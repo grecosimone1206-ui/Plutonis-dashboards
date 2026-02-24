@@ -365,7 +365,7 @@ st.divider()
 with st.sidebar:
     st.markdown("### 🔍 SELEZIONE STRUMENTO")
 
-    scelta = st.selectbox("Scegli il sottostante", options=list(TICKER_DISPONIBILI.keys()), index=0,
+    scelta = st.selectbox("Scegli il sottostante", options=list(TICKER_DISPONIBILI.keys()), index=1,
         help="Seleziona lo strumento su cui vuoi vendere la Put")
 
     ticker_selezionato = TICKER_DISPONIBILI[scelta]
