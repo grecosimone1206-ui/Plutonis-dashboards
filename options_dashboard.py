@@ -1,11 +1,11 @@
 """
 ╔══════════════════════════════════════════════════════════╗
-║         PLUTONIS - Quant Options Dashboard               ║
+║         PHINANCE - Dashboard Vendita Put                 ║
 ║         Motore Quantitativo per Short Put Seller         ║
 ╚══════════════════════════════════════════════════════════╝
 
 Librerie richieste:
-    pip install streamlit numpy pandas scipy plotly
+    pip install streamlit numpy pandas scipy plotly yfinance
 
 Avvio:
     streamlit run options_dashboard.py
@@ -17,53 +17,53 @@ import scipy.stats as si
 import streamlit as st
 import plotly.graph_objects as go
 from dataclasses import dataclass
-from typing import Optional
+
+# Importazione yfinance con gestione errore
+try:
+    import yfinance as yf
+    YFINANCE_DISPONIBILE = True
+except ImportError:
+    YFINANCE_DISPONIBILE = False
 
 # ─────────────────────────────────────────────────────────
 # CONFIGURAZIONE PAGINA
 # ─────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Plutonis | Quant Dashboard",
-    page_icon="⚡",
+    page_title="Phinance | Dashboard Opzioni",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ─────────────────────────────────────────────────────────
-# CSS PERSONALIZZATO  (stile "terminal quant")
+# CSS PERSONALIZZATO
 # ─────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;700&display=swap');
 
-/* Sfondo globale */
 html, body, [data-testid="stAppViewContainer"] {
     background-color: #050A0F;
     color: #C8D8E8;
     font-family: 'Rajdhani', sans-serif;
 }
-
-/* Sidebar */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #07111B 0%, #050A0F 100%);
     border-right: 1px solid #0D2137;
 }
 [data-testid="stSidebar"] .stSlider label,
 [data-testid="stSidebar"] .stNumberInput label,
-[data-testid="stSidebar"] .stSelectbox label {
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] .stTextInput label {
     color: #5EAAD7 !important;
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.78rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
-
-/* Header titolo */
-h1 { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: #E8F4FF; letter-spacing: 0.05em; }
+h1 { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: #E8F4FF; }
 h2 { font-family: 'Rajdhani', sans-serif; color: #5EAAD7; border-bottom: 1px solid #0D2137; padding-bottom: 4px; }
-h3 { font-family: 'Share Tech Mono', monospace; color: #7EC8E3; font-size: 0.85rem; letter-spacing: 0.12em; }
 
-/* Card metrica personalizzata */
 .metric-card {
     background: linear-gradient(135deg, #071828 0%, #0D2137 100%);
     border: 1px solid #1A3A55;
@@ -95,16 +95,8 @@ h3 { font-family: 'Share Tech Mono', monospace; color: #7EC8E3; font-size: 0.85r
     color: #00D4FF;
     line-height: 1;
 }
-.metric-delta {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.75rem;
-    color: #2ECC71;
-    margin-top: 4px;
-}
-.metric-delta.danger { color: #E74C3C; }
-.metric-delta.warning { color: #F39C12; }
+.metric-delta { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: #2ECC71; margin-top: 4px; }
 
-/* Semaforo IV */
 .semaforo {
     display: inline-block;
     width: 14px; height: 14px;
@@ -112,11 +104,10 @@ h3 { font-family: 'Share Tech Mono', monospace; color: #7EC8E3; font-size: 0.85r
     margin-right: 8px;
     vertical-align: middle;
 }
-.semaforo.green  { background: #2ECC71; box-shadow: 0 0 10px #2ECC71; }
-.semaforo.yellow { background: #F39C12; box-shadow: 0 0 10px #F39C12; }
-.semaforo.red    { background: #E74C3C; box-shadow: 0 0 10px #E74C3C; }
+.semaforo.verde  { background: #2ECC71; box-shadow: 0 0 10px #2ECC71; }
+.semaforo.giallo { background: #F39C12; box-shadow: 0 0 10px #F39C12; }
+.semaforo.rosso  { background: #E74C3C; box-shadow: 0 0 10px #E74C3C; }
 
-/* Box alert scenario peggiore */
 .worst-case-box {
     background: linear-gradient(135deg, #1A0A0A, #2A1010);
     border: 1px solid #5C1A1A;
@@ -133,11 +124,21 @@ h3 { font-family: 'Share Tech Mono', monospace; color: #7EC8E3; font-size: 0.85r
     font-size: 0.82rem;
     line-height: 2;
 }
-.grecа-row { display: flex; justify-content: space-between; border-bottom: 1px solid #0D2137; }
-.greca-name { color: #4A7A9B; }
-.greca-val  { color: #C8D8E8; }
+.riga { display: flex; justify-content: space-between; border-bottom: 1px solid #0D2137; }
+.nome { color: #4A7A9B; }
+.valore { color: #C8D8E8; }
 
-/* Bottone */
+.info-box {
+    background: #071828;
+    border: 1px solid #0D2137;
+    border-left: 4px solid #00C4FF;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: #5EAAD7;
+    margin-bottom: 16px;
+}
 .stButton button {
     background: linear-gradient(90deg, #003D6B, #005A9E);
     color: #E8F4FF;
@@ -148,536 +149,489 @@ h3 { font-family: 'Share Tech Mono', monospace; color: #7EC8E3; font-size: 0.85r
     text-transform: uppercase;
     font-size: 0.8rem;
     padding: 8px 20px;
-    transition: all 0.2s;
+    width: 100%;
 }
-.stButton button:hover { background: linear-gradient(90deg, #005A9E, #0080CC); border-color: #00AAFF; }
-
-/* Separatore */
 hr { border-color: #0D2137; }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════
-# FASE 1 – MOTORE MATEMATICO
+# FUNZIONI YFINANCE — Recupero dati reali
+# ═══════════════════════════════════════════════════════════
+
+TICKER_DISPONIBILI = {
+    "S&P 500 (SPY)":             "SPY",
+    "S&P 500 Indice (^GSPC)":    "^GSPC",
+    "NASDAQ 100 (QQQ)":          "QQQ",
+    "Dow Jones (^DJI)":          "^DJI",
+    "Apple (AAPL)":              "AAPL",
+    "Tesla (TSLA)":              "TSLA",
+    "Nvidia (NVDA)":             "NVDA",
+    "Microsoft (MSFT)":          "MSFT",
+    "Amazon (AMZN)":             "AMZN",
+    "Altro (inserisci manualmente)": "MANUALE",
+}
+
+@st.cache_data(ttl=300)
+def recupera_dati_mercato(ticker: str) -> dict:
+    """
+    Recupera da Yahoo Finance tramite yfinance:
+    - Prezzo Spot corrente
+    - Volatilità Storica 30 giorni annualizzata
+    - Variazione % giornaliera
+    - Nome esteso del titolo
+    """
+    try:
+        strumento = yf.Ticker(ticker)
+        storico = strumento.history(period="60d")
+
+        if storico.empty:
+            return {"errore": f"Nessun dato trovato per '{ticker}'. Verifica che il ticker sia corretto."}
+
+        prezzo_spot = float(storico["Close"].iloc[-1])
+
+        variazione_gg = 0.0
+        if len(storico) >= 2:
+            prezzo_ieri = float(storico["Close"].iloc[-2])
+            variazione_gg = ((prezzo_spot - prezzo_ieri) / prezzo_ieri) * 100
+
+        # Volatilità Storica 30gg annualizzata
+        rendimenti = np.log(storico["Close"] / storico["Close"].shift(1)).dropna()
+        vol_30gg = float(rendimenti.tail(30).std() * np.sqrt(252) * 100)
+        vol_60gg = float(rendimenti.std() * np.sqrt(252) * 100)
+
+        try:
+            nome = strumento.info.get("longName", ticker)
+        except Exception:
+            nome = ticker
+
+        return {
+            "prezzo_spot":      round(prezzo_spot, 2),
+            "variazione_gg":    round(variazione_gg, 2),
+            "vol_storica_30gg": round(vol_30gg, 2),
+            "vol_storica_60gg": round(vol_60gg, 2),
+            "nome":             nome,
+            "ultimo_agg":       storico.index[-1].strftime("%d/%m/%Y"),
+            "errore":           None,
+        }
+    except Exception as e:
+        return {"errore": f"Errore di connessione: {str(e)}"}
+
+
+# ═══════════════════════════════════════════════════════════
+# MOTORE MATEMATICO — Black-Scholes
 # ═══════════════════════════════════════════════════════════
 
 @dataclass
-class OpzioneParams:
-    """Contenitore parametri opzione."""
-    S: float     # Prezzo Spot sottostante
-    K: float     # Strike price
-    T: float     # Tempo alla scadenza (anni)
-    r: float     # Tasso risk-free (annuo, decimale)
-    sigma: float # Volatilità Implicita (annua, decimale)
-    tipo: str = "put"  # "put" o "call"
+class ParametriOpzione:
+    S: float; K: float; T: float; r: float; sigma: float
 
 
-def d1_d2(params: OpzioneParams):
-    """Calcola d1 e d2 del modello Black-Scholes."""
-    S, K, T, r, sigma = params.S, params.K, params.T, params.r, params.sigma
-    if T <= 0 or sigma <= 0:
+def calcola_d1_d2(p: ParametriOpzione):
+    if p.T <= 0 or p.sigma <= 0:
         return 0.0, 0.0
-    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    return d1, d2
+    d1 = (np.log(p.S / p.K) + (p.r + 0.5 * p.sigma**2) * p.T) / (p.sigma * np.sqrt(p.T))
+    return d1, d1 - p.sigma * np.sqrt(p.T)
 
 
-def black_scholes_prezzo(params: OpzioneParams) -> float:
-    """
-    Calcola il prezzo teorico dell'opzione (Put o Call) con Black-Scholes.
-    Ritorna il premio in unità di valuta del sottostante.
-    """
-    S, K, T, r = params.S, params.K, params.T, params.r
-    d1, d2 = d1_d2(params)
-
-    if params.tipo == "call":
-        prezzo = S * si.norm.cdf(d1) - K * np.exp(-r * T) * si.norm.cdf(d2)
-    else:  # put
-        prezzo = K * np.exp(-r * T) * si.norm.cdf(-d2) - S * si.norm.cdf(-d1)
-
-    return max(prezzo, 0.0)
+def prezzo_put(p: ParametriOpzione) -> float:
+    d1, d2 = calcola_d1_d2(p)
+    return max(p.K * np.exp(-p.r * p.T) * si.norm.cdf(-d2) - p.S * si.norm.cdf(-d1), 0.0)
 
 
-def probabilita_successo_put(params: OpzioneParams) -> float:
-    """
-    Probabilità che la Put scada OTM (S > K a scadenza).
-    Equivale a N(d2) con la metrica risk-neutral.
-    """
-    _, d2 = d1_d2(params)
-    return si.norm.cdf(d2)  # P(S_T > K) in misura risk-neutral
+def probabilita_successo(p: ParametriOpzione) -> float:
+    _, d2 = calcola_d1_d2(p)
+    return si.norm.cdf(d2)
 
 
-def calcola_greche(params: OpzioneParams) -> dict:
-    """
-    Calcola le greche principali per una Put Short:
-      - Delta  : sensibilità al prezzo (≈ probabilità ITM con segno)
-      - Gamma  : variazione del Delta
-      - Theta  : decadimento temporale giornaliero
-      - Vega   : sensibilità alla volatilità
-      - Rho    : sensibilità al tasso
-    """
-    S, K, T, r, sigma = params.S, params.K, params.T, params.r, params.sigma
-    if T <= 0:
+def calcola_greche(p: ParametriOpzione) -> dict:
+    if p.T <= 0:
         return {"delta": 0, "gamma": 0, "theta": 0, "vega": 0, "rho": 0}
-
-    d1, d2 = d1_d2(params)
+    d1, d2 = calcola_d1_d2(p)
     pdf_d1 = si.norm.pdf(d1)
-    cdf_neg_d1 = si.norm.cdf(-d1)
-    cdf_neg_d2 = si.norm.cdf(-d2)
-
-    # Delta Put: -N(-d1)  →  valore negativo per long, positivo per short
-    delta = -cdf_neg_d1
-
-    # Gamma (identico per call e put)
-    gamma = pdf_d1 / (S * sigma * np.sqrt(T))
-
-    # Theta Put (per anno → diviso 365 per giorno)
-    theta = (
-        -(S * pdf_d1 * sigma) / (2 * np.sqrt(T))
-        + r * K * np.exp(-r * T) * cdf_neg_d2
-    ) / 365
-
-    # Vega (per 1% di variazione IV)
-    vega = S * pdf_d1 * np.sqrt(T) / 100
-
-    # Rho Put
-    rho = -K * T * np.exp(-r * T) * cdf_neg_d2 / 100
-
     return {
-        "delta": round(delta, 4),
-        "gamma": round(gamma, 6),
-        "theta": round(theta, 4),
-        "vega":  round(vega, 4),
-        "rho":   round(rho, 4),
+        "delta": round(-si.norm.cdf(-d1), 4),
+        "gamma": round(pdf_d1 / (p.S * p.sigma * np.sqrt(p.T)), 6),
+        "theta": round((-(p.S * pdf_d1 * p.sigma) / (2 * np.sqrt(p.T)) + p.r * p.K * np.exp(-p.r * p.T) * si.norm.cdf(-d2)) / 365, 4),
+        "vega":  round(p.S * pdf_d1 * np.sqrt(p.T) / 100, 4),
+        "rho":   round(-p.K * p.T * np.exp(-p.r * p.T) * si.norm.cdf(-d2) / 100, 4),
     }
 
 
 # ═══════════════════════════════════════════════════════════
-# FASE 2 – LOGICA DI SELEZIONE
+# LOGICA DI SELEZIONE
 # ═══════════════════════════════════════════════════════════
 
-def semaforo_iv(iv_corrente: float, iv_media_storica: float) -> dict:
-    """
-    Analizza l'Implied Volatility rispetto alla media storica.
-    Ritorna: colore semaforo, descrizione, fattore moltiplicativo IV rank.
-    """
-    ratio = iv_corrente / iv_media_storica if iv_media_storica > 0 else 1.0
-
+def semaforo_volatilita(iv: float, vol_storica: float) -> dict:
+    ratio = iv / vol_storica if vol_storica > 0 else 1.0
     if ratio >= 1.25:
-        return {"colore": "green", "label": "IV ELEVATA ✓", "dettaglio": f"IV {ratio:.1%} vs media – Condizioni favorevoli per la vendita"}
+        return {"colore": "verde",  "etichetta": "CONDIZIONI OTTIME ✓",
+                "dettaglio": f"IV ({iv:.1f}%) è {ratio:.0%} della vol. storica — premi gonfiati, ottimo per vendere"}
     elif ratio >= 0.85:
-        return {"colore": "yellow", "label": "IV NELLA NORMA ≈", "dettaglio": f"IV {ratio:.1%} vs media – Valutare attentamente il premio"}
+        return {"colore": "giallo", "etichetta": "CONDIZIONI NELLA NORMA ≈",
+                "dettaglio": f"IV ({iv:.1f}%) è in linea con la storia — valutare attentamente"}
     else:
-        return {"colore": "red", "label": "IV BASSA ✗", "dettaglio": f"IV {ratio:.1%} vs media – Premio insufficiente, evitare la vendita"}
+        return {"colore": "rosso",  "etichetta": "CONDIZIONI SFAVOREVOLI ✗",
+                "dettaglio": f"IV ({iv:.1f}%) è bassa — premi insufficienti, meglio aspettare"}
 
 
-def suggerisci_strike(
-    S: float,
-    sigma: float,
-    T: float,
-    r: float,
-    prob_target: float = 0.95
-) -> float:
-    """
-    Trova lo strike che garantisce la probabilità di successo desiderata.
-    Usa l'inverso della distribuzione log-normale:
-        K = S * exp((r - 0.5*σ²)*T - σ*√T * N⁻¹(1 - prob_target))
-    """
+def suggerisci_strike(S, sigma, T, r, prob_target) -> float:
     if T <= 0 or sigma <= 0:
         return S
-    z = si.norm.ppf(1.0 - prob_target)   # quantile negativo
-    K = S * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z)
-    return round(K, 2)
+    return round(S * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * si.norm.ppf(1.0 - prob_target)), 2)
 
 
 # ═══════════════════════════════════════════════════════════
-# FASE 3 – GESTIONE DEL RISCHIO
+# GESTIONE DEL RISCHIO
 # ═══════════════════════════════════════════════════════════
 
-def position_sizing(
-    capitale: float,
-    strike: float,
-    margine_perc: float = 0.15,
-    moltiplicatore: int = 100
-) -> dict:
-    """
-    Calcola il numero massimo di contratti Short Put vendibili.
-    Ogni contratto copre 'moltiplicatore' azioni (standard: 100).
-    """
-    margine_per_contratto = strike * moltiplicatore * (margine_perc / 100)
-    n_contratti = int(capitale // margine_per_contratto) if margine_per_contratto > 0 else 0
-    capitale_impegnato = n_contratti * margine_per_contratto
-    capitale_libero = capitale - capitale_impegnato
-
+def calcola_position_sizing(capitale, strike, margine_perc, moltiplicatore=100) -> dict:
+    margine_c = strike * moltiplicatore * (margine_perc / 100)
+    n = int(capitale // margine_c) if margine_c > 0 else 0
     return {
-        "n_contratti":         n_contratti,
-        "margine_per_contratto": round(margine_per_contratto, 2),
-        "capitale_impegnato":  round(capitale_impegnato, 2),
-        "capitale_libero":     round(capitale_libero, 2),
+        "n_contratti":           n,
+        "margine_per_contratto": round(margine_c, 2),
+        "capitale_impegnato":    round(n * margine_c, 2),
+        "capitale_libero":       round(capitale - n * margine_c, 2),
     }
 
 
-def worst_case_scenario(
-    S: float,
-    strike: float,
-    premio_incassato: float,
-    n_contratti: int,
-    crash_perc: float = 20.0,
-    moltiplicatore: int = 100
-) -> dict:
-    """
-    Scenario peggiore: crollo istantaneo del sottostante del crash_perc%.
-    Calcola la perdita massima stimata al netto del premio incassato.
-    """
+def calcola_scenario_peggiore(S, strike, premio, n_contratti, crash_perc, moltiplicatore=100) -> dict:
     S_crash = S * (1 - crash_perc / 100)
-    perdita_per_contratto = max(strike - S_crash, 0) - premio_incassato
-    perdita_totale = perdita_per_contratto * n_contratti * moltiplicatore
-    premio_totale_incassato = premio_incassato * n_contratti * moltiplicatore
-
+    perdita_c = max(strike - S_crash, 0) - premio
     return {
-        "S_crash":              round(S_crash, 2),
-        "perdita_per_contratto": round(perdita_per_contratto, 2),
-        "perdita_totale":       round(perdita_totale, 2),
-        "premio_totale_incassato": round(premio_totale_incassato, 2),
-        "crash_perc":           crash_perc,
+        "S_crash":               round(S_crash, 2),
+        "perdita_per_contratto": round(perdita_c, 2),
+        "perdita_totale":        round(perdita_c * n_contratti * moltiplicatore, 2),
+        "premio_totale":         round(premio * n_contratti * moltiplicatore, 2),
+        "crash_perc":            crash_perc,
     }
 
 
 # ═══════════════════════════════════════════════════════════
-# FASE 4 – INTERFACCIA UTENTE STREAMLIT
+# GRAFICO P&L
 # ═══════════════════════════════════════════════════════════
 
-def grafico_pnl(
-    S: float,
-    strike: float,
-    premio: float,
-    n_contratti: int,
-    moltiplicatore: int = 100
-) -> go.Figure:
-    """
-    Genera il grafico interattivo del P&L a scadenza per una Short Put.
-    """
-    # Range prezzi: dal -40% al +20% rispetto allo spot
+def grafico_pnl(S, strike, premio, n_contratti, moltiplicatore=100) -> go.Figure:
     prezzi = np.linspace(S * 0.55, S * 1.20, 300)
-    pnl_per_share = np.where(prezzi < strike, prezzi - strike + premio, premio)
-    pnl_totale = pnl_per_share * n_contratti * moltiplicatore
-
-    # Colorazione area profitto/perdita
-    colori = ["#2ECC71" if v >= 0 else "#E74C3C" for v in pnl_totale]
-
+    pnl = np.where(prezzi < strike, prezzi - strike + premio, premio) * n_contratti * moltiplicatore
     fig = go.Figure()
-
-    # Area sotto la curva
-    fig.add_trace(go.Scatter(
-        x=prezzi, y=pnl_totale,
-        fill='tozeroy',
-        fillcolor='rgba(46, 204, 113, 0.08)',
-        line=dict(color='#2ECC71', width=2),
-        name='P&L Totale',
-        hovertemplate='Spot: %{x:.2f}<br>P&L: %{y:,.0f} €<extra></extra>',
-    ))
-
-    # Linea zero
-    fig.add_hline(y=0, line=dict(color='#C8D8E8', dash='dot', width=1))
-
-    # Linea Strike
+    fig.add_trace(go.Scatter(x=prezzi, y=np.maximum(pnl, 0), fill='tozeroy',
+        fillcolor='rgba(46,204,113,0.12)', line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
+    fig.add_trace(go.Scatter(x=prezzi, y=np.minimum(pnl, 0), fill='tozeroy',
+        fillcolor='rgba(231,76,60,0.12)', line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
+    fig.add_trace(go.Scatter(x=prezzi, y=pnl, line=dict(color='#00D4FF', width=2.5),
+        name='Profitto / Perdita',
+        hovertemplate='Prezzo a scadenza: %{x:.2f}<br>P&L: %{y:,.0f} €<extra></extra>'))
     fig.add_vline(x=strike, line=dict(color='#F39C12', dash='dash', width=1.5),
-                  annotation_text=f"Strike {strike:.1f}", annotation_font_color="#F39C12")
-
-    # Linea Spot corrente
-    fig.add_vline(x=S, line=dict(color='#00D4FF', dash='dash', width=1.5),
-                  annotation_text=f"Spot {S:.1f}", annotation_font_color="#00D4FF")
-
+        annotation_text=f"Strike {strike:.0f}", annotation_font_color="#F39C12", annotation_position="top right")
+    fig.add_vline(x=S, line=dict(color='#00D4FF', dash='dot', width=1.5),
+        annotation_text=f"Prezzo attuale {S:.0f}", annotation_font_color="#00D4FF", annotation_position="top left")
+    fig.add_vline(x=strike - premio, line=dict(color='#9B59B6', dash='dash', width=1),
+        annotation_text=f"Pareggio {strike-premio:.0f}", annotation_font_color="#9B59B6")
+    fig.add_hline(y=0, line=dict(color='#C8D8E8', dash='dot', width=1))
     fig.update_layout(
-        paper_bgcolor='#050A0F',
-        plot_bgcolor='#071828',
+        paper_bgcolor='#050A0F', plot_bgcolor='#071828',
         font=dict(family='Share Tech Mono', size=11, color='#C8D8E8'),
-        title=dict(text='PROFILO P&L A SCADENZA — SHORT PUT', font=dict(size=13, color='#5EAAD7')),
-        xaxis=dict(
-            title='Prezzo Sottostante a Scadenza',
-            gridcolor='#0D2137', zerolinecolor='#1A3A55',
-        ),
-        yaxis=dict(
-            title='P&L (€)',
-            gridcolor='#0D2137', zerolinecolor='#1A3A55',
-        ),
-        hovermode='x unified',
-        legend=dict(bgcolor='#071828', bordercolor='#0D2137'),
-        margin=dict(l=10, r=10, t=50, b=10),
+        title=dict(text='📈 PROFILO PROFITTO / PERDITA A SCADENZA — VENDITA PUT', font=dict(size=13, color='#5EAAD7')),
+        xaxis=dict(title='Prezzo del Sottostante a Scadenza', gridcolor='#0D2137'),
+        yaxis=dict(title='Profitto / Perdita (€)', gridcolor='#0D2137'),
+        hovermode='x unified', margin=dict(l=10, r=10, t=50, b=10),
     )
     return fig
 
 
-# ─────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
 # INTESTAZIONE
-# ─────────────────────────────────────────────────────────
-col_logo, col_title = st.columns([1, 8])
-with col_title:
-    st.markdown("""
-    <div style='padding: 10px 0 5px 0;'>
-        <span style='font-family: Share Tech Mono; font-size:0.75rem; color:#4A7A9B; letter-spacing:0.2em;'>PLUTONIS QUANTITATIVE SYSTEMS</span><br>
-        <span style='font-family: Rajdhani; font-size:2.4rem; font-weight:700; color:#E8F4FF; letter-spacing:0.04em;'>⚡ OPTIONS QUANT DASHBOARD</span><br>
-        <span style='font-family: Share Tech Mono; font-size:0.72rem; color:#4A7A9B;'>SHORT PUT SELLER — MOTORE BLACK-SCHOLES v1.0</span>
-    </div>
-    """, unsafe_allow_html=True)
+# ═══════════════════════════════════════════════════════════
+
+st.markdown("""
+<div style='padding: 10px 0 5px 0;'>
+    <span style='font-family:Share Tech Mono; font-size:0.75rem; color:#4A7A9B; letter-spacing:0.2em;'>SISTEMI QUANTITATIVI PER IL TRADING DI OPZIONI</span><br>
+    <span style='font-family:Rajdhani; font-size:2.6rem; font-weight:700; color:#E8F4FF; letter-spacing:0.04em;'>📊 PHINANCE</span>
+    <span style='font-family:Rajdhani; font-size:1.2rem; color:#5EAAD7; margin-left:12px;'>Dashboard Vendita Put</span><br>
+    <span style='font-family:Share Tech Mono; font-size:0.72rem; color:#4A7A9B;'>Motore Black-Scholes · Dati Yahoo Finance in Tempo Reale · Gestione del Rischio</span>
+</div>
+""", unsafe_allow_html=True)
 
 st.divider()
 
 
-# ─────────────────────────────────────────────────────────
-# SIDEBAR – INPUT UTENTE
-# ─────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+# SIDEBAR
+# ═══════════════════════════════════════════════════════════
+
 with st.sidebar:
-    st.markdown("### 📐 PARAMETRI DI MERCATO")
+    st.markdown("### 🔍 SELEZIONE STRUMENTO")
 
-    spot = st.number_input(
-        "Prezzo Spot Sottostante (S)",
-        min_value=1.0, max_value=100_000.0, value=5_000.0, step=10.0,
-        help="Prezzo corrente del sottostante (es. indice S&P500, azione)"
-    )
+    scelta = st.selectbox("Scegli il sottostante", options=list(TICKER_DISPONIBILI.keys()), index=0,
+        help="Seleziona lo strumento su cui vuoi vendere la Put")
 
-    dte = st.slider(
-        "Giorni alla Scadenza (DTE)",
-        min_value=1, max_value=365, value=30,
-        help="Days To Expiration — numero di giorni calendariali"
-    )
+    ticker_selezionato = TICKER_DISPONIBILI[scelta]
+    if ticker_selezionato == "MANUALE":
+        ticker_manuale = st.text_input("Inserisci il ticker (es. AAPL)", value="SPY",
+            help="Usa il formato ticker di Yahoo Finance")
+        ticker_da_usare = ticker_manuale.upper().strip()
+    else:
+        ticker_da_usare = ticker_selezionato
 
-    iv_corrente = st.slider(
-        "Volatilità Implicita — IV (%)",
-        min_value=1.0, max_value=150.0, value=20.0, step=0.5,
-        help="Volatilità implicita dell'opzione in percentuale annua"
-    )
-
-    iv_media_storica = st.slider(
-        "IV Media Storica (%)",
-        min_value=1.0, max_value=100.0, value=15.0, step=0.5,
-        help="Media storica dell'IV per confronto con il semaforo"
-    )
-
-    r = st.number_input(
-        "Tasso Risk-Free (%)",
-        min_value=0.0, max_value=20.0, value=4.5, step=0.1,
-        help="Tasso di interesse privo di rischio annuo"
-    )
+    aggiorna = st.button("🔄 AGGIORNA DATI DI MERCATO")
 
     st.divider()
-    st.markdown("### 💼 MONEY MANAGEMENT")
+    st.markdown("### 📐 PARAMETRI OPZIONE")
 
-    capitale = st.number_input(
-        "Capitale Disponibile (€)",
-        min_value=1_000.0, max_value=10_000_000.0, value=50_000.0, step=1_000.0
-    )
-
-    margine_perc = st.slider(
-        "Margine Richiesto (% dello Strike)",
-        min_value=5.0, max_value=50.0, value=15.0, step=1.0,
-        help="Percentuale dello strike richiesta come margine dal broker"
-    )
-
-    crash_perc = st.slider(
-        "Scenario Crash (%)",
-        min_value=5.0, max_value=50.0, value=20.0, step=1.0,
-        help="Percentuale di crollo per lo scenario peggiore"
-    )
+    dte = st.slider("Giorni alla Scadenza (DTE)", 1, 365, 30,
+        help="Numero di giorni calendariali fino alla scadenza")
+    iv_corrente = st.slider("Volatilità Implicita — IV (%)", 1.0, 150.0, 20.0, step=0.5,
+        help="Inserisci l'IV che vedi sul tuo broker per questa scadenza")
+    r = st.number_input("Tasso Risk-Free (%)", 0.0, 20.0, 4.5, step=0.1,
+        help="Rendimento BTP/Treasury come riferimento")
 
     st.divider()
-    st.markdown("### 🎯 STRATEGIA")
+    st.markdown("### 💼 GESTIONE DEL RISCHIO")
 
-    prob_target = st.slider(
-        "Probabilità di Successo Target (%)",
-        min_value=70.0, max_value=99.0, value=90.0, step=1.0,
-        help="Lo strike consigliato raggiungerà questa probabilità di scadere OTM"
-    )
+    capitale = st.number_input("Capitale Disponibile (€)", 1_000.0, 10_000_000.0, 50_000.0, step=1_000.0)
+    margine_perc = st.slider("Margine Richiesto dal Broker (%)", 5.0, 50.0, 15.0, step=1.0,
+        help="Percentuale dello strike che il broker blocca come garanzia")
+    crash_perc = st.slider("Ipotesi Scenario di Crisi (%)", 5.0, 50.0, 20.0, step=1.0,
+        help="Di quanto potrebbe scendere il mercato nel caso peggiore?")
 
-    # Mock Data / API Toggle
-    usa_mock = st.toggle("Usa Mock Data (demo)", value=True, help="OFF = integrazione futura con yfinance")
-    if not usa_mock:
-        st.info("⚙️ Integrazione yfinance: aggiungi `import yfinance as yf` e popola i campi con `ticker.option_chain()`")
+    st.divider()
+    st.markdown("### 🎯 OBIETTIVO STRATEGIA")
+
+    prob_target = st.slider("Probabilità di Successo Desiderata (%)", 70.0, 99.0, 90.0, step=1.0,
+        help="Lo strike sarà calcolato per garantire questa probabilità di scadere senza perdite")
 
 
-# ─────────────────────────────────────────────────────────
-# CALCOLI CENTRALI
-# ─────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+# RECUPERO DATI DI MERCATO
+# ═══════════════════════════════════════════════════════════
+
+if ("dati" not in st.session_state or aggiorna or
+        st.session_state.get("ticker_corrente") != ticker_da_usare):
+    with st.spinner(f"⏳ Recupero dati per {ticker_da_usare} da Yahoo Finance..."):
+        st.session_state.dati = recupera_dati_mercato(ticker_da_usare)
+        st.session_state.ticker_corrente = ticker_da_usare
+
+dati = st.session_state.dati
+
+if dati.get("errore"):
+    st.error(f"⚠️ **Errore:** {dati['errore']}")
+    st.info("💡 Prova con ticker come: SPY, QQQ, AAPL, TSLA, MSFT, ^GSPC")
+    st.stop()
+
+spot         = dati["prezzo_spot"]
+vol_storica  = dati["vol_storica_30gg"]
+variazione   = dati["variazione_gg"]
+nome         = dati["nome"]
+ultimo_agg   = dati["ultimo_agg"]
+
+
+# ═══════════════════════════════════════════════════════════
+# CALCOLI
+# ═══════════════════════════════════════════════════════════
+
 T_anni = dte / 365.0
-sigma_dec = iv_corrente / 100.0
-r_dec = r / 100.0
+sigma  = iv_corrente / 100.0
+r_dec  = r / 100.0
 
-strike_consigliato = suggerisci_strike(spot, sigma_dec, T_anni, r_dec, prob_target / 100.0)
+strike      = suggerisci_strike(spot, sigma, T_anni, r_dec, prob_target / 100.0)
+params      = ParametriOpzione(S=spot, K=strike, T=T_anni, r=r_dec, sigma=sigma)
+premio      = prezzo_put(params)
+prob_ok     = probabilita_successo(params)
+greche      = calcola_greche(params)
+semaforo    = semaforo_volatilita(iv_corrente, vol_storica)
+sizing      = calcola_position_sizing(capitale, strike, margine_perc)
+scenario    = calcola_scenario_peggiore(spot, strike, premio, sizing["n_contratti"], crash_perc)
+distanza    = (spot - strike) / spot * 100
+premio_tot  = premio * sizing["n_contratti"] * 100
+theta_tot   = abs(greche["theta"]) * sizing["n_contratti"] * 100
+rend_mese   = (premio_tot / sizing["capitale_impegnato"] * 100) if sizing["capitale_impegnato"] > 0 else 0
 
-params = OpzioneParams(S=spot, K=strike_consigliato, T=T_anni, r=r_dec, sigma=sigma_dec)
-premio = black_scholes_prezzo(params)
-prob_successo = probabilita_successo_put(params)
-greche = calcola_greche(params)
-iv_info = semaforo_iv(iv_corrente, iv_media_storica)
-sizing = position_sizing(capitale, strike_consigliato, margine_perc)
-wcs = worst_case_scenario(spot, strike_consigliato, premio, sizing["n_contratti"], crash_perc)
 
+# ═══════════════════════════════════════════════════════════
+# BARRA INFORMAZIONI STRUMENTO
+# ═══════════════════════════════════════════════════════════
 
-# ─────────────────────────────────────────────────────────
-# SEMAFORO IV
-# ─────────────────────────────────────────────────────────
+colore_v = "#2ECC71" if variazione >= 0 else "#E74C3C"
+freccia  = "▲" if variazione >= 0 else "▼"
+
 st.markdown(f"""
-<div style='display:flex; align-items:center; margin-bottom:20px; padding: 12px 20px;
+<div class='info-box'>
+    <span style='color:#E8F4FF; font-size:0.9rem; font-family:Rajdhani; font-weight:700;'>{nome}</span>
+    &nbsp;|&nbsp;
+    <span style='color:#00D4FF; font-size:1rem; font-family:Rajdhani; font-weight:700;'>{spot:,.2f}</span>
+    &nbsp;
+    <span style='color:{colore_v};'>{freccia} {abs(variazione):.2f}% oggi</span>
+    &nbsp;|&nbsp;
+    Volatilità Storica 30gg: <span style='color:#E8F4FF;'>{vol_storica:.1f}%</span>
+    &nbsp;|&nbsp;
+    Aggiornato al: <span style='color:#E8F4FF;'>{ultimo_agg}</span>
+    &nbsp;|&nbsp;
+    <span style='color:#4A7A9B;'>Fonte: Yahoo Finance</span>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════
+# SEMAFORO VOLATILITÀ
+# ═══════════════════════════════════════════════════════════
+
+st.markdown(f"""
+<div style='display:flex; align-items:center; margin-bottom:20px; padding:14px 20px;
      background:#071828; border:1px solid #0D2137; border-radius:8px;'>
-    <span class='semaforo {iv_info["colore"]}'></span>
+    <span class='semaforo {semaforo["colore"]}'></span>
     <span style='font-family:Share Tech Mono; font-size:0.82rem; color:#E8F4FF; margin-right:16px;'>
-        IV RANK: {iv_info["label"]}
+        SEGNALE: {semaforo["etichetta"]}
     </span>
-    <span style='font-family:Rajdhani; font-size:0.9rem; color:#7EC8E3;'>
-        {iv_info["dettaglio"]}
+    <span style='font-family:Rajdhani; font-size:0.95rem; color:#7EC8E3;'>
+        {semaforo["dettaglio"]}
     </span>
 </div>
 """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────
-# 3 COLONNE PRINCIPALI
-# ─────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+# 3 METRICHE PRINCIPALI
+# ═══════════════════════════════════════════════════════════
+
 c1, c2, c3 = st.columns(3)
 
 with c1:
     st.markdown(f"""
     <div class='metric-card'>
         <div class='metric-label'>🎯 STRIKE CONSIGLIATO</div>
-        <div class='metric-value'>{strike_consigliato:,.1f}</div>
-        <div class='metric-delta'>Distanza dallo Spot: {((spot - strike_consigliato)/spot*100):.1f}% OTM</div>
+        <div class='metric-value'>{strike:,.1f}</div>
+        <div class='metric-delta'>Distanza dal prezzo attuale: {distanza:.1f}% sotto</div>
     </div>
     """, unsafe_allow_html=True)
 
 with c2:
-    colore_prob = "danger" if prob_successo < 0.80 else ("warning" if prob_successo < 0.90 else "")
+    colore_p = "#2ECC71" if prob_ok >= 0.90 else "#F39C12" if prob_ok >= 0.80 else "#E74C3C"
+    giudizio = "Eccellente" if prob_ok >= 0.90 else "Accettabile" if prob_ok >= 0.80 else "Rischiosa"
     st.markdown(f"""
     <div class='metric-card'>
         <div class='metric-label'>✅ PROBABILITÀ DI SUCCESSO</div>
-        <div class='metric-value' style='color:{"#2ECC71" if prob_successo>=0.90 else "#F39C12" if prob_successo>=0.80 else "#E74C3C"}'>{prob_successo*100:.1f}%</div>
-        <div class='metric-delta {colore_prob}'>P(scade OTM) — modello risk-neutral</div>
+        <div class='metric-value' style='color:{colore_p};'>{prob_ok*100:.1f}%</div>
+        <div class='metric-delta'>Valutazione: {giudizio} — probabilità che scada senza perdite</div>
     </div>
     """, unsafe_allow_html=True)
 
 with c3:
-    premio_totale = premio * sizing["n_contratti"] * 100
     st.markdown(f"""
     <div class='metric-card'>
-        <div class='metric-label'>💰 PREMIO STIMATO</div>
+        <div class='metric-label'>💰 PREMIO INCASSATO</div>
         <div class='metric-value'>{premio:.2f}</div>
-        <div class='metric-delta'>Totale ({sizing["n_contratti"]} contratti): {premio_totale:,.0f} €/mese</div>
+        <div class='metric-delta'>Totale con {sizing["n_contratti"]} contratti: +{premio_tot:,.0f} € al mese</div>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
 # GRAFICO P&L
-# ─────────────────────────────────────────────────────────
-st.plotly_chart(
-    grafico_pnl(spot, strike_consigliato, premio, sizing["n_contratti"]),
-    use_container_width=True
-)
+# ═══════════════════════════════════════════════════════════
+
+st.plotly_chart(grafico_pnl(spot, strike, premio, sizing["n_contratti"]), use_container_width=True)
 
 
-# ─────────────────────────────────────────────────────────
-# GRECHE + POSITION SIZING + WORST CASE
-# ─────────────────────────────────────────────────────────
-g_col, ps_col, wc_col = st.columns(3)
+# ═══════════════════════════════════════════════════════════
+# PANNELLI INFERIORI
+# ═══════════════════════════════════════════════════════════
 
-with g_col:
-    st.markdown("## GRECHE")
-    delta_pct = abs(greche['delta']) * 100
+col_g, col_ps, col_wc = st.columns(3)
+
+with col_g:
+    st.markdown("## LETTERE GRECHE")
+    st.markdown("<div class='info-box' style='font-size:0.68rem;'>Le greche misurano la sensibilità del prezzo dell'opzione alle variazioni di mercato</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class='greche-box'>
-        <div class='grecа-row'><span class='greca-name'>Δ DELTA</span><span class='greca-val'>{greche['delta']:.4f} ({delta_pct:.1f}% ITM)</span></div>
-        <div class='grecа-row'><span class='greca-name'>Γ GAMMA</span><span class='greca-val'>{greche['gamma']:.6f}</span></div>
-        <div class='grecа-row'><span class='greca-name'>Θ THETA</span><span class='greca-val'>+{abs(greche['theta']):.4f} €/giorno</span></div>
-        <div class='grecа-row'><span class='greca-name'>ν VEGA</span><span class='greca-val'>{greche['vega']:.4f} / 1% IV</span></div>
-        <div class='grecа-row'><span class='greca-name'>ρ RHO</span><span class='greca-val'>{greche['rho']:.4f}</span></div>
+        <div class='riga'><span class='nome'>Δ DELTA (prob. ITM)</span><span class='valore'>{greche['delta']:.4f} → {abs(greche['delta'])*100:.1f}%</span></div>
+        <div class='riga'><span class='nome'>Γ GAMMA (accelerazione)</span><span class='valore'>{greche['gamma']:.6f}</span></div>
+        <div class='riga'><span class='nome'>Θ THETA (guadagno/giorno)</span><span class='valore' style='color:#2ECC71'>+{abs(greche['theta']):.4f} €</span></div>
+        <div class='riga'><span class='nome'>ν VEGA (sensib. volatilità)</span><span class='valore'>{greche['vega']:.4f} per 1% IV</span></div>
+        <div class='riga'><span class='nome'>ρ RHO (sensib. tassi)</span><span class='valore'>{greche['rho']:.4f}</span></div>
     </div>
     """, unsafe_allow_html=True)
 
-with ps_col:
-    st.markdown("## POSITION SIZING")
+with col_ps:
+    st.markdown("## DIMENSIONE POSIZIONE")
+    st.markdown("<div class='info-box' style='font-size:0.68rem;'>Quanti contratti puoi vendere in sicurezza con il tuo capitale disponibile</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class='greche-box'>
-        <div class='grecа-row'><span class='greca-name'>CONTRATTI MAX</span><span class='greca-val' style='color:#00D4FF; font-size:1.1rem'>{sizing["n_contratti"]}</span></div>
-        <div class='grecа-row'><span class='greca-name'>MARGINE/CONTRATTO</span><span class='greca-val'>{sizing["margine_per_contratto"]:,.0f} €</span></div>
-        <div class='grecа-row'><span class='greca-name'>CAPITALE IMPEGNATO</span><span class='greca-val'>{sizing["capitale_impegnato"]:,.0f} €</span></div>
-        <div class='grecа-row'><span class='greca-name'>CAPITALE LIBERO</span><span class='greca-val' style='color:#2ECC71'>{sizing["capitale_libero"]:,.0f} €</span></div>
-        <div class='grecа-row'><span class='greca-name'>RENDIMENTO THETA/DIE</span><span class='greca-val'>+{abs(greche["theta"]) * sizing["n_contratti"] * 100:,.0f} €</span></div>
+        <div class='riga'><span class='nome'>CONTRATTI MASSIMI</span><span class='valore' style='color:#00D4FF; font-size:1.1rem'>{sizing["n_contratti"]}</span></div>
+        <div class='riga'><span class='nome'>MARGINE PER CONTRATTO</span><span class='valore'>{sizing["margine_per_contratto"]:,.0f} €</span></div>
+        <div class='riga'><span class='nome'>CAPITALE BLOCCATO</span><span class='valore'>{sizing["capitale_impegnato"]:,.0f} €</span></div>
+        <div class='riga'><span class='nome'>CAPITALE LIBERO</span><span class='valore' style='color:#2ECC71'>{sizing["capitale_libero"]:,.0f} €</span></div>
+        <div class='riga'><span class='nome'>GUADAGNO THETA/GIORNO</span><span class='valore' style='color:#2ECC71'>+{theta_tot:,.0f} €</span></div>
+        <div class='riga'><span class='nome'>RENDIMENTO SUL MARGINE</span><span class='valore' style='color:#2ECC71'>{rend_mese:.1f}% / mese</span></div>
     </div>
     """, unsafe_allow_html=True)
 
-with wc_col:
-    st.markdown("## WORST CASE SCENARIO")
+with col_wc:
+    st.markdown("## SCENARIO DI CRISI")
+    st.markdown("<div class='info-box' style='font-size:0.68rem; border-left-color:#E74C3C;'>Cosa succederebbe se il mercato crollasse improvvisamente</div>", unsafe_allow_html=True)
+    perdita_netta = scenario["perdita_totale"] + scenario["premio_totale"]
+    impatto = (perdita_netta / capitale * 100) if capitale > 0 else 0
     st.markdown(f"""
     <div class='worst-case-box'>
-        <div style='font-family:Share Tech Mono; font-size:0.7rem; color:#E74C3C; letter-spacing:0.15em; margin-bottom:12px;'>
-            ⚠ CROLLO -{wcs["crash_perc"]:.0f}% IN UN GIORNO
+        <div style='font-family:Share Tech Mono; font-size:0.7rem; color:#E74C3C; margin-bottom:12px;'>
+            ⚠ IPOTESI: CROLLO DEL -{scenario["crash_perc"]:.0f}% IN UN GIORNO
         </div>
-        <div class='grecа-row' style='border-bottom:1px solid #3A1515;'>
-            <span class='greca-name'>SPOT POST-CRASH</span>
-            <span class='greca-val'>{wcs["S_crash"]:,.1f}</span>
-        </div>
-        <div class='grecа-row' style='border-bottom:1px solid #3A1515;'>
-            <span class='greca-name'>PERDITA/CONTRATTO</span>
-            <span class='greca-val' style='color:#E74C3C'>{wcs["perdita_per_contratto"]:,.0f} €</span>
-        </div>
-        <div class='grecа-row' style='border-bottom:1px solid #3A1515;'>
-            <span class='greca-name'>PERDITA TOTALE</span>
-            <span class='greca-val' style='color:#E74C3C; font-size:1.1rem'>{wcs["perdita_totale"]:,.0f} €</span>
-        </div>
-        <div class='grecа-row'>
-            <span class='greca-name'>PREMI INCASSATI</span>
-            <span class='greca-val' style='color:#2ECC71'>+{wcs["premio_totale_incassato"]:,.0f} €</span>
-        </div>
-        <div style='margin-top:12px; font-family:Share Tech Mono; font-size:0.7rem; color:#4A7A9B;'>
-            Perdita netta: {wcs["perdita_totale"] + wcs["premio_totale_incassato"]:,.0f} €
-            ({((wcs["perdita_totale"] + wcs["premio_totale_incassato"])/capitale*100):.1f}% del capitale)
+        <div class='riga' style='border-bottom:1px solid #3A1515;'><span class='nome'>PREZZO DOPO IL CROLLO</span><span class='valore'>{scenario["S_crash"]:,.2f}</span></div>
+        <div class='riga' style='border-bottom:1px solid #3A1515;'><span class='nome'>PERDITA PER CONTRATTO</span><span class='valore' style='color:#E74C3C'>{scenario["perdita_per_contratto"]:,.0f} €</span></div>
+        <div class='riga' style='border-bottom:1px solid #3A1515;'><span class='nome'>PERDITA LORDA TOTALE</span><span class='valore' style='color:#E74C3C'>{scenario["perdita_totale"]:,.0f} €</span></div>
+        <div class='riga' style='border-bottom:1px solid #3A1515;'><span class='nome'>PREMI GIÀ INCASSATI</span><span class='valore' style='color:#2ECC71'>+{scenario["premio_totale"]:,.0f} €</span></div>
+        <div class='riga'><span class='nome'>PERDITA NETTA FINALE</span><span class='valore' style='color:#E74C3C; font-weight:bold'>{perdita_netta:,.0f} €</span></div>
+        <div style='margin-top:10px; font-family:Share Tech Mono; font-size:0.7rem; color:#4A7A9B;'>
+            Impatto sul capitale totale: {impatto:.1f}%
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────
-# RIEPILOGO SETUP TRADE
-# ─────────────────────────────────────────────────────────
-st.divider()
-st.markdown("## RIEPILOGO TRADE")
+# ═══════════════════════════════════════════════════════════
+# RIEPILOGO OPERAZIONE
+# ═══════════════════════════════════════════════════════════
 
-setup_data = {
+st.divider()
+st.markdown("## 📋 RIEPILOGO OPERAZIONE")
+
+st.dataframe(pd.DataFrame({
     "Parametro": [
-        "Sottostante (Spot)", "Strike Consigliato", "DTE", "IV Corrente",
-        "Premio per Contratto", "Contratti", "Premi Totali Mensili",
-        "Margine Totale", "Break-Even a Scadenza", "Theta Giornaliero Totale"
+        "Strumento", "Prezzo Attuale", "Strike Consigliato", "Distanza Strike",
+        "Giorni alla Scadenza", "Volatilità Implicita (IV)", "Volatilità Storica 30gg",
+        "Premio per Contratto", "Numero di Contratti", "Incasso Totale Premi",
+        "Punto di Pareggio a Scadenza", "Guadagno Theta Giornaliero", "Rendimento Mensile sul Margine"
     ],
     "Valore": [
-        f"{spot:,.2f}", f"{strike_consigliato:,.2f}", f"{dte} gg",
-        f"{iv_corrente:.1f}%", f"{premio:.4f} ({premio*100:.2f} €/contratto)",
+        nome, f"{spot:,.2f}", f"{strike:,.2f}",
+        f"{distanza:.1f}% sotto il prezzo attuale",
+        f"{dte} giorni", f"{iv_corrente:.1f}%", f"{vol_storica:.1f}%",
+        f"{premio:.4f}  ({premio*100:.2f} € per contratto da 100 azioni)",
         str(sizing["n_contratti"]),
-        f"{premio * sizing['n_contratti'] * 100:,.0f} €",
-        f"{sizing['capitale_impegnato']:,.0f} €",
-        f"{strike_consigliato - premio:.2f}",
-        f"+{abs(greche['theta']) * sizing['n_contratti'] * 100:,.0f} €/giorno"
+        f"+{premio_tot:,.0f} €",
+        f"{strike - premio:,.2f}",
+        f"+{theta_tot:,.0f} € al giorno",
+        f"{rend_mese:.1f}%  ({rend_mese*12:.1f}% annuo stimato)",
     ],
-}
-df_setup = pd.DataFrame(setup_data)
-
-st.dataframe(
-    df_setup,
-    use_container_width=True,
-    hide_index=True,
+}), use_container_width=True, hide_index=True,
     column_config={
-        "Parametro": st.column_config.TextColumn(width="medium"),
-        "Valore": st.column_config.TextColumn(width="medium"),
+        "Parametro": st.column_config.TextColumn("Parametro", width="medium"),
+        "Valore":    st.column_config.TextColumn("Valore",    width="large"),
     }
 )
 
 
-# ─────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
 # FOOTER
-# ─────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+
 st.markdown("""
 <div style='text-align:center; margin-top:40px; padding:16px;
-     font-family:Share Tech Mono; font-size:0.65rem; color:#1A3A55; letter-spacing:0.15em;'>
-    PLUTONIS QUANTITATIVE SYSTEMS — SOLO SCOPI EDUCATIVI — NON COSTITUISCE CONSULENZA FINANZIARIA<br>
-    ⚙ Predisposto per integrazione API yfinance | Black-Scholes Engine v1.0
+     font-family:Share Tech Mono; font-size:0.65rem; color:#1A3A55; letter-spacing:0.12em;'>
+    PHINANCE · SISTEMI QUANTITATIVI PER IL TRADING DI OPZIONI<br>
+    SOLO A SCOPO EDUCATIVO — NON COSTITUISCE CONSULENZA FINANZIARIA<br>
+    Dati forniti da Yahoo Finance · Black-Scholes Engine v2.0
 </div>
 """, unsafe_allow_html=True)
