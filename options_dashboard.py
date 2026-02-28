@@ -877,30 +877,37 @@ with st.sidebar:
         help="Attiva per inserire il premio che vedi su IBKR invece di quello calcolato da Black-Scholes.")
     if usa_premio_reale:
         st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) — €</span>", unsafe_allow_html=True)
-        if "premio_reale" not in st.session_state:
-            st.session_state.premio_reale = 5.0
+
+        # Callback per sincronizzare slider → number_input
+        def _sync_slider():
+            st.session_state["_pr_val"] = st.session_state["slider_pr"]
+        # Callback per sincronizzare number_input → slider
+        def _sync_input():
+            st.session_state["_pr_val"] = st.session_state["input_pr"]
+
+        if "_pr_val" not in st.session_state:
+            st.session_state["_pr_val"] = 5.0
+
+        cur = float(st.session_state["_pr_val"])
+
         col_s, col_n = st.columns([2, 1])
         with col_s:
-            prem_slider = st.slider(
-                "Premio (cursore)", 0.01, 500.0,
-                float(st.session_state.premio_reale), 0.01,
+            st.slider(
+                "Premio (cursore)", 0.01, 500.0, cur, 0.01,
                 label_visibility="collapsed",
-                key="slider_pr"
+                key="slider_pr",
+                on_change=_sync_slider
             )
         with col_n:
-            prem_input = st.number_input(
-                "Premio (±)", 0.01, 500.0,
-                float(st.session_state.premio_reale), 0.01,
+            st.number_input(
+                "Premio (±)", 0.01, 500.0, cur, 0.01,
                 label_visibility="collapsed",
                 key="input_pr",
-                format="%.2f"
+                format="%.2f",
+                on_change=_sync_input
             )
-        # Il più recente vince
-        if abs(prem_slider - st.session_state.premio_reale) > 0.001:
-            st.session_state.premio_reale = prem_slider
-        elif abs(prem_input - st.session_state.premio_reale) > 0.001:
-            st.session_state.premio_reale = prem_input
-        premio_reale = float(st.session_state.premio_reale)
+
+        premio_reale = float(st.session_state["_pr_val"])
         st.markdown(
             f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
             f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
