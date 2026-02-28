@@ -258,13 +258,17 @@ hr { border-color: var(--border-subtle) !important; }
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-xl);
-    padding: 2rem 2.2rem;
+    padding: 1.6rem 1.6rem;
     position: relative;
     overflow: hidden;
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     animation: fadeSlideUp 0.6s ease both;
     height: 100%;
+    min-height: 180px;
     cursor: default;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 .kpi-card:hover {
     border-color: rgba(0,194,255,0.2);
@@ -292,24 +296,27 @@ hr { border-color: var(--border-subtle) !important; }
 }
 .kpi-eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     font-weight: 500;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .kpi-value {
     font-family: var(--font-body);
-    font-size: 3rem;
+    font-size: 2.6rem;
     font-weight: 700;
     letter-spacing: -0.04em;
     color: var(--text-primary);
     line-height: 1;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .kpi-value.cyan  { color: var(--accent-cyan); }
 .kpi-value.green { color: var(--accent-green); }
@@ -948,12 +955,50 @@ with b4:
     )
 st.markdown("</div>", unsafe_allow_html=True)
 
+# variabili comuni
+pn      = sc["lt"] + sc["pt"]
+imp     = (pn / marg_tot * 100) if marg_tot > 0 else 0
+rend_ann = rend * 12
+
 # ── SIGNAL BANNER ──
 st.markdown(f"""
 <div class="signal-banner {sema['c']}">
     <span class="signal-dot {sema['c']}"></span>
     <span class="signal-label">{sema['l']}</span>
     <span class="signal-text">{sema['d']}</span>
+</div>
+""", unsafe_allow_html=True)
+
+# ── DETTAGLIO POSIZIONE — orizzontale full width, subito dopo semaforo ──
+st.markdown(f"""
+<div class="panel" style="margin-bottom:1.5rem">
+    <div class="panel-title"><span style="color:var(--accent-green);margin-right:0.4rem">&#9678;</span> Dettaglio Posizione</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
+        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.4rem">Contratti selezionati</div>
+            <div class="panel-val big cyan">{n_contratti}</div>
+        </div>
+        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.4rem">Margine per contratto</div>
+            <div class="panel-val cyan">{mc:,.0f} €</div>
+        </div>
+        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.4rem">Margine totale richiesto</div>
+            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{marg_tot:,.0f} €</div>
+        </div>
+        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.4rem">Incasso totale premi</div>
+            <div class="panel-val green">+{ptot:,.0f} €</div>
+        </div>
+        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.4rem">Theta totale / giorno</div>
+            <div class="panel-val green">+{thday:,.0f} €</div>
+        </div>
+        <div style="padding:0.6rem 1.2rem">
+            <div class="panel-key" style="margin-bottom:0.4rem">Rendimento sul margine</div>
+            <div class="panel-val green">{rend:.1f}% / mese·{rend_ann:.1f}% / anno</div>
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -994,7 +1039,6 @@ with c3:
     """, unsafe_allow_html=True)
 
 with c4:
-    mc_cls = "gold"
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.18s">
         <div class="kpi-eyebrow">◎ Margine Richiesto</div>
@@ -1008,75 +1052,75 @@ st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
 # ── GRAFICO ──
 st.plotly_chart(pnl_chart(spot, K, prem, sz["n"]), use_container_width=True)
-st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
-
-# ── PANNELLI INFERIORI: Crisi + Dettaglio ──
-pn  = sc["lt"] + sc["pt"]
-imp = (pn / marg_tot * 100) if marg_tot > 0 else 0
-rend_ann = rend * 12
-
-p1, p2 = st.columns([1, 1], gap="large")
-
-with p1:
-    st.markdown(f"""
-    <div class="crisis-panel">
-        <div class="crisis-header">⚠ Scenario di Crisi — Crollo {sc['crash']:.0f}%</div>
-        <div class="crisis-row"><span class="crisis-key">Prezzo dopo il crollo</span><span class="crisis-val">{sc['Sc']:,.2f}</span></div>
-        <div class="crisis-row"><span class="crisis-key">Perdita per contratto</span><span class="crisis-val red">{sc['lc']:,.0f} €</span></div>
-        <div class="crisis-row"><span class="crisis-key">Perdita lorda totale</span><span class="crisis-val red">{sc['lt']:,.0f} €</span></div>
-        <div class="crisis-row"><span class="crisis-key">Premi già incassati</span><span class="crisis-val green">+{sc['pt']:,.0f} €</span></div>
-        <div class="crisis-row"><span class="crisis-key">Perdita netta finale</span><span class="crisis-val red" style="font-size:0.9rem;font-weight:600">{pn:,.0f} €</span></div>
-        <div class="crisis-impact">Impatto sul margine impegnato: {imp:.1f}%</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with p2:
-    st.markdown(f"""
-    <div class="panel">
-        <div class="panel-title"><span style="color:var(--accent-green);margin-right:0.4rem">◎</span> Dettaglio Posizione</div>
-        <div class="panel-row"><span class="panel-key">Contratti selezionati</span><span class="panel-val big cyan">{n_contratti}</span></div>
-        <div class="panel-row"><span class="panel-key">Margine per contratto</span><span class="panel-val cyan">{mc:,.0f} €</span></div>
-        <div class="panel-row"><span class="panel-key">Margine totale richiesto</span><span class="panel-val" style="color:var(--accent-gold);font-weight:700">{marg_tot:,.0f} €</span></div>
-        <div class="panel-row"><span class="panel-key">Incasso totale premi</span><span class="panel-val green">+{ptot:,.0f} €</span></div>
-        <div class="panel-row"><span class="panel-key">Theta totale / giorno</span><span class="panel-val green">+{thday:,.0f} €</span></div>
-        <div class="panel-row"><span class="panel-key">Rendimento sul margine</span><span class="panel-val green">{rend:.1f}% / mese · {rend_ann:.1f}% / anno</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ── GRECHE — pannello orizzontale full width ──
 st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
+
+# ── GRECHE — orizzontale full width ──
 st.markdown(f"""
-<div class="panel" style="animation-delay:0.3s">
+<div class="panel" style="animation-delay:0.3s;margin-bottom:1.5rem">
     <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">∑</span> Lettere Greche</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0">
-        <div class="panel-row" style="flex-direction:column;align-items:flex-start;padding:0.8rem 1.2rem;border-bottom:none;border-right:1px solid rgba(255,255,255,0.04)">
-            <span class="panel-key" style="margin-bottom:0.5rem">Δ Delta (prob. ITM)</span>
-            <span class="panel-val cyan" style="font-size:1rem">{gre['delta']:.4f}</span>
-            <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.2rem">{abs(gre['delta'])*100:.1f}% prob. ITM</span>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.5rem">Δ Delta (prob. ITM)</div>
+            <div class="panel-val cyan" style="font-size:1rem">{gre['delta']:.4f}</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">{abs(gre['delta'])*100:.1f}% prob. ITM</div>
         </div>
-        <div class="panel-row" style="flex-direction:column;align-items:flex-start;padding:0.8rem 1.2rem;border-bottom:none;border-right:1px solid rgba(255,255,255,0.04)">
-            <span class="panel-key" style="margin-bottom:0.5rem">Γ Gamma</span>
-            <span class="panel-val" style="font-size:1rem">{gre['gamma']:.6f}</span>
-            <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.2rem">accelerazione delta</span>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.5rem">Γ Gamma</div>
+            <div class="panel-val" style="font-size:1rem">{gre['gamma']:.6f}</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">accelerazione delta</div>
         </div>
-        <div class="panel-row" style="flex-direction:column;align-items:flex-start;padding:0.8rem 1.2rem;border-bottom:none;border-right:1px solid rgba(255,255,255,0.04)">
-            <span class="panel-key" style="margin-bottom:0.5rem">Θ Theta</span>
-            <span class="panel-val green" style="font-size:1rem">+{abs(gre['theta']):.4f} €</span>
-            <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.2rem">guadagno per giorno</span>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.5rem">Θ Theta</div>
+            <div class="panel-val green" style="font-size:1rem">+{abs(gre['theta']):.4f} €</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">guadagno per giorno</div>
         </div>
-        <div class="panel-row" style="flex-direction:column;align-items:flex-start;padding:0.8rem 1.2rem;border-bottom:none;border-right:1px solid rgba(255,255,255,0.04)">
-            <span class="panel-key" style="margin-bottom:0.5rem">ν Vega</span>
-            <span class="panel-val" style="font-size:1rem">{gre['vega']:.4f}</span>
-            <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.2rem">sensib. a +1% IV</span>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+            <div class="panel-key" style="margin-bottom:0.5rem">ν Vega</div>
+            <div class="panel-val" style="font-size:1rem">{gre['vega']:.4f}</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">sensib. a +1% IV</div>
         </div>
-        <div class="panel-row" style="flex-direction:column;align-items:flex-start;padding:0.8rem 1.2rem;border-bottom:none">
-            <span class="panel-key" style="margin-bottom:0.5rem">ρ Rho</span>
-            <span class="panel-val" style="font-size:1rem">{gre['rho']:.4f}</span>
-            <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.2rem">sensib. ai tassi</span>
+        <div style="padding:0.8rem 1.2rem">
+            <div class="panel-key" style="margin-bottom:0.5rem">ρ Rho</div>
+            <div class="panel-val" style="font-size:1rem">{gre['rho']:.4f}</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">sensib. ai tassi</div>
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# ── SCENARIO CRISI — orizzontale full width ──
+st.markdown(f"""
+<div class="crisis-panel" style="animation-delay:0.35s">
+    <div class="crisis-header">⚠ Scenario di Crisi — Crollo {sc['crash']:.0f}%</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
+            <div class="crisis-key" style="margin-bottom:0.4rem">Prezzo dopo il crollo</div>
+            <div class="crisis-val">{sc['Sc']:,.2f}</div>
+        </div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
+            <div class="crisis-key" style="margin-bottom:0.4rem">Perdita per contratto</div>
+            <div class="crisis-val red">{sc['lc']:,.0f} €</div>
+        </div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
+            <div class="crisis-key" style="margin-bottom:0.4rem">Perdita lorda totale</div>
+            <div class="crisis-val red">{sc['lt']:,.0f} €</div>
+        </div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
+            <div class="crisis-key" style="margin-bottom:0.4rem">Premi già incassati</div>
+            <div class="crisis-val green">+{sc['pt']:,.0f} €</div>
+        </div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
+            <div class="crisis-key" style="margin-bottom:0.4rem">Perdita netta finale</div>
+            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{pn:,.0f} €</div>
+        </div>
+        <div style="padding:0.8rem 1.2rem">
+            <div class="crisis-key" style="margin-bottom:0.4rem">Impatto sul margine</div>
+            <div class="crisis-val red">{imp:.1f}%</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 
 # ── RIEPILOGO ──
 st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allow_html=True)
