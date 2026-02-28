@@ -329,9 +329,9 @@ hr { border-color: var(--border-subtle) !important; }
 }
 .kpi-value {
     font-family: var(--font-body);
-    font-size: 2.6rem;
+    font-size: 1.9rem;
     font-weight: 700;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
     color: var(--text-primary);
     line-height: 1;
     margin-bottom: 0.5rem;
@@ -589,25 +589,20 @@ hr { border-color: var(--border-subtle) !important; }
 }
 
 
-/* ── DELTA COLORI CUSTOM (live bar) ── */
-.ph-delta-green [data-testid="stMetricDelta"] {
-    color: #00E5A0 !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.02em;
+/* ── BADGE FRECCE LIVE BAR ── */
+.ph-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 5px;
+    letter-spacing: 0.04em;
+    margin-top: 0.3rem;
 }
-.ph-delta-gold [data-testid="stMetricDelta"] {
-    color: #FFB547 !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.02em;
-}
-.ph-delta-red [data-testid="stMetricDelta"] {
-    color: #FF6B6B !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.02em;
-}
-.ph-delta-green [data-testid="stMetricDelta"] svg,
-.ph-delta-gold  [data-testid="stMetricDelta"] svg,
-.ph-delta-red   [data-testid="stMetricDelta"] svg { display: none !important; }
+.ph-badge-green { background: rgba(0,229,160,0.12); color: #00E5A0; border: 1px solid rgba(0,229,160,0.25); }
+.ph-badge-gold  { background: rgba(255,181,71,0.12);  color: #FFB547; border: 1px solid rgba(255,181,71,0.25); }
+.ph-badge-red   { background: rgba(255,107,107,0.12); color: #FF6B6B; border: 1px solid rgba(255,107,107,0.25); }
 
 /* ── BADGE SEGNALE inline ── */
 .sig-green {
@@ -877,6 +872,45 @@ with st.sidebar:
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
         help="84% = Delta 0.16 — punto ottimale Tastytrade.\n90% = Delta 0.10 — più conservativo.\n80% = Delta 0.20 — più aggressivo.")
 
+    st.markdown("<div class='sb-section'>Dati Reali da IBKR</div>", unsafe_allow_html=True)
+    usa_premio_reale = st.toggle("Usa premio reale",
+        help="Attiva per inserire il premio che vedi su IBKR invece di quello calcolato da Black-Scholes.")
+    if usa_premio_reale:
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) — €</span>", unsafe_allow_html=True)
+        if "premio_reale" not in st.session_state:
+            st.session_state.premio_reale = 5.0
+        col_s, col_n = st.columns([2, 1])
+        with col_s:
+            prem_slider = st.slider(
+                "Premio (cursore)", 0.01, 500.0,
+                float(st.session_state.premio_reale), 0.01,
+                label_visibility="collapsed",
+                key="slider_pr"
+            )
+        with col_n:
+            prem_input = st.number_input(
+                "Premio (±)", 0.01, 500.0,
+                float(st.session_state.premio_reale), 0.01,
+                label_visibility="collapsed",
+                key="input_pr",
+                format="%.2f"
+            )
+        # Il più recente vince
+        if abs(prem_slider - st.session_state.premio_reale) > 0.001:
+            st.session_state.premio_reale = prem_slider
+        elif abs(prem_input - st.session_state.premio_reale) > 0.001:
+            st.session_state.premio_reale = prem_input
+        premio_reale = float(st.session_state.premio_reale)
+        st.markdown(
+            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
+            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
+            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
+            f"Premio selezionato: <strong>{fmt_eur(premio_reale)} €</strong></div>",
+            unsafe_allow_html=True
+        )
+    else:
+        premio_reale = None
+
 
 # ═══════════════════════════════════════════════════════════
 # RECUPERO DATI
@@ -920,7 +954,9 @@ sigma = iv_pct / 100.0
 r     = r_pct / 100.0
 K     = strike_target(spot, sigma, T, r, prob_t/100.0)
 par   = Par(S=spot, K=K, T=T, r=r, sigma=sigma)
-prem  = prezzo_put(par)
+prem_bs = prezzo_put(par)
+prem     = premio_reale if premio_reale is not None else prem_bs
+prem_fonte = "IBKR (reale)" if premio_reale is not None else "Black-Scholes (stimato)" 
 prob  = prob_ok(par)
 gre   = calc_greche(par)
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank)
@@ -1020,12 +1056,9 @@ st.markdown("<div class='live-bar-wrap'>", unsafe_allow_html=True)
 b1, b2, b3, b4 = st.columns(4, gap="medium")
 
 with b1:
-    st.markdown(f"<div class='ph-delta-{spot_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Prezzo Spot",
         value=f"{fmt_eur(spot)}",
-        delta=spot_arrow,
-        delta_color="off",
         help=(
             "PREZZO SPOT\n\n"
             "Prezzo attuale del sottostante scaricato in tempo reale da Yahoo Finance.\n\n"
@@ -1033,15 +1066,12 @@ with b1:
             f"Aggiornato: {ts_spot}"
         )
     )
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ph-badge ph-badge-{spot_cls}'>{spot_arrow}</div>", unsafe_allow_html=True)
 
 with b2:
-    st.markdown(f"<div class='ph-delta-{vol_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Vol. Storica 30gg",
         value=f"{vol_st:.1f}%",
-        delta=vol_arrow,
-        delta_color="off",
         help=(
             "VOLATILITÀ STORICA 30gg\n\n"
             "Quanto si è mosso davvero il mercato negli ultimi 30 giorni.\n"
@@ -1053,15 +1083,12 @@ with b2:
             f"Aggiornato: {ts_vol}"
         )
     )
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ph-badge ph-badge-{vol_cls}'>{vol_arrow}</div>", unsafe_allow_html=True)
 
 with b3:
-    st.markdown(f"<div class='ph-delta-{ivr_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● IV Rank",
         value=f"{iv_rank:.0f} / 100",
-        delta=ivr_arrow,
-        delta_color="off",
         help=(
             "IV RANK (0 – 100)\n\n"
             "Dove si trova la volatilità attuale rispetto al suo range degli ultimi 12 mesi.\n\n"
@@ -1073,15 +1100,12 @@ with b3:
             f"Aggiornato: {ts_ivr}"
         )
     )
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ph-badge ph-badge-{ivr_cls}'>{ivr_arrow}</div>", unsafe_allow_html=True)
 
 with b4:
-    st.markdown(f"<div class='ph-delta-{vix_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● VIX — Indice di Paura",
         value=vix_str,
-        delta=vix_arrow,
-        delta_color="off",
         help=(
             "VIX — CBOE VOLATILITY INDEX\n\n"
             "Misura la volatilità implicita attesa sull'S&P 500 nei prossimi 30 giorni.\n"
@@ -1093,7 +1117,7 @@ with b4:
             f"Aggiornato: {ts_vix}"
         )
     )
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ph-badge ph-badge-{vix_cls}'>{vix_arrow}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
 # variabili comuni
@@ -1120,11 +1144,11 @@ st.markdown(f"""
             <div class="panel-val big cyan">{n_contratti}</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Margine per contratto</div>
+            <div class="panel-key" style="margin-bottom:0.4rem">Margine stimato / contratto *</div>
             <div class="panel-val cyan">{fmt_eur(mc) + " €"}</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Margine totale richiesto</div>
+            <div class="panel-key" style="margin-bottom:0.4rem">Margine totale stimato *</div>
             <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{fmt_eur(marg_tot) + " €"}</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
@@ -1141,6 +1165,7 @@ st.markdown(f"""
         </div>
     </div>
 </div>
+<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);margin-top:0.4rem;margin-bottom:1rem">* Stima indicativa: {marg_pct:.0f}% × strike. Il margine reale dipende dal broker — verifica sempre su IBKR prima di operare.</div>
 """, unsafe_allow_html=True)
 
 # ── KPI CARDS — 4 colonne ──
@@ -1182,7 +1207,7 @@ with c3:
 with c4:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.18s">
-        <div class="kpi-eyebrow">◎ Margine Richiesto</div>
+        <div class="kpi-eyebrow">◎ Margine Stimato *</div>
         <div class="kpi-value gold">{fmt_eur(marg_tot) + " €"}</div>
         <div class="kpi-sub">{fmt_eur(mc)} € × {n_contratti} contratti</div>
         <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
