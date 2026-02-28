@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════╗
-║         PHINANCE - Dashboard Vendita Put  v5.0           ║
+║         PHINANCE - Dashboard Vendita Put  v5.1           ║
 ║         Auto VIX · IV Rank · Live Timestamps             ║
 ╚══════════════════════════════════════════════════════════╝
 Librerie: pip install streamlit numpy pandas scipy plotly yfinance
@@ -774,10 +774,11 @@ with st.sidebar:
     r_pct  = st.number_input("Tasso Risk-Free (%)", 0.0, 20.0, 4.5, 0.1,
         help="Rendimento BTP/Treasury 10 anni.\nAggiorna ogni 3 mesi circa.")
 
-    st.markdown("<div class='sb-section'>Gestione del Rischio</div>", unsafe_allow_html=True)
-    capitale = st.number_input("Capitale Disponibile (€)", 1_000.0, 10_000_000.0, 50_000.0, 1_000.0)
+    st.markdown("<div class='sb-section'>Posizione & Rischio</div>", unsafe_allow_html=True)
+    n_contratti = st.slider("Numero di Contratti", 1, 50, 3,
+        help="Quanti contratti vuoi vendere.\nOgni contratto copre 100 azioni del sottostante.")
     marg_pct = st.slider("Margine Broker (%)", 5.0, 50.0, 15.0, 1.0,
-        help="% dello strike bloccata come garanzia dal broker.\nVerifica nelle impostazioni del tuo broker.")
+        help="% del valore dello strike bloccata come garanzia dal broker.\nIBKR tipicamente richiede il 15-20% per le put OTM su ETF.\nVerifica nelle impostazioni del tuo conto.")
     crash    = st.slider("Scenario di Crisi (%)", 5.0, 50.0, 20.0, 1.0,
         help="Crollo ipotetico usato per calcolare il worst case scenario.")
 
@@ -832,12 +833,17 @@ prem  = prezzo_put(par)
 prob  = prob_ok(par)
 gre   = calc_greche(par)
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank)
-sz    = calc_sizing(capitale, K, marg_pct)
-sc    = calc_wcs(spot, K, prem, sz["n"], crash)
-dist  = (spot - K) / spot * 100
-ptot  = prem * sz["n"] * 100
-thday = abs(gre["theta"]) * sz["n"] * 100
-rend  = (ptot / sz["imp"] * 100) if sz["imp"] > 0 else 0
+# v5.1 — calcoli basati su n_contratti scelto dall'utente
+mult      = 100                                        # ogni contratto = 100 azioni
+mc        = round(K * mult * (marg_pct / 100), 2)     # margine per contratto (€)
+marg_tot  = round(n_contratti * mc, 2)                 # margine totale richiesto (€)
+ptot      = round(prem * n_contratti * mult, 2)        # incasso totale premi (€)
+thday     = round(abs(gre["theta"]) * n_contratti * mult, 2)  # theta totale/giorno (€)
+rend      = (ptot / marg_tot * 100) if marg_tot > 0 else 0    # rendimento sul margine (%)
+dist      = (spot - K) / spot * 100
+sc        = calc_wcs(spot, K, prem, n_contratti, crash)
+# sz dict compatibilità (usato nel pannello e nel riepilogo)
+sz        = {"n": n_contratti, "mc": mc, "imp": marg_tot, "lib": 0}
 
 # IV Rank badge
 ivr_cls   = "alto" if iv_rank >= 60 else "medio" if iv_rank >= 35 else "basso"
@@ -861,7 +867,7 @@ st.markdown(f"""
         <span class="ph-subtitle">Dashboard Vendita Put · Motore Black-Scholes</span>
     </div>
     <div class="ph-header-right">
-        <span class="ph-tag">v5.0 · Yahoo Finance · CBOE VIX</span>
+        <span class="ph-tag">v5.1 · Yahoo Finance · CBOE VIX</span>
         <span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.1em">SOLO A SCOPO EDUCATIVO</span>
     </div>
 </div>
@@ -982,8 +988,8 @@ with c3:
     <div class="kpi-card" style="animation-delay:0.12s">
         <div class="kpi-eyebrow">◈ Premio Incassato</div>
         <div class="kpi-value">{prem:.2f}</div>
-        <div class="kpi-sub">{sz['n']} contratti → <strong style="color:#00E5A0">+{ptot:,.0f} €</strong> al mese</div>
-        <div><span class="kpi-badge green">+{rend:.1f}% / mese sul margine</span></div>
+        <div class="kpi-sub">{n_contratti} contratti · margine richiesto <strong style="color:var(--accent-gold)">{marg_tot:,.0f} €</strong></div>
+        <div><span class="kpi-badge green">+{ptot:,.0f} € incassati · {rend:.1f}% sul margine</span></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1009,15 +1015,19 @@ with g1:
     """, unsafe_allow_html=True)
 
 with g2:
+    rend_ann = rend * 12
     st.markdown(f"""
     <div class="panel">
-        <div class="panel-title"><span style="color:var(--accent-green);margin-right:0.4rem">◎</span> Dimensione Posizione</div>
-        <div class="panel-row"><span class="panel-key">Contratti massimi</span><span class="panel-val big cyan">{sz['n']}</span></div>
-        <div class="panel-row"><span class="panel-key">Margine per contratto</span><span class="panel-val">{sz['mc']:,.0f} €</span></div>
-        <div class="panel-row"><span class="panel-key">Capitale bloccato</span><span class="panel-val">{sz['imp']:,.0f} €</span></div>
-        <div class="panel-row"><span class="panel-key">Capitale libero</span><span class="panel-val green">{sz['lib']:,.0f} €</span></div>
+        <div class="panel-title"><span style="color:var(--accent-green);margin-right:0.4rem">◎</span> Posizione & Margine Richiesto</div>
+        <div class="panel-row"><span class="panel-key">Contratti selezionati</span><span class="panel-val big cyan">{n_contratti}</span></div>
+        <div class="panel-row"><span class="panel-key">Margine per contratto</span><span class="panel-val cyan">{mc:,.0f} €</span></div>
+        <div class="panel-row">
+            <span class="panel-key" style="font-weight:600;color:var(--text-secondary)">▶ Margine totale richiesto</span>
+            <span class="panel-val" style="font-size:1rem;font-weight:700;color:var(--accent-gold)">{marg_tot:,.0f} €</span>
+        </div>
+        <div class="panel-row"><span class="panel-key">Incasso totale premi</span><span class="panel-val green">+{ptot:,.0f} €</span></div>
         <div class="panel-row"><span class="panel-key">Theta totale / giorno</span><span class="panel-val green">+{thday:,.0f} €</span></div>
-        <div class="panel-row"><span class="panel-key">Rendimento mensile</span><span class="panel-val green">{rend:.1f}%</span></div>
+        <div class="panel-row"><span class="panel-key">Rendimento sul margine</span><span class="panel-val green">{rend:.1f}% / mese · {rend_ann:.1f}% / anno</span></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1041,16 +1051,19 @@ st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allo
 st.dataframe(pd.DataFrame({
     "Parametro": ["Strumento","Prezzo Attuale","Strike Consigliato","Distanza Strike",
                   "Giorni alla Scadenza","IV Impostata","Vol. Storica 30gg","VIX Corrente","IV Rank",
-                  "Premio per Contratto","Numero Contratti","Incasso Totale",
-                  "Punto di Pareggio","Theta Giornaliero","Rendimento Mensile"],
+                  "Premio per Contratto","Numero Contratti","Margine per Contratto",
+                  "Margine Totale Richiesto","Incasso Totale Premi",
+                  "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
     "Valore":    [nome, f"{spot:,.2f}", f"{K:,.2f}", f"{dist:.1f}% sotto lo spot",
                   f"{dte} gg", f"{iv_pct:.1f}%", f"{vol_st:.1f}%",
                   f"{vix_str}" + (" (preimpostato in IV)" if vix_val else ""),
                   f"{iv_rank:.0f}/100 — {ivr_label}",
                   f"{prem:.4f}  ({prem*100:.2f} € / contratto 100 azioni)",
-                  str(sz["n"]), f"+{ptot:,.0f} €",
+                  str(n_contratti), f"{mc:,.0f} €",
+                  f"{marg_tot:,.0f} € (da avere sul conto)",
+                  f"+{ptot:,.0f} €",
                   f"{K-prem:,.2f}", f"+{thday:,.0f} € / giorno",
-                  f"{rend:.1f}%  ({rend*12:.1f}% annuo stimato)"],
+                  f"{rend:.1f}% / mese  ({rend*12:.1f}% annuo stimato)"],
 }), use_container_width=True, hide_index=True,
     column_config={
         "Parametro": st.column_config.TextColumn(width="medium"),
