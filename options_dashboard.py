@@ -880,9 +880,51 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── BARRA 4 DATI LIVE — colonne native Streamlit con tooltip help ──
-fr   = "▲" if var >= 0 else "▼"
-sign = "+" if var >= 0 else ""
+# ── BARRA 4 DATI LIVE — frecce semantiche ──
+
+# Prezzo Spot: ▲ verde / ▼ rosso / ↔ grigio
+if var > 0.05:
+    spot_arrow = f"▲ +{var:.2f}% oggi"
+    spot_color = "normal"        # verde Streamlit
+elif var < -0.05:
+    spot_arrow = f"▼ {var:.2f}% oggi"
+    spot_color = "inverse"       # rosso Streamlit
+else:
+    spot_arrow = f"↔ {var:.2f}% oggi"
+    spot_color = "off"
+
+# Vol. Storica: alta=verde(↑ premi alti), media=giallo(↔), bassa=rosso(↓ premi scarsi)
+if vol_st >= 25:
+    vol_arrow = "↑ Alta — Premi elevati"
+    vol_color = "normal"
+elif vol_st >= 15:
+    vol_arrow = "↔ Media — Nella norma"
+    vol_color = "off"
+else:
+    vol_arrow = "↓ Bassa — Premi scarsi"
+    vol_color = "inverse"
+
+# IV Rank: alto=verde(↑ vendi), medio=giallo(↔), basso=rosso(↓ aspetta)
+if iv_rank >= 60:
+    ivr_arrow = "↑ Alto — Vendi"
+    ivr_color = "normal"
+elif iv_rank >= 35:
+    ivr_arrow = "↔ Medio — Valuta"
+    ivr_color = "off"
+else:
+    ivr_arrow = "↓ Basso — Aspetta"
+    ivr_color = "inverse"
+
+# VIX: alto=verde(↑ opportunità), medio=giallo(↔), basso=rosso(↓)
+if vix_val and vix_val >= 20:
+    vix_arrow = "↑ Elevato — Buono per vendere"
+    vix_color = "normal"
+elif vix_val and vix_val >= 15:
+    vix_arrow = "↔ Normale — Nella norma"
+    vix_color = "off"
+else:
+    vix_arrow = "↓ Basso — Premi scarsi"
+    vix_color = "inverse"
 
 st.markdown("<div class='live-bar-wrap'>", unsafe_allow_html=True)
 b1, b2, b3, b4 = st.columns(4, gap="medium")
@@ -891,7 +933,8 @@ with b1:
     st.metric(
         label="● Prezzo Spot",
         value=f"{spot:,.2f}",
-        delta=f"{sign}{var:.2f}% oggi",
+        delta=spot_arrow,
+        delta_color=spot_color,
         help=(
             "PREZZO SPOT\n\n"
             "Prezzo attuale del sottostante scaricato in tempo reale da Yahoo Finance.\n\n"
@@ -904,30 +947,32 @@ with b2:
     st.metric(
         label="● Vol. Storica 30gg",
         value=f"{vol_st:.1f}%",
-        delta="Volatilità realizzata annualizzata",
-        delta_color="off",
+        delta=vol_arrow,
+        delta_color=vol_color,
         help=(
             "VOLATILITÀ STORICA 30gg\n\n"
             "Quanto si è mosso davvero il mercato negli ultimi 30 giorni.\n"
             "Calcolata su rendimenti logaritmici giornalieri annualizzati (×√252).\n\n"
+            "  ≥ 25% → Alta — premi elevati, favorevole per vendere\n"
+            "  15-25% → Media — nella norma\n"
+            "  < 15% → Bassa — premi scarsi, valuta se conviene\n\n"
             f"Fonte: Yahoo Finance (storico prezzi)\n"
             f"Aggiornato: {ts_vol}"
         )
     )
 
 with b3:
-    ivr_delta = f"{ivr_label}"
     st.metric(
         label="● IV Rank",
         value=f"{iv_rank:.0f} / 100",
-        delta=ivr_delta,
-        delta_color="normal" if iv_rank >= 60 else "off",
+        delta=ivr_arrow,
+        delta_color=ivr_color,
         help=(
             "IV RANK (0 – 100)\n\n"
             "Dove si trova la volatilità attuale rispetto al suo range degli ultimi 12 mesi.\n\n"
-            "  100 = al massimo storico dell'anno → ottimo per vendere\n"
-            "   50 = a metà del range → accettabile\n"
-            "    0 = al minimo storico dell'anno → evitare\n\n"
+            "  ≥ 60 → Alto — ottimo per vendere\n"
+            "  35-59 → Medio — valuta con attenzione\n"
+            "  < 35 → Basso — aspetta condizioni migliori\n\n"
             "Regola pratica: operare solo con IV Rank > 50\n\n"
             f"Fonte: Calcolato su dati Yahoo Finance\n"
             f"Aggiornato: {ts_ivr}"
@@ -935,20 +980,18 @@ with b3:
     )
 
 with b4:
-    vix_delta = "Preimpostato in IV ✓" if vix_val else "Non disponibile"
     st.metric(
         label="● VIX — Indice di Paura",
         value=vix_str,
-        delta=vix_delta,
-        delta_color="off",
+        delta=vix_arrow if vix_val else "Non disponibile",
+        delta_color=vix_color if vix_val else "off",
         help=(
             "VIX — CBOE VOLATILITY INDEX\n\n"
             "Misura la volatilità implicita attesa sull'S&P 500 nei prossimi 30 giorni.\n"
             "Viene scaricato in automatico e preimpostato nel campo IV della sidebar.\n\n"
-            "  VIX < 15  → basso, premi scarsi\n"
-            "  VIX 15-20 → nella norma\n"
-            "  VIX > 20  → elevato, buono per vendere\n"
-            "  VIX > 30  → paura, ottimo per vendere\n\n"
+            "  > 20 → Elevato — buono per vendere\n"
+            "  15-20 → Normale — nella norma\n"
+            "  < 15 → Basso — premi scarsi, evitare\n\n"
             f"Fonte: Yahoo Finance (^VIX)\n"
             f"Aggiornato: {ts_vix}"
         )
