@@ -567,6 +567,14 @@ hr { border-color: var(--border-subtle) !important; }
     line-height: 2.2;
 }
 
+
+/* ── DELTA COLORI CUSTOM ── */
+.ph-delta-green [data-testid="stMetricDelta"] { color: var(--accent-green) !important; }
+.ph-delta-gold  [data-testid="stMetricDelta"] { color: var(--accent-gold)  !important; }
+.ph-delta-red   [data-testid="stMetricDelta"] { color: var(--accent-red)   !important; }
+.ph-delta-green [data-testid="stMetricDelta"] svg,
+.ph-delta-gold  [data-testid="stMetricDelta"] svg,
+.ph-delta-red   [data-testid="stMetricDelta"] svg { display: none !important; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
@@ -881,60 +889,67 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ── BARRA 4 DATI LIVE — frecce semantiche ──
+# Usiamo delta_color="off" su tutti: Streamlit non aggiunge frecce proprie.
+# Freccia e colore nel testo, poi CSS custom colora i delta per posizione.
 
-# Prezzo Spot: ▲ verde / ▼ rosso / ↔ grigio
+# Prezzo Spot
 if var > 0.05:
     spot_arrow = f"▲ +{var:.2f}% oggi"
-    spot_color = "normal"        # verde Streamlit
+    spot_cls   = "green"
 elif var < -0.05:
     spot_arrow = f"▼ {var:.2f}% oggi"
-    spot_color = "inverse"       # rosso Streamlit
+    spot_cls   = "red"
 else:
     spot_arrow = f"↔ {var:.2f}% oggi"
-    spot_color = "off"
+    spot_cls   = "gold"
 
-# Vol. Storica: alta=verde(↑ premi alti), media=giallo(↔), bassa=rosso(↓ premi scarsi)
+# Vol. Storica: alta=verde, media=arancio, bassa=rosso
 if vol_st >= 25:
-    vol_arrow = "↑ Alta — Premi elevati"
-    vol_color = "normal"
+    vol_arrow = "▲ Alta — Premi elevati"
+    vol_cls   = "green"
 elif vol_st >= 15:
     vol_arrow = "↔ Media — Nella norma"
-    vol_color = "off"
+    vol_cls   = "gold"
 else:
-    vol_arrow = "↓ Bassa — Premi scarsi"
-    vol_color = "inverse"
+    vol_arrow = "▼ Bassa — Premi scarsi"
+    vol_cls   = "red"
 
-# IV Rank: alto=verde(↑ vendi), medio=giallo(↔), basso=rosso(↓ aspetta)
+# IV Rank: alto=verde, medio=arancio, basso=rosso
 if iv_rank >= 60:
-    ivr_arrow = "↑ Alto — Vendi"
-    ivr_color = "normal"
+    ivr_arrow = "▲ Alto — Vendi"
+    ivr_cls   = "green"
 elif iv_rank >= 35:
     ivr_arrow = "↔ Medio — Valuta"
-    ivr_color = "off"
+    ivr_cls   = "gold"
 else:
-    ivr_arrow = "↓ Basso — Aspetta"
-    ivr_color = "inverse"
+    ivr_arrow = "▼ Basso — Aspetta"
+    ivr_cls   = "red"
 
-# VIX: alto=verde(↑ opportunità), medio=giallo(↔), basso=rosso(↓)
+# VIX: alto=verde, medio=arancio, basso=rosso
 if vix_val and vix_val >= 20:
-    vix_arrow = "↑ Elevato — Buono per vendere"
-    vix_color = "normal"
+    vix_arrow = "▲ Elevato — Buono per vendere"
+    vix_cls   = "green"
 elif vix_val and vix_val >= 15:
     vix_arrow = "↔ Normale — Nella norma"
-    vix_color = "off"
+    vix_cls   = "gold"
+elif vix_val:
+    vix_arrow = "▼ Basso — Premi scarsi"
+    vix_cls   = "red"
 else:
-    vix_arrow = "↓ Basso — Premi scarsi"
-    vix_color = "inverse"
+    vix_arrow = "Non disponibile"
+    vix_cls   = "gold"
+
 
 st.markdown("<div class='live-bar-wrap'>", unsafe_allow_html=True)
 b1, b2, b3, b4 = st.columns(4, gap="medium")
 
 with b1:
+    st.markdown(f"<div class='ph-delta-{spot_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Prezzo Spot",
         value=f"{spot:,.2f}",
         delta=spot_arrow,
-        delta_color=spot_color,
+        delta_color="off",
         help=(
             "PREZZO SPOT\n\n"
             "Prezzo attuale del sottostante scaricato in tempo reale da Yahoo Finance.\n\n"
@@ -942,13 +957,15 @@ with b1:
             f"Aggiornato: {ts_spot}"
         )
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with b2:
+    st.markdown(f"<div class='ph-delta-{vol_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Vol. Storica 30gg",
         value=f"{vol_st:.1f}%",
         delta=vol_arrow,
-        delta_color=vol_color,
+        delta_color="off",
         help=(
             "VOLATILITÀ STORICA 30gg\n\n"
             "Quanto si è mosso davvero il mercato negli ultimi 30 giorni.\n"
@@ -960,13 +977,15 @@ with b2:
             f"Aggiornato: {ts_vol}"
         )
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with b3:
+    st.markdown(f"<div class='ph-delta-{ivr_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● IV Rank",
         value=f"{iv_rank:.0f} / 100",
         delta=ivr_arrow,
-        delta_color=ivr_color,
+        delta_color="off",
         help=(
             "IV RANK (0 – 100)\n\n"
             "Dove si trova la volatilità attuale rispetto al suo range degli ultimi 12 mesi.\n\n"
@@ -978,13 +997,15 @@ with b3:
             f"Aggiornato: {ts_ivr}"
         )
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with b4:
+    st.markdown(f"<div class='ph-delta-{vix_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● VIX — Indice di Paura",
         value=vix_str,
-        delta=vix_arrow if vix_val else "Non disponibile",
-        delta_color=vix_color if vix_val else "off",
+        delta=vix_arrow,
+        delta_color="off",
         help=(
             "VIX — CBOE VOLATILITY INDEX\n\n"
             "Misura la volatilità implicita attesa sull'S&P 500 nei prossimi 30 giorni.\n"
@@ -996,6 +1017,7 @@ with b4:
             f"Aggiornato: {ts_vix}"
         )
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
 # variabili comuni
