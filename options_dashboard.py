@@ -20,6 +20,27 @@ try:
 except ImportError:
     yf = None
 
+# ── Formato europeo per valori in euro ──
+def fmt_eur(v, decimali=2):
+    """Formatta un numero in formato europeo: 1.250,00"""
+    s = f"{abs(v):,.{decimali}f}"          # es. "1,250.00"
+    s = s.replace(",", "X").replace(".", ",").replace("X", ".")  # → "1.250,00"
+    return ("-" if v < 0 else "") + s
+
+def fmt_pct(v, decimali=2):
+    """Formatta percentuale con decimali e formato europeo"""
+    s = f"{abs(v):,.{decimali}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return ("-" if v < 0 else "+") + s + "%"
+
+def segnale(v, soglia_pos=0, soglia_neg=0):
+    """Restituisce (freccia, classe_css) in base al valore"""
+    if v > soglia_pos:
+        return "▲", "sig-green"
+    elif v < soglia_neg:
+        return "▼", "sig-red"
+    else:
+        return "⇄", "sig-gold"
+
 # ─────────────────────────────────────────────────────────
 # CONFIGURAZIONE PAGINA
 # ─────────────────────────────────────────────────────────
@@ -568,13 +589,68 @@ hr { border-color: var(--border-subtle) !important; }
 }
 
 
-/* ── DELTA COLORI CUSTOM ── */
-.ph-delta-green [data-testid="stMetricDelta"] { color: var(--accent-green) !important; }
-.ph-delta-gold  [data-testid="stMetricDelta"] { color: var(--accent-gold)  !important; }
-.ph-delta-red   [data-testid="stMetricDelta"] { color: var(--accent-red)   !important; }
+/* ── DELTA COLORI CUSTOM (live bar) ── */
+.ph-delta-green [data-testid="stMetricDelta"] {
+    color: #00E5A0 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+}
+.ph-delta-gold [data-testid="stMetricDelta"] {
+    color: #FFB547 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+}
+.ph-delta-red [data-testid="stMetricDelta"] {
+    color: #FF6B6B !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+}
 .ph-delta-green [data-testid="stMetricDelta"] svg,
 .ph-delta-gold  [data-testid="stMetricDelta"] svg,
 .ph-delta-red   [data-testid="stMetricDelta"] svg { display: none !important; }
+
+/* ── BADGE SEGNALE inline ── */
+.sig-green {
+    color: #00E5A0;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+.sig-gold {
+    color: #FFB547;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+.sig-red {
+    color: #FF6B6B;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+.badge-sig {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+}
+.badge-sig.green {
+    background: rgba(0,229,160,0.12);
+    color: #00E5A0;
+    border: 1px solid rgba(0,229,160,0.25);
+}
+.badge-sig.gold {
+    background: rgba(255,181,71,0.12);
+    color: #FFB547;
+    border: 1px solid rgba(255,181,71,0.25);
+}
+.badge-sig.red {
+    background: rgba(255,107,107,0.12);
+    color: #FF6B6B;
+    border: 1px solid rgba(255,107,107,0.25);
+}
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
@@ -741,9 +817,9 @@ def pnl_chart(S, K, prem, n, mult=100):
     fig.add_trace(go.Scatter(x=px, y=np.minimum(pnl,0), fill='tozeroy', fillcolor='rgba(255,90,90,0.07)',  line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
     fig.add_trace(go.Scatter(x=px, y=pnl, line=dict(color='#00C2FF', width=2), name='P&L',
         hovertemplate='<b>Prezzo:</b> %{x:,.2f}<br><b>P&L:</b> %{y:+,.0f} €<extra></extra>'))
-    fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {K:,.0f}",   font=dict(color='#FFB547', size=11)))
-    fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {S:,.0f}", font=dict(color='#8B9FC0', size=11)))
-    fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {K-prem:,.0f}", font=dict(color='#A855F7', size=11)))
+    fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {fmt_eur(K, 0)}",   font=dict(color='#FFB547', size=11)))
+    fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {fmt_eur(S, 0)}", font=dict(color='#8B9FC0', size=11)))
+    fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {fmt_eur(K-prem, 0)}", font=dict(color='#A855F7', size=11)))
     fig.add_hline(y=0,       line=dict(color='rgba(255,255,255,0.08)', width=1))
     fig.update_layout(
         paper_bgcolor='#080C10', plot_bgcolor='#0C1219',
@@ -947,7 +1023,7 @@ with b1:
     st.markdown(f"<div class='ph-delta-{spot_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Prezzo Spot",
-        value=f"{spot:,.2f}",
+        value=f"{fmt_eur(spot)}",
         delta=spot_arrow,
         delta_color="off",
         help=(
@@ -1045,23 +1121,23 @@ st.markdown(f"""
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Margine per contratto</div>
-            <div class="panel-val cyan">{mc:,.0f} €</div>
+            <div class="panel-val cyan">{fmt_eur(mc) + " €"}</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Margine totale richiesto</div>
-            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{marg_tot:,.0f} €</div>
+            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{fmt_eur(marg_tot) + " €"}</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Incasso totale premi</div>
-            <div class="panel-val green">+{ptot:,.0f} €</div>
+            <div class="panel-val green">+{fmt_eur(ptot) + " €"}</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Theta totale / giorno</div>
-            <div class="panel-val green">+{thday:,.0f} €</div>
+            <div class="panel-val green">+{fmt_eur(thday)} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem">
             <div class="panel-key" style="margin-bottom:0.4rem">Rendimento sul margine</div>
-            <div class="panel-val green">{rend:.1f}% / mese·{rend_ann:.1f}% / anno</div>
+            <div class="panel-val green">{rend:.1f}% / mese · {rend_ann:.1f}% / anno</div>
         </div>
     </div>
 </div>
@@ -1074,7 +1150,7 @@ with c1:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.0s">
         <div class="kpi-eyebrow">🎯 Strike Consigliato</div>
-        <div class="kpi-value cyan">{K:,.1f}</div>
+        <div class="kpi-value cyan">{fmt_eur(K, 1)}</div>
         <div class="kpi-sub">{dist:.1f}% sotto lo spot</div>
         <div><span class="kpi-badge green">OTM TARGET</span></div>
     </div>
@@ -1097,8 +1173,8 @@ with c3:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.12s">
         <div class="kpi-eyebrow">◈ Premio Incassato</div>
-        <div class="kpi-value green">{prem:.2f}</div>
-        <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{ptot:,.0f} €</strong></div>
+        <div class="kpi-value green">{fmt_eur(prem)}</div>
+        <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{fmt_eur(ptot) + " €"}</strong></div>
         <div><span class="kpi-badge green">{rend:.1f}% sul margine / mese</span></div>
     </div>
     """, unsafe_allow_html=True)
@@ -1107,8 +1183,8 @@ with c4:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.18s">
         <div class="kpi-eyebrow">◎ Margine Richiesto</div>
-        <div class="kpi-value gold">{marg_tot:,.0f} €</div>
-        <div class="kpi-sub">{mc:,.0f} € × {n_contratti} contratti</div>
+        <div class="kpi-value gold">{fmt_eur(marg_tot) + " €"}</div>
+        <div class="kpi-sub">{fmt_eur(mc)} € × {n_contratti} contratti</div>
         <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
     </div>
     """, unsafe_allow_html=True)
@@ -1136,7 +1212,7 @@ st.markdown(f"""
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.5rem">Θ Theta</div>
-            <div class="panel-val green" style="font-size:1rem">+{abs(gre['theta']):.4f} €</div>
+            <div class="panel-val green" style="font-size:1rem">+{fmt_eur(abs(gre['theta']), 4)} €</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">guadagno per giorno</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
@@ -1160,23 +1236,23 @@ st.markdown(f"""
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Prezzo dopo il crollo</div>
-            <div class="crisis-val">{sc['Sc']:,.2f}</div>
+            <div class="crisis-val">{fmt_eur(sc["Sc"])}</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita per contratto</div>
-            <div class="crisis-val red">{sc['lc']:,.0f} €</div>
+            <div class="crisis-val red">{fmt_eur(abs(sc["lc"]))} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita lorda totale</div>
-            <div class="crisis-val red">{sc['lt']:,.0f} €</div>
+            <div class="crisis-val red">{fmt_eur(abs(sc["lt"]))} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Premi già incassati</div>
-            <div class="crisis-val green">+{sc['pt']:,.0f} €</div>
+            <div class="crisis-val green">+{fmt_eur(sc["pt"])} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita netta finale</div>
-            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{pn:,.0f} €</div>
+            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt_eur(abs(pn))} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem">
             <div class="crisis-key" style="margin-bottom:0.4rem">Impatto sul margine</div>
@@ -1195,15 +1271,15 @@ st.dataframe(pd.DataFrame({
                   "Premio per Contratto","Numero Contratti","Margine per Contratto",
                   "Margine Totale Richiesto","Incasso Totale Premi",
                   "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
-    "Valore":    [nome, f"{spot:,.2f}", f"{K:,.2f}", f"{dist:.1f}% sotto lo spot",
+    "Valore":    [nome, f"{fmt_eur(spot)}", f"{fmt_eur(K)}", f"{dist:.1f}% sotto lo spot",
                   f"{dte} gg", f"{iv_pct:.1f}%", f"{vol_st:.1f}%",
                   f"{vix_str}" + (" (preimpostato in IV)" if vix_val else ""),
                   f"{iv_rank:.0f}/100 — {ivr_label}",
-                  f"{prem:.4f}  ({prem*100:.2f} € / contratto 100 azioni)",
-                  str(n_contratti), f"{mc:,.0f} €",
-                  f"{marg_tot:,.0f} € (da avere sul conto)",
-                  f"+{ptot:,.0f} €",
-                  f"{K-prem:,.2f}", f"+{thday:,.0f} € / giorno",
+                  f"{fmt_eur(prem, 4)}  ({fmt_eur(prem*100)} € / contratto 100 azioni)",
+                  str(n_contratti), fmt_eur(mc) + " €",
+                  fmt_eur(marg_tot) + " € (da avere sul conto)",
+                  "+" + fmt_eur(ptot) + " €",
+                  f"{fmt_eur(K - prem)}", f"+{fmt_eur(thday)} € / giorno",
                   f"{rend:.1f}% / mese  ({rend*12:.1f}% annuo stimato)"],
 }), use_container_width=True, hide_index=True,
     column_config={
@@ -1215,7 +1291,7 @@ st.dataframe(pd.DataFrame({
 st.markdown("""
 <div class="ph-footer">
     <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:500">Phinance</span><br>
-    Sistemi Quantitativi per il Trading di Opzioni · v5.0<br>
+    Sistemi Quantitativi per il Trading di Opzioni · v5.1<br>
     Dati: Yahoo Finance &nbsp;·&nbsp; VIX: CBOE &nbsp;·&nbsp; Motore: Black-Scholes<br>
     <span style="color:rgba(255,255,255,0.03);font-size:0.5rem">───────────────────────────────────────</span><br>
     Solo a scopo educativo · Non costituisce consulenza finanziaria
