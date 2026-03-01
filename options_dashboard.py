@@ -266,7 +266,7 @@ hr { border-color: var(--border-subtle) !important; }
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     animation: fadeSlideUp 0.6s ease both;
     height: 100%;
-    min-height: 180px;
+    min-height: 220px;
     cursor: default;
     display: flex;
     flex-direction: column;
@@ -1135,52 +1135,10 @@ c1, c2, c3, c4 = st.columns(4, gap="medium")
 
 with c1:
     st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.0s">
-        <div class="kpi-eyebrow">🎯 Strike Consigliato</div>
-        <div class="kpi-value cyan">{fmt(K,2)}</div>
-        <div class="kpi-sub">{fmt(dist,2)}% sotto lo spot</div>
-        <div><span class="kpi-badge green">OTM TARGET</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c2:
-    bc = "green" if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
-    bt = "Eccellente" if prob >= 0.90 else "Accettabile" if prob >= 0.80 else "Rischiosa"
-    vc = "green"  if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
-    st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.06s">
-        <div class="kpi-eyebrow">✦ Probabilità di Successo</div>
-        <div class="kpi-value {vc}">{fmt(prob*100,2)}%</div>
-        <div class="kpi-sub">Scade senza perdite</div>
-        <div><span class="kpi-badge {bc}">{bt}</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c3:
-    st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.12s">
-        <div class="kpi-eyebrow">◈ Premio Incassato</div>
-        <div class="kpi-value green">{fmt(prem,2)}</div>
-        <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{fmt(ptot,0)} €</strong></div>
-        <div><span class="kpi-badge green">{fmt(rend,2)}% sul margine / mese</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c4:
-    st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.18s">
-        <div class="kpi-eyebrow">◎ Margine Richiesto</div>
-        <div class="kpi-value gold">{fmt(marg_tot,0)} €</div>
-        <div class="kpi-sub">{fmt(mc,0)} € × {n_contratti} contratti</div>
-        <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    <div class="kpi-card"
 
 st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
-# ── GRAFICO ──
-st.plotly_chart(pnl_chart(spot, K, prem, sz["n"]), use_container_width=True)
-st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
 
 # ── GRECHE — orizzontale full width ──
 st.markdown(f"""
