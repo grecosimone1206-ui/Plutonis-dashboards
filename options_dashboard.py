@@ -14,32 +14,12 @@ import streamlit as st
 import plotly.graph_objects as go
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 try:
     import yfinance as yf
 except ImportError:
     yf = None
-
-# ── Formato europeo per valori in euro ──
-def fmt_eur(v, decimali=2):
-    """Formatta un numero in formato europeo: 1.250,00"""
-    s = f"{abs(v):,.{decimali}f}"          # es. "1,250.00"
-    s = s.replace(",", "X").replace(".", ",").replace("X", ".")  # → "1.250,00"
-    return ("-" if v < 0 else "") + s
-
-def fmt_pct(v, decimali=2):
-    """Formatta percentuale con decimali e formato europeo"""
-    s = f"{abs(v):,.{decimali}f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    return ("-" if v < 0 else "+") + s + "%"
-
-def segnale(v, soglia_pos=0, soglia_neg=0):
-    """Restituisce (freccia, classe_css) in base al valore"""
-    if v > soglia_pos:
-        return "▲", "sig-green"
-    elif v < soglia_neg:
-        return "▼", "sig-red"
-    else:
-        return "⇄", "sig-gold"
 
 # ─────────────────────────────────────────────────────────
 # CONFIGURAZIONE PAGINA
@@ -52,606 +32,10 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────────────────
-# CSS — LUXURY FINTECH v4.0
+# CSS — caricato da style.css
 # ─────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap');
-
-/* ── VARIABILI ── */
-:root {
-  --bg-base:         #060A0E;
-  --bg-surface:      #0A1118;
-  --bg-elevated:     #0F1822;
-  --bg-card:         #0C1520;
-  --border-subtle:   rgba(255,255,255,0.055);
-  --border-medium:   rgba(255,255,255,0.09);
-  --border-strong:   rgba(255,255,255,0.15);
-  --text-primary:    #EEF4FF;
-  --text-secondary:  #7A90B0;
-  --text-muted:      #3E526A;
-  --accent-cyan:     #00C2FF;
-  --accent-cyan-soft:rgba(0,194,255,0.08);
-  --accent-green:    #00E5A0;
-  --accent-green-dim:rgba(0,229,160,0.08);
-  --accent-gold:     #FFB547;
-  --accent-gold-dim: rgba(255,181,71,0.08);
-  --accent-red:      #FF5A5A;
-  --accent-red-dim:  rgba(255,90,90,0.06);
-  --radius-sm:       8px;
-  --radius-md:       12px;
-  --radius-lg:       18px;
-  --radius-xl:       24px;
-  --shadow-sm:       0 2px 8px rgba(0,0,0,0.3);
-  --shadow-md:       0 4px 20px rgba(0,0,0,0.45);
-  --shadow-lg:       0 8px 40px rgba(0,0,0,0.6);
-  --shadow-glow-c:   0 0 24px rgba(0,194,255,0.12);
-  --font-body:       'DM Sans', sans-serif;
-  --font-mono:       'DM Mono', monospace;
-}
-
-/* ── RESET ── */
-html, body,
-[data-testid="stAppViewContainer"],
-[data-testid="stAppViewBlockContainer"] {
-    background-color: var(--bg-base) !important;
-    color: var(--text-primary);
-    font-family: var(--font-body);
-}
-[data-testid="stAppViewBlockContainer"] { padding-top: 0 !important; }
-.block-container { padding: 2.5rem 3rem !important; max-width: 100% !important; }
-
-/* ── SIDEBAR ── */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0A1118 0%, #080E15 100%) !important;
-    border-right: 1px solid var(--border-subtle) !important;
-}
-[data-testid="stSidebar"] > div { padding: 2rem 1.4rem; }
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] .stSlider label,
-[data-testid="stSidebar"] .stNumberInput label,
-[data-testid="stSidebar"] .stSelectbox label,
-[data-testid="stSidebar"] .stTextInput label {
-    font-family: var(--font-mono) !important;
-    font-size: 0.65rem !important;
-    font-weight: 500 !important;
-    color: var(--text-muted) !important;
-    letter-spacing: 0.15em !important;
-    text-transform: uppercase !important;
-}
-[data-testid="stSidebar"] input,
-[data-testid="stSidebar"] .stSelectbox > div > div {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-sm) !important;
-    color: var(--text-primary) !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.85rem !important;
-    transition: border-color 0.2s ease !important;
-}
-[data-testid="stSidebar"] input:focus {
-    border-color: rgba(0,194,255,0.4) !important;
-    box-shadow: 0 0 0 2px rgba(0,194,255,0.08) !important;
-}
-[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] div[role="slider"] {
-    background: var(--accent-cyan) !important;
-    border: 2px solid var(--bg-base) !important;
-    box-shadow: 0 0 10px rgba(0,194,255,0.6) !important;
-    width: 16px !important; height: 16px !important;
-}
-[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] div[data-testid="stSliderTrackFill"] {
-    background: linear-gradient(90deg, rgba(0,194,255,0.5), var(--accent-cyan)) !important;
-}
-[data-testid="stSidebar"] .stButton button {
-    background: linear-gradient(135deg, rgba(0,194,255,0.08), rgba(0,194,255,0.04)) !important;
-    border: 1px solid rgba(0,194,255,0.2) !important;
-    border-radius: var(--radius-md) !important;
-    color: var(--accent-cyan) !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.7rem !important;
-    letter-spacing: 0.12em !important;
-    text-transform: uppercase !important;
-    padding: 12px 16px !important;
-    width: 100% !important;
-    transition: all 0.2s ease !important;
-}
-[data-testid="stSidebar"] .stButton button:hover {
-    background: linear-gradient(135deg, rgba(0,194,255,0.15), rgba(0,194,255,0.08)) !important;
-    border-color: rgba(0,194,255,0.4) !important;
-    box-shadow: 0 0 16px rgba(0,194,255,0.2) !important;
-    transform: translateY(-1px) !important;
-}
-[data-testid="stSidebar"] hr {
-    border-color: var(--border-subtle) !important;
-    margin: 1.5rem 0 !important;
-}
-
-/* ── TIPOGRAFIA ── */
-h1, h2, h3 { font-family: var(--font-body) !important; }
-h2 {
-    font-size: 0.65rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.2em !important;
-    text-transform: uppercase !important;
-    color: var(--text-muted) !important;
-    border: none !important;
-    margin-bottom: 1rem !important;
-}
-hr { border-color: var(--border-subtle) !important; }
-
-/* ── ANIMAZIONI ── */
-@keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-@keyframes pulseGlow {
-    0%, 100% { opacity: 0.7; box-shadow: 0 0 4px currentColor; }
-    50%       { opacity: 1;   box-shadow: 0 0 12px currentColor; }
-}
-
-/* ── HEADER ── */
-.ph-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2.2rem 0 1.8rem 0;
-    border-bottom: 1px solid var(--border-subtle);
-    margin-bottom: 2rem;
-    animation: fadeSlideUp 0.6s ease both;
-}
-.ph-logo {
-    font-family: var(--font-body);
-    font-size: 2.4rem;
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    background: linear-gradient(120deg, #FFFFFF 0%, #80DDFF 40%, var(--accent-cyan) 70%, #0077BB 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
-}
-.ph-header-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.3rem;
-}
-.ph-subtitle {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-.ph-tag {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    border: 1px solid var(--border-subtle);
-    border-radius: 20px;
-    padding: 3px 10px;
-    background: rgba(255,255,255,0.02);
-}
-
-/* ── SIGNAL BANNER ── */
-.signal-banner {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    border-radius: var(--radius-md);
-    padding: 1rem 1.6rem;
-    margin-bottom: 2rem;
-    border: 1px solid;
-    animation: fadeSlideUp 0.6s 0.1s ease both;
-}
-.signal-banner.verde  { background: rgba(0,229,160,0.04);  border-color: rgba(0,229,160,0.18); }
-.signal-banner.giallo { background: rgba(255,181,71,0.04);  border-color: rgba(255,181,71,0.18); }
-.signal-banner.rosso  { background: rgba(255,90,90,0.04);   border-color: rgba(255,90,90,0.18); }
-.signal-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-.signal-dot.verde  { background: var(--accent-green); box-shadow: 0 0 0 4px rgba(0,229,160,0.12); animation: pulseGlow 2.5s infinite; color: var(--accent-green); }
-.signal-dot.giallo { background: var(--accent-gold);  box-shadow: 0 0 0 4px rgba(255,181,71,0.12); }
-.signal-dot.rosso  { background: var(--accent-red);   box-shadow: 0 0 0 4px rgba(255,90,90,0.12); }
-.signal-label {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-.signal-banner.verde  .signal-label { color: var(--accent-green); }
-.signal-banner.giallo .signal-label { color: var(--accent-gold); }
-.signal-banner.rosso  .signal-label { color: var(--accent-red); }
-.signal-text { font-family: var(--font-body); font-size: 0.88rem; color: var(--text-secondary); line-height: 1.4; }
-
-/* ── KPI CARDS ── */
-.kpi-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
-    padding: 1.6rem 1.6rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
-    animation: fadeSlideUp 0.6s ease both;
-    height: 100%;
-    min-height: 180px;
-    cursor: default;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.kpi-card:hover {
-    border-color: rgba(0,194,255,0.2);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md), var(--shadow-glow-c);
-}
-.kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(0,194,255,0.3) 50%, transparent 100%);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-.kpi-card:hover::before { opacity: 1; }
-.kpi-card::after {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 140px; height: 140px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,194,255,0.04) 0%, transparent 70%);
-    pointer-events: none;
-}
-.kpi-eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 0.6rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.kpi-value {
-    font-family: var(--font-body);
-    font-size: 1.9rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--text-primary);
-    line-height: 1;
-    margin-bottom: 0.5rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.kpi-value.cyan  { color: var(--accent-cyan); }
-.kpi-value.green { color: var(--accent-green); }
-.kpi-value.gold  { color: var(--accent-gold); }
-.kpi-value.red   { color: var(--accent-red); }
-.kpi-sub {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 0.8rem;
-}
-.kpi-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 20px;
-}
-.kpi-badge.green { background: var(--accent-green-dim); color: var(--accent-green); border: 1px solid rgba(0,229,160,0.2); }
-.kpi-badge.gold  { background: var(--accent-gold-dim);  color: var(--accent-gold);  border: 1px solid rgba(255,181,71,0.2); }
-.kpi-badge.red   { background: var(--accent-red-dim);   color: var(--accent-red);   border: 1px solid rgba(255,90,90,0.2); }
-
-/* ── PANELS ── */
-.panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
-    padding: 1.8rem 2rem;
-    animation: fadeSlideUp 0.6s 0.2s ease both;
-    height: 100%;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-.panel:hover {
-    border-color: var(--border-medium);
-    box-shadow: var(--shadow-sm);
-}
-.panel-title {
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    font-weight: 500;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 1.4rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-subtle);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.panel-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.65rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    transition: all 0.15s;
-}
-.panel-row:last-child { border-bottom: none; padding-bottom: 0; }
-.panel-row:hover {
-    background: rgba(255,255,255,0.025);
-    margin: 0 -0.6rem;
-    padding: 0.65rem 0.6rem;
-    border-radius: 6px;
-    border-bottom-color: transparent;
-}
-.panel-key {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    letter-spacing: 0.02em;
-}
-.panel-val {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-    text-align: right;
-}
-.panel-val.cyan  { color: var(--accent-cyan); }
-.panel-val.green { color: var(--accent-green); }
-.panel-val.red   { color: var(--accent-red); }
-.panel-val.big   { font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan); letter-spacing: -0.02em; }
-
-/* ── CRISIS PANEL ── */
-.crisis-panel {
-    background: linear-gradient(135deg, rgba(255,90,90,0.04) 0%, rgba(10,17,24,0.95) 100%);
-    border: 1px solid rgba(255,90,90,0.14);
-    border-radius: var(--radius-xl);
-    padding: 1.8rem 2rem;
-    animation: fadeSlideUp 0.6s 0.2s ease both;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-}
-.crisis-panel::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,90,90,0.3), transparent);
-}
-.crisis-header {
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    font-weight: 500;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(255,90,90,0.5);
-    margin-bottom: 1.4rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255,90,90,0.1);
-}
-.crisis-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.65rem 0;
-    border-bottom: 1px solid rgba(255,90,90,0.06);
-}
-.crisis-row:last-child { border-bottom: none; }
-.crisis-key { font-family: var(--font-mono); font-size: 0.68rem; color: rgba(255,90,90,0.4); }
-.crisis-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
-.crisis-val.red   { color: var(--accent-red); }
-.crisis-val.green { color: var(--accent-green); }
-.crisis-impact {
-    margin-top: 1.2rem;
-    padding: 0.9rem 1.1rem;
-    background: rgba(255,90,90,0.06);
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(255,90,90,0.1);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: rgba(255,90,90,0.5);
-    text-align: center;
-    letter-spacing: 0.05em;
-}
-
-/* ── SECTION LABEL ── */
-.section-label {
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin: 2.5rem 0 1.2rem 0;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
-
-/* ── SIDEBAR SECTIONS ── */
-.sb-section {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    padding: 1rem 0 0.5rem 0;
-    margin-top: 0.5rem;
-    border-top: 1px solid var(--border-subtle);
-}
-.sb-section:first-child { border-top: none; margin-top: 0; padding-top: 0; }
-
-/* ── METRIC CARDS NATIVE ── */
-.live-bar-wrap [data-testid="stMetric"] {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: 1.4rem 1.6rem;
-    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-    animation: fadeSlideUp 0.6s 0.05s ease both;
-}
-.live-bar-wrap [data-testid="stMetric"]:hover {
-    border-color: rgba(0,194,255,0.18);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm), 0 0 16px rgba(0,194,255,0.06);
-}
-.live-bar-wrap [data-testid="stMetricLabel"] {
-    font-family: var(--font-mono) !important;
-    font-size: 0.6rem !important;
-    letter-spacing: 0.14em !important;
-    text-transform: uppercase !important;
-    color: var(--text-muted) !important;
-}
-.live-bar-wrap [data-testid="stMetricValue"] {
-    font-family: var(--font-body) !important;
-    font-size: 1.7rem !important;
-    font-weight: 700 !important;
-    color: var(--accent-cyan) !important;
-    letter-spacing: -0.03em !important;
-    line-height: 1.1 !important;
-}
-.live-bar-wrap [data-testid="stMetricDelta"] {
-    font-family: var(--font-mono) !important;
-    font-size: 0.65rem !important;
-}
-.live-bar-wrap [data-testid="stMetricLabel"] svg {
-    color: var(--text-muted) !important;
-    transition: color 0.2s ease;
-}
-.live-bar-wrap [data-testid="stMetricLabel"]:hover svg {
-    color: var(--accent-cyan) !important;
-}
-
-/* ── DATAFRAME ── */
-[data-testid="stDataFrame"] {
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-lg) !important;
-    overflow: hidden !important;
-}
-[data-testid="stDataFrame"] th {
-    background: rgba(255,255,255,0.02) !important;
-    color: var(--text-muted) !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.62rem !important;
-    letter-spacing: 0.12em !important;
-    text-transform: uppercase !important;
-    border-bottom: 1px solid var(--border-medium) !important;
-    padding: 12px 16px !important;
-}
-[data-testid="stDataFrame"] td {
-    background: var(--bg-card) !important;
-    color: var(--text-secondary) !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.78rem !important;
-    border-bottom: 1px solid var(--border-subtle) !important;
-    padding: 10px 16px !important;
-}
-
-/* ── FOOTER ── */
-.ph-footer {
-    text-align: center;
-    padding: 2.5rem 0 1.5rem 0;
-    border-top: 1px solid var(--border-subtle);
-    margin-top: 3rem;
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    letter-spacing: 0.12em;
-    line-height: 2.2;
-}
-
-
-/* ── BADGE FRECCE LIVE BAR ── */
-.ph-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 5px;
-    letter-spacing: 0.04em;
-    margin-top: 0.3rem;
-}
-.ph-badge-green { background: rgba(0,229,160,0.12); color: #00E5A0; border: 1px solid rgba(0,229,160,0.25); }
-.ph-badge-gold  { background: rgba(255,181,71,0.12);  color: #FFB547; border: 1px solid rgba(255,181,71,0.25); }
-.ph-badge-red   { background: rgba(255,107,107,0.12); color: #FF6B6B; border: 1px solid rgba(255,107,107,0.25); }
-
-/* ── BADGE SEGNALE inline ── */
-.sig-green {
-    color: #00E5A0;
-    font-weight: 700;
-    font-family: var(--font-mono);
-}
-.sig-gold {
-    color: #FFB547;
-    font-weight: 700;
-    font-family: var(--font-mono);
-}
-.sig-red {
-    color: #FF6B6B;
-    font-weight: 700;
-    font-family: var(--font-mono);
-}
-.badge-sig {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 4px;
-    letter-spacing: 0.04em;
-}
-.badge-sig.green {
-    background: rgba(0,229,160,0.12);
-    color: #00E5A0;
-    border: 1px solid rgba(0,229,160,0.25);
-}
-.badge-sig.gold {
-    background: rgba(255,181,71,0.12);
-    color: #FFB547;
-    border: 1px solid rgba(255,181,71,0.25);
-}
-.badge-sig.red {
-    background: rgba(255,107,107,0.12);
-    color: #FF6B6B;
-    border: 1px solid rgba(255,107,107,0.25);
-}
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
-</style>
-""", unsafe_allow_html=True)
+_css = (Path(__file__).parent / "style.css").read_text()
+st.markdown(f"<style>{_css}</style>", unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -796,13 +180,18 @@ def strike_target(S, sigma, T, r, pt):
     if T <= 0 or sigma <= 0: return S
     return round(S*np.exp((r-0.5*sigma**2)*T + sigma*np.sqrt(T)*si.norm.ppf(1.0-pt)), 2)
 
-def calc_sizing(cap, K, marg, mult=100):
-    mc = K*mult*(marg/100); n = int(cap//mc) if mc > 0 else 0
-    return {"n":n, "mc":round(mc,2), "imp":round(n*mc,2), "lib":round(cap-n*mc,2)}
-
 def calc_wcs(S, K, prem, n, crash, mult=100):
-    Sc = S*(1-crash/100); lc = max(K-Sc,0)-prem
-    return {"Sc":round(Sc,2), "lc":round(lc,2), "lt":round(lc*n*mult,2), "pt":round(prem*n*mult,2), "crash":crash}
+    Sc        = S * (1 - crash / 100)
+    lc_gross  = max(K - Sc, 0)                  # perdita lorda per azione (senza premio)
+    lc_net    = lc_gross - prem                  # perdita netta per azione (al netto del premio)
+    return {
+        "Sc":       round(Sc, 2),
+        "lc":       round(lc_net, 2),            # per contratto, netto
+        "lt_gross": round(lc_gross * n * mult, 2),  # perdita lorda totale
+        "lt":       round(lc_net * n * mult, 2),    # perdita netta totale
+        "pt":       round(prem * n * mult, 2),
+        "crash":    crash,
+    }
 
 def pnl_chart(S, K, prem, n, mult=100):
     px  = np.linspace(S*0.55, S*1.20, 400)
@@ -812,9 +201,9 @@ def pnl_chart(S, K, prem, n, mult=100):
     fig.add_trace(go.Scatter(x=px, y=np.minimum(pnl,0), fill='tozeroy', fillcolor='rgba(255,90,90,0.07)',  line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
     fig.add_trace(go.Scatter(x=px, y=pnl, line=dict(color='#00C2FF', width=2), name='P&L',
         hovertemplate='<b>Prezzo:</b> %{x:,.2f}<br><b>P&L:</b> %{y:+,.0f} €<extra></extra>'))
-    fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {fmt_eur(K, 0)}",   font=dict(color='#FFB547', size=11)))
-    fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {fmt_eur(S, 0)}", font=dict(color='#8B9FC0', size=11)))
-    fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {fmt_eur(K-prem, 0)}", font=dict(color='#A855F7', size=11)))
+    fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {K:,.0f}",   font=dict(color='#FFB547', size=11)))
+    fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {S:,.0f}", font=dict(color='#8B9FC0', size=11)))
+    fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {K-prem:,.0f}", font=dict(color='#A855F7', size=11)))
     fig.add_hline(y=0,       line=dict(color='rgba(255,255,255,0.08)', width=1))
     fig.update_layout(
         paper_bgcolor='#080C10', plot_bgcolor='#0C1219',
@@ -856,6 +245,7 @@ with st.sidebar:
     dte    = st.slider("Giorni alla Scadenza (DTE)", 1, 365, 45,
         help=f"Giorni calendariali alla scadenza.\nOttimale: 35-49 giorni.\nUltimo aggiornamento: impostato da te manualmente.")
     iv_pct = st.slider("Volatilità Implicita IV (%)", 1.0, 150.0, 20.0, 0.5,
+        key="iv_pct",
         help="Se hai premuto 'Aggiorna', questo campo viene preimpostato automaticamente con il VIX corrente.\nPuoi modificarlo manualmente per confrontare scenari diversi.")
     r_pct  = st.number_input("Tasso Risk-Free (%)", 0.0, 20.0, 4.5, 0.1,
         help="Rendimento BTP/Treasury 10 anni.\nAggiorna ogni 3 mesi circa.")
@@ -871,52 +261,6 @@ with st.sidebar:
     st.markdown("<div class='sb-section'>Obiettivo Strategia</div>", unsafe_allow_html=True)
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
         help="84% = Delta 0.16 — punto ottimale Tastytrade.\n90% = Delta 0.10 — più conservativo.\n80% = Delta 0.20 — più aggressivo.")
-
-    st.markdown("<div class='sb-section'>Dati Reali da IBKR</div>", unsafe_allow_html=True)
-    usa_premio_reale = st.toggle("Usa premio reale",
-        help="Attiva per inserire il premio che vedi su IBKR invece di quello calcolato da Black-Scholes.")
-    if usa_premio_reale:
-        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) — €</span>", unsafe_allow_html=True)
-
-        # Callback per sincronizzare slider → number_input
-        def _sync_slider():
-            st.session_state["_pr_val"] = st.session_state["slider_pr"]
-        # Callback per sincronizzare number_input → slider
-        def _sync_input():
-            st.session_state["_pr_val"] = st.session_state["input_pr"]
-
-        if "_pr_val" not in st.session_state:
-            st.session_state["_pr_val"] = 5.0
-
-        cur = float(st.session_state["_pr_val"])
-
-        col_s, col_n = st.columns([2, 1])
-        with col_s:
-            st.slider(
-                "Premio (cursore)", 0.01, 500.0, cur, 0.01,
-                label_visibility="collapsed",
-                key="slider_pr",
-                on_change=_sync_slider
-            )
-        with col_n:
-            st.number_input(
-                "Premio (±)", 0.01, 500.0, cur, 0.01,
-                label_visibility="collapsed",
-                key="input_pr",
-                format="%.2f",
-                on_change=_sync_input
-            )
-
-        premio_reale = float(st.session_state["_pr_val"])
-        st.markdown(
-            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
-            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
-            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-            f"Premio selezionato: <strong>{fmt_eur(premio_reale)} €</strong></div>",
-            unsafe_allow_html=True
-        )
-    else:
-        premio_reale = None
 
 
 # ═══════════════════════════════════════════════════════════
@@ -947,9 +291,10 @@ ts_vol  = dati["ts_vol"]
 ts_vix  = dati["ts_vix"]
 ts_ivr  = dati["ts_ivrank"]
 
-# Preimposta IV con VIX se disponibile e se l'utente ha appena aggiornato
+# Preimposta lo slider IV con il VIX aggiornato e ricarica la pagina
 if aggiorna and vix_val is not None:
-    iv_pct = vix_val
+    st.session_state["iv_pct"] = float(vix_val)
+    st.rerun()
 
 
 # ═══════════════════════════════════════════════════════════
@@ -961,9 +306,7 @@ sigma = iv_pct / 100.0
 r     = r_pct / 100.0
 K     = strike_target(spot, sigma, T, r, prob_t/100.0)
 par   = Par(S=spot, K=K, T=T, r=r, sigma=sigma)
-prem_bs = prezzo_put(par)
-prem     = premio_reale if premio_reale is not None else prem_bs
-prem_fonte = "IBKR (reale)" if premio_reale is not None else "Black-Scholes (stimato)" 
+prem  = prezzo_put(par)
 prob  = prob_ok(par)
 gre   = calc_greche(par)
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank)
@@ -1063,9 +406,12 @@ st.markdown("<div class='live-bar-wrap'>", unsafe_allow_html=True)
 b1, b2, b3, b4 = st.columns(4, gap="medium")
 
 with b1:
+    st.markdown(f"<div class='ph-delta-{spot_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Prezzo Spot",
-        value=f"{fmt_eur(spot)}",
+        value=f"{spot:,.2f}",
+        delta=spot_arrow,
+        delta_color="off",
         help=(
             "PREZZO SPOT\n\n"
             "Prezzo attuale del sottostante scaricato in tempo reale da Yahoo Finance.\n\n"
@@ -1073,12 +419,15 @@ with b1:
             f"Aggiornato: {ts_spot}"
         )
     )
-    st.markdown(f"<div class='ph-badge ph-badge-{spot_cls}'>{spot_arrow}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with b2:
+    st.markdown(f"<div class='ph-delta-{vol_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Vol. Storica 30gg",
         value=f"{vol_st:.1f}%",
+        delta=vol_arrow,
+        delta_color="off",
         help=(
             "VOLATILITÀ STORICA 30gg\n\n"
             "Quanto si è mosso davvero il mercato negli ultimi 30 giorni.\n"
@@ -1090,12 +439,15 @@ with b2:
             f"Aggiornato: {ts_vol}"
         )
     )
-    st.markdown(f"<div class='ph-badge ph-badge-{vol_cls}'>{vol_arrow}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with b3:
+    st.markdown(f"<div class='ph-delta-{ivr_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● IV Rank",
         value=f"{iv_rank:.0f} / 100",
+        delta=ivr_arrow,
+        delta_color="off",
         help=(
             "IV RANK (0 – 100)\n\n"
             "Dove si trova la volatilità attuale rispetto al suo range degli ultimi 12 mesi.\n\n"
@@ -1107,12 +459,15 @@ with b3:
             f"Aggiornato: {ts_ivr}"
         )
     )
-    st.markdown(f"<div class='ph-badge ph-badge-{ivr_cls}'>{ivr_arrow}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with b4:
+    st.markdown(f"<div class='ph-delta-{vix_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● VIX — Indice di Paura",
         value=vix_str,
+        delta=vix_arrow,
+        delta_color="off",
         help=(
             "VIX — CBOE VOLATILITY INDEX\n\n"
             "Misura la volatilità implicita attesa sull'S&P 500 nei prossimi 30 giorni.\n"
@@ -1124,13 +479,13 @@ with b4:
             f"Aggiornato: {ts_vix}"
         )
     )
-    st.markdown(f"<div class='ph-badge ph-badge-{vix_cls}'>{vix_arrow}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
 # variabili comuni
-pn      = sc["lt"] + sc["pt"]
-imp     = (pn / marg_tot * 100) if marg_tot > 0 else 0
-rend_ann = rend * 12
+pn       = sc["lt"]                                        # perdita netta totale (già al netto del premio)
+imp      = (abs(pn) / marg_tot * 100) if marg_tot > 0 else 0
+rend_ann = (((1 + rend / 100) ** 12) - 1) * 100           # rendimento annuo composto
 
 # ── SIGNAL BANNER ──
 st.markdown(f"""
@@ -1151,28 +506,27 @@ st.markdown(f"""
             <div class="panel-val big cyan">{n_contratti}</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Margine stimato / contratto *</div>
-            <div class="panel-val cyan">{fmt_eur(mc) + " €"}</div>
+            <div class="panel-key" style="margin-bottom:0.4rem">Margine per contratto</div>
+            <div class="panel-val cyan">{mc:,.0f} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Margine totale stimato *</div>
-            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{fmt_eur(marg_tot) + " €"}</div>
+            <div class="panel-key" style="margin-bottom:0.4rem">Margine totale richiesto</div>
+            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{marg_tot:,.0f} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Incasso totale premi</div>
-            <div class="panel-val green">+{fmt_eur(ptot) + " €"}</div>
+            <div class="panel-val green">+{ptot:,.0f} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Theta totale / giorno</div>
-            <div class="panel-val green">+{fmt_eur(thday)} €</div>
+            <div class="panel-val green">+{thday:,.0f} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem">
             <div class="panel-key" style="margin-bottom:0.4rem">Rendimento sul margine</div>
-            <div class="panel-val green">{rend:.1f}% / mese · {rend_ann:.1f}% / anno</div>
+            <div class="panel-val green">{rend:.1f}% / mese · {rend_ann:.1f}% / anno (composto)</div>
         </div>
     </div>
 </div>
-<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);margin-top:0.4rem;margin-bottom:1rem">* Stima indicativa: {marg_pct:.0f}% × strike. Il margine reale dipende dal broker — verifica sempre su IBKR prima di operare.</div>
 """, unsafe_allow_html=True)
 
 # ── KPI CARDS — 4 colonne ──
@@ -1182,7 +536,7 @@ with c1:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.0s">
         <div class="kpi-eyebrow">🎯 Strike Consigliato</div>
-        <div class="kpi-value cyan">{fmt_eur(K, 1)}</div>
+        <div class="kpi-value cyan">{K:,.1f}</div>
         <div class="kpi-sub">{dist:.1f}% sotto lo spot</div>
         <div><span class="kpi-badge green">OTM TARGET</span></div>
     </div>
@@ -1205,8 +559,8 @@ with c3:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.12s">
         <div class="kpi-eyebrow">◈ Premio Incassato</div>
-        <div class="kpi-value green">{fmt_eur(prem)}</div>
-        <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{fmt_eur(ptot) + " €"}</strong></div>
+        <div class="kpi-value green">{prem:.2f}</div>
+        <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{ptot:,.0f} €</strong></div>
         <div><span class="kpi-badge green">{rend:.1f}% sul margine / mese</span></div>
     </div>
     """, unsafe_allow_html=True)
@@ -1214,9 +568,9 @@ with c3:
 with c4:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.18s">
-        <div class="kpi-eyebrow">◎ Margine Stimato *</div>
-        <div class="kpi-value gold">{fmt_eur(marg_tot) + " €"}</div>
-        <div class="kpi-sub">{fmt_eur(mc)} € × {n_contratti} contratti</div>
+        <div class="kpi-eyebrow">◎ Margine Richiesto</div>
+        <div class="kpi-value gold">{marg_tot:,.0f} €</div>
+        <div class="kpi-sub">{mc:,.0f} € × {n_contratti} contratti</div>
         <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
     </div>
     """, unsafe_allow_html=True)
@@ -1244,7 +598,7 @@ st.markdown(f"""
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.5rem">Θ Theta</div>
-            <div class="panel-val green" style="font-size:1rem">+{fmt_eur(abs(gre['theta']), 4)} €</div>
+            <div class="panel-val green" style="font-size:1rem">+{abs(gre['theta']):.4f} €</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">guadagno per giorno</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
@@ -1268,23 +622,23 @@ st.markdown(f"""
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Prezzo dopo il crollo</div>
-            <div class="crisis-val">{fmt_eur(sc["Sc"])}</div>
+            <div class="crisis-val">{sc['Sc']:,.2f}</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita per contratto</div>
-            <div class="crisis-val red">{fmt_eur(abs(sc["lc"]))} €</div>
+            <div class="crisis-val red">{sc['lc']:,.0f} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita lorda totale</div>
-            <div class="crisis-val red">{fmt_eur(abs(sc["lt"]))} €</div>
+            <div class="crisis-val red">{sc['lt_gross']:,.0f} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Premi già incassati</div>
-            <div class="crisis-val green">+{fmt_eur(sc["pt"])} €</div>
+            <div class="crisis-val green">+{sc['pt']:,.0f} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita netta finale</div>
-            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt_eur(abs(pn))} €</div>
+            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{pn:,.0f} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem">
             <div class="crisis-key" style="margin-bottom:0.4rem">Impatto sul margine</div>
@@ -1303,16 +657,16 @@ st.dataframe(pd.DataFrame({
                   "Premio per Contratto","Numero Contratti","Margine per Contratto",
                   "Margine Totale Richiesto","Incasso Totale Premi",
                   "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
-    "Valore":    [nome, f"{fmt_eur(spot)}", f"{fmt_eur(K)}", f"{dist:.1f}% sotto lo spot",
+    "Valore":    [nome, f"{spot:,.2f}", f"{K:,.2f}", f"{dist:.1f}% sotto lo spot",
                   f"{dte} gg", f"{iv_pct:.1f}%", f"{vol_st:.1f}%",
                   f"{vix_str}" + (" (preimpostato in IV)" if vix_val else ""),
                   f"{iv_rank:.0f}/100 — {ivr_label}",
-                  f"{fmt_eur(prem, 4)}  ({fmt_eur(prem*100)} € / contratto 100 azioni)",
-                  str(n_contratti), fmt_eur(mc) + " €",
-                  fmt_eur(marg_tot) + " € (da avere sul conto)",
-                  "+" + fmt_eur(ptot) + " €",
-                  f"{fmt_eur(K - prem)}", f"+{fmt_eur(thday)} € / giorno",
-                  f"{rend:.1f}% / mese  ({rend*12:.1f}% annuo stimato)"],
+                  f"{prem:.4f}  ({prem*100:.2f} € / contratto 100 azioni)",
+                  str(n_contratti), f"{mc:,.0f} €",
+                  f"{marg_tot:,.0f} € (da avere sul conto)",
+                  f"+{ptot:,.0f} €",
+                  f"{K-prem:,.2f}", f"+{thday:,.0f} € / giorno",
+                  f"{rend:.1f}% / mese  ({rend_ann:.1f}% annuo composto stimato)"],
 }), use_container_width=True, hide_index=True,
     column_config={
         "Parametro": st.column_config.TextColumn(width="medium"),
@@ -1323,7 +677,7 @@ st.dataframe(pd.DataFrame({
 st.markdown("""
 <div class="ph-footer">
     <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:500">Phinance</span><br>
-    Sistemi Quantitativi per il Trading di Opzioni · v5.1<br>
+    Sistemi Quantitativi per il Trading di Opzioni · v5.0<br>
     Dati: Yahoo Finance &nbsp;·&nbsp; VIX: CBOE &nbsp;·&nbsp; Motore: Black-Scholes<br>
     <span style="color:rgba(255,255,255,0.03);font-size:0.5rem">───────────────────────────────────────</span><br>
     Solo a scopo educativo · Non costituisce consulenza finanziaria
