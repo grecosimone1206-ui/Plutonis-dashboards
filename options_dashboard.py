@@ -444,7 +444,7 @@ hr { border-color: var(--border-subtle) !important; }
     border-bottom: 1px solid rgba(255,90,90,0.06);
 }
 .crisis-row:last-child { border-bottom: none; }
-.crisis-key { font-family: var(--font-mono); font-size: 0.68rem; color: rgba(255,90,90,0.4); }
+.crisis-key { font-family: var(--font-mono); font-size: 0.68rem; color: rgba(255,140,140,0.85); font-weight: 500; }
 .crisis-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
 .crisis-val.red   { color: var(--accent-red); }
 .crisis-val.green { color: var(--accent-green); }
@@ -575,6 +575,61 @@ hr { border-color: var(--border-subtle) !important; }
 [data-testid="stColumn"]:has(.ph-delta-green) [data-testid="stMetricDelta"] svg,
 [data-testid="stColumn"]:has(.ph-delta-gold)  [data-testid="stMetricDelta"] svg,
 [data-testid="stColumn"]:has(.ph-delta-red)   [data-testid="stMetricDelta"] svg { display: none !important; }
+/* ── TOOLTIP GRECHE ── */
+.greek-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.greek-tooltip .tip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    cursor: help;
+    font-family: var(--font-body);
+    font-style: normal;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+}
+.greek-tooltip:hover .tip-icon {
+    background: rgba(0,194,255,0.12);
+    border-color: rgba(0,194,255,0.3);
+    color: var(--accent-cyan);
+}
+.greek-tooltip .tip-box {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    min-width: 220px;
+    max-width: 260px;
+    background: #0F1E2E;
+    border: 1px solid rgba(0,194,255,0.2);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    white-space: normal;
+}
+.greek-tooltip:hover .tip-box {
+    visibility: visible;
+    opacity: 1;
+}
+
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
@@ -1182,29 +1237,49 @@ st.markdown(f"""
     <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">∑</span> Lettere Greche</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0">
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.5rem">Δ Delta (prob. ITM)</div>
+            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                Δ Delta (prob. ITM)
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Misura quanto varia il premio per ogni $1 di movimento del sottostante. Per una put venduta il delta è negativo — normale. Es. -0,14 significa che se SPY sale di $1 il tuo premio scende di €0,14. In valore assoluto = probabilità che l'opzione scada ITM (in perdita).</div>
+            </div>
             <div class="panel-val cyan" style="font-size:1rem">{fmt(gre['delta'],4)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">{fmt(abs(gre['delta'])*100,1)}% prob. ITM</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">{fmt(abs(gre['delta'])*100,1)}% prob. ITM</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.5rem">Γ Gamma</div>
+            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                Γ Gamma
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Velocità con cui cambia il delta al variare del prezzo. Gamma basso = posizione stabile. Gamma alto (vicino alla scadenza o allo strike) = il delta cambia rapidamente = rischio maggiore da gestire.</div>
+            </div>
             <div class="panel-val" style="font-size:1rem">{fmt(gre['gamma'],6)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">accelerazione delta</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">accelerazione delta</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.5rem">Θ Theta</div>
+            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                Θ Theta
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Il tuo guadagno quotidiano dal passare del tempo (time decay). Vendendo put incassi theta positivo: ogni giorno che passa, anche se il mercato non si muove, il valore dell'opzione diminuisce e tu guadagni. È il motore principale della strategia.</div>
+            </div>
             <div class="panel-val green" style="font-size:1rem">+{fmt(abs(gre['theta']),4)} €</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">guadagno per giorno</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">guadagno per giorno</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.5rem">ν Vega</div>
+            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                ν Vega
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Sensibilità del premio alla volatilità implicita (IV). Vendendo opzioni sei "short vega": se la IV sale il tuo premio aumenta di valore (perdita non realizzata). Se la IV scende guadagni. Preferisci vendere con IV alta e aspettare che scenda.</div>
+            </div>
             <div class="panel-val" style="font-size:1rem">{fmt(gre['vega'],4)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">sensib. a +1% IV</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">sensib. a +1% IV</div>
         </div>
         <div style="padding:0.8rem 1.2rem">
-            <div class="panel-key" style="margin-bottom:0.5rem">ρ Rho</div>
+            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                ρ Rho
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Sensibilità del premio ai tassi di interesse. Per opzioni a breve scadenza (30-60 giorni) è il fattore meno rilevante. Diventa significativo solo su opzioni con scadenze molto lunghe (LEAPS).</div>
+            </div>
             <div class="panel-val" style="font-size:1rem">{fmt(gre['rho'],4)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">sensib. ai tassi</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">sensib. ai tassi</div>
         </div>
     </div>
 </div>
