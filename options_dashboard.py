@@ -794,7 +794,8 @@ with st.sidebar:
 
     dte    = st.slider("Giorni alla Scadenza (DTE)", 1, 365, 45,
         help=f"Giorni calendariali alla scadenza.\nOttimale: 35-49 giorni.\nUltimo aggiornamento: impostato da te manualmente.")
-    iv_pct = st.slider("Volatilità Implicita IV (%)", 1.0, 150.0, 20.0, 0.5,
+    iv_pct = st.slider("Volatilità Implicita IV (%)", 1.0, 150.0,
+        float(st.session_state.get("_iv_pct_init", 20.0)), 0.5,
         key="iv_pct_slider",
         help="Se hai premuto 'Aggiorna', questo campo viene preimpostato automaticamente con il VIX corrente.\nPuoi modificarlo manualmente per confrontare scenari diversi.")
     r_pct  = st.number_input("Tasso Risk-Free (%)", 0.0, 20.0, 4.5, 0.1,
@@ -885,7 +886,7 @@ ts_ivr  = dati["ts_ivrank"]
 
 # Preimposta lo slider IV con il VIX aggiornato e ricarica la pagina
 if aggiorna and vix_val is not None:
-    st.session_state["iv_pct_slider"] = float(vix_val)
+    st.session_state["_iv_pct_init"] = float(vix_val)
     st.rerun()
 
 
@@ -898,7 +899,9 @@ sigma = iv_pct / 100.0
 r     = r_pct / 100.0
 K     = strike_target(spot, sigma, T, r, prob_t/100.0)
 par   = Par(S=spot, K=K, T=T, r=r, sigma=sigma)
-prem  = prem_manuale if prem_manuale > 0 else prezzo_put(par)
+prem_bs = prezzo_put(par)
+prem     = premio_reale if premio_reale is not None else prem_bs
+prem_fonte = "IBKR (reale)" if premio_reale is not None else "Black-Scholes (stimato)"
 prob  = prob_ok(par)
 gre   = calc_greche(par)
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank)
