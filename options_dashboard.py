@@ -1058,7 +1058,7 @@ st.markdown(f"""
 
   <div class="kpi-card" style="animation-delay:0.0s">
     <div class="kpi-eyebrow">&#9679; Prezzo Spot</div>
-    <div class="kpi-value {spot_cls}" style="font-size:1.9rem">{fmt_eur(spot)}</div>
+    <div class="kpi-value {spot_cls}" style="font-size:1.9rem">{fmt(spot,2)}</div>
     <div class="kpi-sub">Aggiornato: {ts_spot}</div>
     <div><span class="kpi-badge {spot_cls}">{spot_arrow}</span></div>
   </div>
