@@ -31,9 +31,10 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────────────────
-# CSS — inline
+# CSS — LUXURY FINTECH v4.0
 # ─────────────────────────────────────────────────────────
-st.markdown("""<style>
+st.markdown("""
+<style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap');
 
 /* ── VARIABILI ── */
@@ -567,17 +568,19 @@ hr { border-color: var(--border-subtle) !important; }
 }
 
 /* ── DELTA COLORI CUSTOM ── */
-.ph-delta-green [data-testid="stMetricDelta"] { color: var(--accent-green) !important; }
-.ph-delta-gold  [data-testid="stMetricDelta"] { color: var(--accent-gold)  !important; }
-.ph-delta-red   [data-testid="stMetricDelta"] { color: var(--accent-red)   !important; }
-.ph-delta-green [data-testid="stMetricDelta"] svg,
-.ph-delta-gold  [data-testid="stMetricDelta"] svg,
-.ph-delta-red   [data-testid="stMetricDelta"] svg { display: none !important; }
+/* :has() necessario perché il div wrapper e st.metric sono fratelli nel DOM, non padre-figlio */
+[data-testid="stColumn"]:has(.ph-delta-green) [data-testid="stMetricDelta"] { color: var(--accent-green) !important; }
+[data-testid="stColumn"]:has(.ph-delta-gold)  [data-testid="stMetricDelta"] { color: var(--accent-gold)  !important; }
+[data-testid="stColumn"]:has(.ph-delta-red)   [data-testid="stMetricDelta"] { color: var(--accent-red)   !important; }
+[data-testid="stColumn"]:has(.ph-delta-green) [data-testid="stMetricDelta"] svg,
+[data-testid="stColumn"]:has(.ph-delta-gold)  [data-testid="stMetricDelta"] svg,
+[data-testid="stColumn"]:has(.ph-delta-red)   [data-testid="stMetricDelta"] svg { display: none !important; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
-</style>""", unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -804,6 +807,14 @@ with st.sidebar:
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
         help="84% = Delta 0.16 — punto ottimale Tastytrade.\n90% = Delta 0.10 — più conservativo.\n80% = Delta 0.20 — più aggressivo.")
 
+    st.markdown("<div class='sb-section'>Premio</div>", unsafe_allow_html=True)
+    prem_manuale = st.number_input(
+        "Premio per Contratto (0 = auto Black-Scholes)",
+        min_value=0.0, max_value=9999.0, value=0.0, step=0.01,
+        label_visibility="collapsed",
+        help="Se > 0 sovrascrive il premio calcolato da Black-Scholes con il valore reale del mercato (es. bid/ask dal tuo broker).\nLascia 0 per usare il calcolo automatico."
+    )
+
 
 # ═══════════════════════════════════════════════════════════
 # RECUPERO DATI
@@ -848,7 +859,7 @@ sigma = iv_pct / 100.0
 r     = r_pct / 100.0
 K     = strike_target(spot, sigma, T, r, prob_t/100.0)
 par   = Par(S=spot, K=K, T=T, r=r, sigma=sigma)
-prem  = prezzo_put(par)
+prem  = prem_manuale if prem_manuale > 0 else prezzo_put(par)
 prob  = prob_ok(par)
 gre   = calc_greche(par)
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank)
