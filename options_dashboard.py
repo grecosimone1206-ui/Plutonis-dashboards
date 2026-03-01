@@ -777,17 +777,17 @@ def calc_greche(p: Par) -> dict:
         "rho":   round(-p.K*p.T*np.exp(-p.r*p.T)*si.norm.cdf(-d2)/100, 4),
     }
 
-def calc_semaforo(iv, vol, ivr):
+def calc_semaforo(iv, vol, ivr, vix=None):
     """Usa sia IV vs Vol.Storica che IV Rank per segnale più preciso."""
     ratio = iv/vol if vol > 0 else 1.0
     # Verde se entrambi i segnali sono positivi
     if ratio >= 1.20 and ivr >= 50:
-        return {"c":"verde",  "l":"Condizioni Ottime",      "d":f"IV {fmt(iv,1)}% è {ratio:.0%} della vol. storica · IV Rank {fmt(ivr,0)}/100 — premi gonfiati, ottimo per vendere"}
+        return {"c":"verde",  "l":"Condizioni Ottime",      "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — premi gonfiati, ottimo per vendere"}
     if ratio >= 1.20 or ivr >= 50:
-        return {"c":"giallo", "l":"Condizioni Parzialmente Favorevoli", "d":f"IV {fmt(iv,1)}% · IV Rank {fmt(ivr,0)}/100 — un segnale positivo, l'altro neutro. Valutare con attenzione"}
+        return {"c":"giallo", "l":"Condizioni Parzialmente Favorevoli", "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — un segnale positivo, l'altro neutro. Valutare con attenzione"}
     if ratio >= 0.85:
-        return {"c":"giallo", "l":"Condizioni nella Norma",  "d":f"IV {fmt(iv,1)}% in linea con la storia · IV Rank {fmt(ivr,0)}/100 — valutare il premio"}
-    return          {"c":"rosso",  "l":"Condizioni Sfavorevoli",  "d":f"IV {fmt(iv,1)}% bassa · IV Rank {fmt(ivr,0)}/100 — premi insufficienti, meglio aspettare"}
+        return {"c":"giallo", "l":"Condizioni nella Norma",  "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — valutare il premio"}
+    return          {"c":"rosso",  "l":"Condizioni Sfavorevoli",  "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — premi insufficienti, meglio aspettare"}
 
 def strike_target(S, sigma, T, r, pt):
     if T <= 0 or sigma <= 0: return S
@@ -967,7 +967,7 @@ prem     = premio_reale if premio_reale is not None else prem_bs
 prem_fonte = "IBKR (reale)" if premio_reale is not None else "Black-Scholes (stimato)"
 prob  = prob_ok(par)
 gre   = calc_greche(par)
-sema  = calc_semaforo(iv_pct, vol_st, iv_rank)
+sema  = calc_semaforo(iv_pct, vol_st, iv_rank, vix_val)
 # v5.1 — calcoli basati su n_contratti scelto dall'utente
 mult      = 100                                        # ogni contratto = 100 azioni
 mc        = round(K * mult * (marg_pct / 100), 2)     # margine per contratto (€)
