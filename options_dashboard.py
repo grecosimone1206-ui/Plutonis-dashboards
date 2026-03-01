@@ -1,7 +1,7 @@
 """
 ╔══════════════════════════════════════════════════════════╗
 ║         PHINANCE - Dashboard Vendita Put  v5.1           ║
-║         Auto VIX · IV Rank · Live Timestamps             ║
+║         Auto VIX &middot; IV Rank &middot; Live Timestamps             ║
 ╚══════════════════════════════════════════════════════════╝
 Librerie: pip install streamlit numpy pandas scipy plotly yfinance
 Avvio:    streamlit run options_dashboard.py
@@ -20,9 +20,9 @@ try:
 except ImportError:
     yf = None
 
-# ─────────────────────────────────────────────────────────
+# &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;──────────────────
 # CONFIGURAZIONE PAGINA
-# ─────────────────────────────────────────────────────────
+# &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;──────────────────
 st.set_page_config(
     page_title="Phinance | Dashboard Opzioni",
     page_icon="📊",
@@ -30,9 +30,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─────────────────────────────────────────────────────────
-# CSS — LUXURY FINTECH v4.0
-# ─────────────────────────────────────────────────────────
+# &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;──────────────────
+# CSS &mdash; LUXURY FINTECH v4.0
+# &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;──────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap');
@@ -647,7 +647,7 @@ hr { border-color: var(--border-subtle) !important; }
 
 
 # ═══════════════════════════════════════════════════════════
-# FUNZIONI DATI — yfinance + VIX + IV Rank
+# FUNZIONI DATI &mdash; yfinance + VIX + IV Rank
 # ═══════════════════════════════════════════════════════════
 
 TICKER_DISPONIBILI = {
@@ -782,12 +782,12 @@ def calc_semaforo(iv, vol, ivr, vix=None):
     ratio = iv/vol if vol > 0 else 1.0
     # Verde se entrambi i segnali sono positivi
     if ratio >= 1.20 and ivr >= 50:
-        return {"c":"verde",  "l":"Condizioni Ottime",      "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — premi gonfiati, ottimo per vendere"}
+        return {"c":"verde",  "l":"Condizioni Ottime",      "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} &middot; IV Rank {fmt(ivr,0)}/100 &mdash; premi gonfiati, ottimo per vendere"}
     if ratio >= 1.20 or ivr >= 50:
-        return {"c":"giallo", "l":"Condizioni Parzialmente Favorevoli", "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — un segnale positivo, l'altro neutro. Valutare con attenzione"}
+        return {"c":"giallo", "l":"Condizioni Parzialmente Favorevoli", "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} &middot; IV Rank {fmt(ivr,0)}/100 &mdash; un segnale positivo, l'altro neutro. Valutare con attenzione"}
     if ratio >= 0.85:
-        return {"c":"giallo", "l":"Condizioni nella Norma",  "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — valutare il premio"}
-    return          {"c":"rosso",  "l":"Condizioni Sfavorevoli",  "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} · IV Rank {fmt(ivr,0)}/100 — premi insufficienti, meglio aspettare"}
+        return {"c":"giallo", "l":"Condizioni nella Norma",  "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} &middot; IV Rank {fmt(ivr,0)}/100 &mdash; valutare il premio"}
+    return          {"c":"rosso",  "l":"Condizioni Sfavorevoli",  "d":f"VIX {fmt(vix,2) if vix else fmt(iv,1)+'%'} &middot; IV Rank {fmt(ivr,0)}/100 &mdash; premi insufficienti, meglio aspettare"}
 
 def strike_target(S, sigma, T, r, pt):
     if T <= 0 or sigma <= 0: return S
@@ -813,7 +813,7 @@ def pnl_chart(S, K, prem, n, mult=100):
     fig.add_trace(go.Scatter(x=px, y=np.maximum(pnl,0), fill='tozeroy', fillcolor='rgba(0,229,160,0.07)', line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
     fig.add_trace(go.Scatter(x=px, y=np.minimum(pnl,0), fill='tozeroy', fillcolor='rgba(255,90,90,0.07)',  line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
     fig.add_trace(go.Scatter(x=px, y=pnl, line=dict(color='#00C2FF', width=2), name='P&L',
-        hovertemplate='<b>Prezzo:</b> %{x:,.2f}<br><b>P&L:</b> %{y:+,.0f} €<extra></extra>'))
+        hovertemplate='<b>Prezzo:</b> %{x:,.2f}<br><b>P&L:</b> %{y:+,.0f} &euro;<extra></extra>'))
     fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {fmt(K,0)}",   font=dict(color='#FFB547', size=11)))
     fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {fmt(S,0)}", font=dict(color='#8B9FC0', size=11)))
     fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {fmt(K-prem,0)}", font=dict(color='#A855F7', size=11)))
@@ -823,7 +823,7 @@ def pnl_chart(S, K, prem, n, mult=100):
         font=dict(family='DM Mono', size=11, color='#8B9FC0'),
         title=dict(text='Profilo Profitto / Perdita a Scadenza', font=dict(family='DM Sans', size=13, color='#8B9FC0'), x=0, xanchor='left', pad=dict(l=0,b=12)),
         xaxis=dict(title='Prezzo del Sottostante a Scadenza', gridcolor='rgba(255,255,255,0.04)', zerolinecolor='rgba(255,255,255,0.05)', tickfont=dict(size=10), title_font=dict(size=11)),
-        yaxis=dict(title='Profitto / Perdita (€)',            gridcolor='rgba(255,255,255,0.04)', zerolinecolor='rgba(255,255,255,0.05)', tickfont=dict(size=10), title_font=dict(size=11)),
+        yaxis=dict(title='Profitto / Perdita (&euro;)',            gridcolor='rgba(255,255,255,0.04)', zerolinecolor='rgba(255,255,255,0.05)', tickfont=dict(size=10), title_font=dict(size=11)),
         hovermode='x unified',
         hoverlabel=dict(bgcolor='#111923', bordercolor='rgba(255,255,255,0.1)', font=dict(family='DM Mono', size=11, color='#F0F6FF')),
         legend=dict(bgcolor='rgba(0,0,0,0)'),
@@ -851,7 +851,7 @@ with st.sidebar:
         raw = st.text_input("Ticker Yahoo Finance", value="SPY", label_visibility="collapsed")
         tk  = raw.upper().strip()
 
-    aggiorna = st.button("↻  Aggiorna Tutti i Dati")
+    aggiorna = st.button("&#8635;  Aggiorna Tutti i Dati")
 
     st.markdown("<div class='sb-section'>Parametri Opzione</div>", unsafe_allow_html=True)
 
@@ -874,13 +874,13 @@ with st.sidebar:
 
     st.markdown("<div class='sb-section'>Obiettivo Strategia</div>", unsafe_allow_html=True)
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
-        help="84% = Delta 0.16 — punto ottimale Tastytrade.\n90% = Delta 0.10 — più conservativo.\n80% = Delta 0.20 — più aggressivo.")
+        help="84% = Delta 0.16 &mdash; punto ottimale Tastytrade.\n90% = Delta 0.10 &mdash; più conservativo.\n80% = Delta 0.20 &mdash; più aggressivo.")
 
     st.markdown("<div class='sb-section'>Dati Reali da IBKR</div>", unsafe_allow_html=True)
     usa_premio_reale = st.toggle("Usa premio reale",
         help="Attiva per inserire il premio che vedi su IBKR invece di quello calcolato da Black-Scholes.")
     if usa_premio_reale:
-        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) — €</span>", unsafe_allow_html=True)
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) &mdash; &euro;</span>", unsafe_allow_html=True)
 
         def _sync_slider():
             st.session_state["_pr_val"] = st.session_state["slider_pr"]
@@ -912,7 +912,7 @@ with st.sidebar:
             f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
             f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
             f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-            f"Premio selezionato: <strong>{premio_reale:.2f} €</strong></div>",
+            f"Premio selezionato: <strong>{premio_reale:.2f} &euro;</strong></div>",
             unsafe_allow_html=True
         )
     else:
@@ -925,14 +925,14 @@ with st.sidebar:
 
 if ("dati" not in st.session_state or aggiorna or
         st.session_state.get("tk") != tk):
-    with st.spinner(f"⟳  Recupero dati per {tk} e VIX…"):
+    with st.spinner(f"&#10227;  Recupero dati per {tk} e VIX…"):
         st.session_state.dati = recupera_dati_mercato(tk)
         st.session_state.tk   = tk
 
 dati = st.session_state.dati
 if dati.get("errore"):
     st.error(f"**Errore dati:** {dati['errore']}")
-    st.info("💡 Prova con: SPY · QQQ · AAPL · TSLA · MSFT · ^GSPC")
+    st.info("💡 Prova con: SPY &middot; QQQ &middot; AAPL &middot; TSLA &middot; MSFT &middot; ^GSPC")
     st.stop()
 
 spot    = dati["prezzo_spot"]
@@ -968,12 +968,12 @@ prem_fonte = "IBKR (reale)" if premio_reale is not None else "Black-Scholes (sti
 prob  = prob_ok(par)
 gre   = calc_greche(par)
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank, vix_val)
-# v5.1 — calcoli basati su n_contratti scelto dall'utente
+# v5.1 &mdash; calcoli basati su n_contratti scelto dall'utente
 mult      = 100                                        # ogni contratto = 100 azioni
-mc        = round(K * mult * (marg_pct / 100), 2)     # margine per contratto (€)
-marg_tot  = round(n_contratti * mc, 2)                 # margine totale richiesto (€)
-ptot      = round(prem * n_contratti * mult, 2)        # incasso totale premi (€)
-thday     = round(abs(gre["theta"]) * n_contratti * mult, 2)  # theta totale/giorno (€)
+mc        = round(K * mult * (marg_pct / 100), 2)     # margine per contratto (&euro;)
+marg_tot  = round(n_contratti * mc, 2)                 # margine totale richiesto (&euro;)
+ptot      = round(prem * n_contratti * mult, 2)        # incasso totale premi (&euro;)
+thday     = round(abs(gre["theta"]) * n_contratti * mult, 2)  # theta totale/giorno (&euro;)
 rend      = (ptot / marg_tot * 100) if marg_tot > 0 else 0    # rendimento sul margine (%)
 dist      = (spot - K) / spot * 100
 sc        = calc_wcs(spot, K, prem, n_contratti, crash)
@@ -982,7 +982,7 @@ sz        = {"n": n_contratti, "mc": mc, "imp": marg_tot, "lib": 0}
 
 # IV Rank badge
 ivr_cls   = "alto" if iv_rank >= 60 else "medio" if iv_rank >= 35 else "basso"
-ivr_label = "Alto — Vendi" if iv_rank >= 60 else "Medio — Valuta" if iv_rank >= 35 else "Basso — Aspetta"
+ivr_label = "Alto &mdash; Vendi" if iv_rank >= 60 else "Medio &mdash; Valuta" if iv_rank >= 35 else "Basso &mdash; Aspetta"
 
 # VIX colore
 vix_str = fmt(vix_val, 2) if vix_val else "N/D"
@@ -999,61 +999,61 @@ st.markdown(f"""
     <div style="display:flex;align-items:center;gap:1.2rem">
         <span class="ph-logo">Phinance</span>
         <div style="width:1px;height:2rem;background:var(--border-medium)"></div>
-        <span class="ph-subtitle">Dashboard Vendita Put · Motore Black-Scholes</span>
+        <span class="ph-subtitle">Dashboard Vendita Put &middot; Motore Black-Scholes</span>
     </div>
     <div class="ph-header-right">
-        <span class="ph-tag">v5.1 · Yahoo Finance · CBOE VIX</span>
+        <span class="ph-tag">v5.1 &middot; Yahoo Finance &middot; CBOE VIX</span>
         <span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.1em">SOLO A SCOPO EDUCATIVO</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── BARRA 4 DATI LIVE — frecce semantiche ──
+# ── BARRA 4 DATI LIVE &mdash; frecce semantiche ──
 # Usiamo delta_color="off" su tutti: Streamlit non aggiunge frecce proprie.
 # Freccia e colore nel testo, poi CSS custom colora i delta per posizione.
 
 # Prezzo Spot
 if var > 0.05:
-    spot_arrow = f"▲ +{fmt(var,2)}% oggi"
+    spot_arrow = f"&#9650; +{fmt(var,2)}% oggi"
     spot_cls   = "green"
 elif var < -0.05:
-    spot_arrow = f"▼ {fmt(var,2)}% oggi"
+    spot_arrow = f"&#9660; {fmt(var,2)}% oggi"
     spot_cls   = "red"
 else:
-    spot_arrow = f"↔ {fmt(var,2)}% oggi"
+    spot_arrow = f"&#8596; {fmt(var,2)}% oggi"
     spot_cls   = "gold"
 
 # Vol. Storica: alta=verde, media=arancio, bassa=rosso
 if vol_st >= 25:
-    vol_arrow = "▲ Alta — Premi elevati"
+    vol_arrow = "&#9650; Alta &mdash; Premi elevati"
     vol_cls   = "green"
 elif vol_st >= 15:
-    vol_arrow = "↔ Media — Nella norma"
+    vol_arrow = "&#8596; Media &mdash; Nella norma"
     vol_cls   = "gold"
 else:
-    vol_arrow = "▼ Bassa — Premi scarsi"
+    vol_arrow = "&#9660; Bassa &mdash; Premi scarsi"
     vol_cls   = "red"
 
 # IV Rank: alto=verde, medio=arancio, basso=rosso
 if iv_rank >= 60:
-    ivr_arrow = "▲ Alto — Vendi"
+    ivr_arrow = "&#9650; Alto &mdash; Vendi"
     ivr_cls   = "green"
 elif iv_rank >= 35:
-    ivr_arrow = "↔ Medio — Valuta"
+    ivr_arrow = "&#8596; Medio &mdash; Valuta"
     ivr_cls   = "gold"
 else:
-    ivr_arrow = "▼ Basso — Aspetta"
+    ivr_arrow = "&#9660; Basso &mdash; Aspetta"
     ivr_cls   = "red"
 
 # VIX: alto=verde, medio=arancio, basso=rosso
 if vix_val and vix_val >= 20:
-    vix_arrow = "▲ Elevato — Buono per vendere"
+    vix_arrow = "&#9650; Elevato &mdash; Buono per vendere"
     vix_cls   = "green"
 elif vix_val and vix_val >= 15:
-    vix_arrow = "↔ Normale — Nella norma"
+    vix_arrow = "&#8596; Normale &mdash; Nella norma"
     vix_cls   = "gold"
 elif vix_val:
-    vix_arrow = "▼ Basso — Premi scarsi"
+    vix_arrow = "&#9660; Basso &mdash; Premi scarsi"
     vix_cls   = "red"
 else:
     vix_arrow = "Non disponibile"
@@ -1085,7 +1085,7 @@ st.markdown(f"""
   </div>
 
   <div class="kpi-card" style="animation-delay:0.18s">
-    <div class="kpi-eyebrow">&#9679; VIX — Indice di Paura</div>
+    <div class="kpi-eyebrow">&#9679; VIX &mdash; Indice di Paura</div>
     <div class="kpi-value {vix_cls}" style="font-size:1.9rem">{vix_str}</div>
     <div class="kpi-sub">Aggiornato: {ts_vix}</div>
     <div><span class="kpi-badge {vix_cls}">{vix_arrow}</span></div>
@@ -1108,7 +1108,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── DETTAGLIO POSIZIONE — 6 mini KPI card con st.columns ──
+# ── DETTAGLIO POSIZIONE &mdash; 6 mini KPI card con st.columns ──
 st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione <span style='color:var(--text-muted);font-weight:400'>(margine stimato)</span></span>", unsafe_allow_html=True)
 d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
 st.markdown("<div style='margin-bottom:0rem'></div>", unsafe_allow_html=True)
@@ -1119,44 +1119,95 @@ _b = "font-family:'DM Mono',monospace;font-size:0.6rem;color:#3E526A;white-space
 with d1:
     st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
 with d2:
-    st.markdown(f'<div style="{_s}"><div style="{_e}">Margine / contratto</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(mc,2)} €</div><div style="{_b}">{fmt(marg_pct,0)}% × strike</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="{_s}"><div style="{_e}">Margine / contratto</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(mc,2)} &euro;</div><div style="{_b}">{fmt(marg_pct,0)}% × strike</div></div>', unsafe_allow_html=True)
 with d3:
-    st.markdown(f'<div style="{_s}"><div style="{_e}">Margine totale</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(marg_tot,2)} €</div><div style="{_b}">da avere sul conto</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="{_s}"><div style="{_e}">Margine totale</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(marg_tot,2)} &euro;</div><div style="{_b}">da avere sul conto</div></div>', unsafe_allow_html=True)
 with d4:
-    st.markdown(f'<div style="{_s}"><div style="{_e}">Incasso premi</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(ptot,2)} €</div><div style="{_b}">{n_contratti} × {fmt(prem,2)} × 100</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="{_s}"><div style="{_e}">Incasso premi</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(ptot,2)} &euro;</div><div style="{_b}">{n_contratti} × {fmt(prem,2)} × 100</div></div>', unsafe_allow_html=True)
 with d5:
-    st.markdown(f'<div style="{_s}"><div style="{_e}">Theta / giorno</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(thday,2)} €</div><div style="{_b}">guadagno dal tempo</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="{_s}"><div style="{_e}">Theta / giorno</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(thday,2)} &euro;</div><div style="{_b}">guadagno dal tempo</div></div>', unsafe_allow_html=True)
 with d6:
     st.markdown(f'<div style="{_s}"><div style="{_e}">Rendimento</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">{fmt(rend,2)}% / mese</div><div style="{_b}">{fmt(rend_ann,2)}% / anno</div></div>', unsafe_allow_html=True)
 
 st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
-# ── KPI CARDS — 4 colonne ──
+# ── KPI CARDS &mdash; 4 colonne ──
 c1, c2, c3, c4 = st.columns(4, gap="medium")
 
 with c1:
     st.markdown(f"""
-    <div class="kpi-card"
+    <div class="kpi-card" style="animation-delay:0.0s">
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Strike Consigliato
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Lo strike viene calcolato automaticamente con Black-Scholes in base alla probabilit&agrave; di successo che imposti nella sidebar. All&apos;84% corrisponde un delta di circa 0,16 &mdash; il punto ottimale secondo la strategia Tastytrade.</div>
+        </div>
+        <div class="kpi-value cyan">{fmt(K,2)}</div>
+        <div class="kpi-sub">{fmt(dist,2)}% sotto lo spot</div>
+        <div><span class="kpi-badge green">OTM TARGET</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c2:
+    bc = "green" if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
+    bt = "Eccellente" if prob >= 0.90 else "Accettabile" if prob >= 0.80 else "Rischiosa"
+    vc = "green"  if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
+    st.markdown(f"""
+    <div class="kpi-card" style="animation-delay:0.06s">
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Probabilit&agrave; di Successo
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Probabilit&agrave; che l&apos;opzione scada OTM e tu incassi il premio intero. Calcolata con Black-Scholes come N(d2). 84% = ottimale secondo Tastytrade. Sopra 90% = pi&ugrave; sicuro ma premio molto basso.</div>
+        </div>
+        <div class="kpi-value {vc}">{fmt(prob*100,2)}%</div>
+        <div class="kpi-sub">Scade senza perdite</div>
+        <div><span class="kpi-badge {bc}">{bt}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c3:
+    st.markdown(f"""
+    <div class="kpi-card" style="animation-delay:0.12s">
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Premio Incassato
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Il premio &egrave; il massimo guadagno possibile &mdash; lo incassi subito alla vendita. Se l&apos;opzione scade OTM tieni tutto. Strategia comune: chiudi al 50% del profitto riacquistando l&apos;opzione a prezzo inferiore.</div>
+        </div>
+        <div class="kpi-value green">{fmt(prem,2)}</div>
+        <div class="kpi-sub">{n_contratti} contratti &rarr; <strong style="color:var(--accent-green)">+{fmt(ptot,0)} &euro;</strong></div>
+        <div><span class="kpi-badge green">{fmt(rend,2)}% sul margine / mese</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c4:
+    st.markdown(f"""
+    <div class="kpi-card" style="animation-delay:0.18s">
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Margine Richiesto
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Il margine &egrave; la liquidit&agrave; che il broker blocca come garanzia. Non &egrave; un costo &mdash; rimane tuo &mdash; ma non puoi usarla per altri trade. Il valore &egrave; una stima: verifica sempre su IBKR prima di operare.</div>
+        </div>
+        <div class="kpi-value gold">{fmt(marg_tot,0)} &euro;</div>
+        <div class="kpi-sub">{fmt(mc,0)} &euro; &times; {n_contratti} contratti</div>
+        <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
 
-# ── GRECHE — orizzontale full width ──
+# ── GRECHE &mdash; orizzontale full width ──
 st.markdown(f"""
 <div class="panel" style="animation-delay:0.3s;margin-bottom:1.5rem">
-    <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">∑</span> Lettere Greche</div>
+    <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">&#8721;</span> Lettere Greche</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0">
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                Δ Delta (prob. ITM)
+                &#916; Delta (prob. ITM)
                 <span class="tip-icon">?</span>
-                <div class="tip-box">Misura quanto varia il premio per ogni $1 di movimento del sottostante. Per una put venduta il delta è negativo — normale. Es. -0,14 significa che se SPY sale di $1 il tuo premio scende di €0,14. In valore assoluto = probabilità che l'opzione scada ITM (in perdita).</div>
+                <div class="tip-box">Misura quanto varia il premio per ogni $1 di movimento del sottostante. Per una put venduta il delta è negativo &mdash; normale. Es. -0,14 significa che se SPY sale di $1 il tuo premio scende di &euro;0,14. In valore assoluto = probabilità che l&apos;opzione scada ITM (in perdita).</div>
             </div>
             <div class="panel-val cyan" style="font-size:1rem">{fmt(gre['delta'],4)}</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">{fmt(abs(gre['delta'])*100,1)}% prob. ITM</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                Γ Gamma
+                &#915; Gamma
                 <span class="tip-icon">?</span>
                 <div class="tip-box">Velocità con cui cambia il delta al variare del prezzo. Gamma basso = posizione stabile. Gamma alto (vicino alla scadenza o allo strike) = il delta cambia rapidamente = rischio maggiore da gestire.</div>
             </div>
@@ -1165,16 +1216,16 @@ st.markdown(f"""
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                Θ Theta
+                &#920; Theta
                 <span class="tip-icon">?</span>
-                <div class="tip-box">Il tuo guadagno quotidiano dal passare del tempo (time decay). Vendendo put incassi theta positivo: ogni giorno che passa, anche se il mercato non si muove, il valore dell'opzione diminuisce e tu guadagni. È il motore principale della strategia.</div>
+                <div class="tip-box">Il tuo guadagno quotidiano dal passare del tempo (time decay). Vendendo put incassi theta positivo: ogni giorno che passa, anche se il mercato non si muove, il valore dell&apos;opzione diminuisce e tu guadagni. È il motore principale della strategia.</div>
             </div>
-            <div class="panel-val green" style="font-size:1rem">+{fmt(abs(gre['theta']),4)} €</div>
+            <div class="panel-val green" style="font-size:1rem">+{fmt(abs(gre['theta']),4)} &euro;</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">guadagno per giorno</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                ν Vega
+                v Vega
                 <span class="tip-icon">?</span>
                 <div class="tip-box">Sensibilità del premio alla volatilità implicita (IV). Vendendo opzioni sei "short vega": se la IV sale il tuo premio aumenta di valore (perdita non realizzata). Se la IV scende guadagni. Preferisci vendere con IV alta e aspettare che scenda.</div>
             </div>
@@ -1183,7 +1234,7 @@ st.markdown(f"""
         </div>
         <div style="padding:0.8rem 1.2rem">
             <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                ρ Rho
+                &#961; Rho
                 <span class="tip-icon">?</span>
                 <div class="tip-box">Sensibilità del premio ai tassi di interesse. Per opzioni a breve scadenza (30-60 giorni) è il fattore meno rilevante. Diventa significativo solo su opzioni con scadenze molto lunghe (LEAPS).</div>
             </div>
@@ -1194,10 +1245,10 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── SCENARIO CRISI — orizzontale full width ──
+# ── SCENARIO CRISI &mdash; orizzontale full width ──
 st.markdown(f"""
 <div class="crisis-panel" style="animation-delay:0.35s">
-    <div class="crisis-header">⚠ Scenario di Crisi — Crollo {fmt(sc['crash'],0)}%</div>
+    <div class="crisis-header">&#9888; Scenario di Crisi &mdash; Crollo {fmt(sc['crash'],0)}%</div>
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column;justify-content:flex-start">
             <div class="crisis-key" style="margin-bottom:0.6rem;min-height:1.2rem">Prezzo dopo il crollo</div>
@@ -1205,19 +1256,19 @@ st.markdown(f"""
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Perdita per contratto</div>
-            <div class="crisis-val red">{fmt(sc['lc'],2)} €</div>
+            <div class="crisis-val red">{fmt(sc['lc'],2)} &euro;</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Perdita lorda totale</div>
-            <div class="crisis-val red">{fmt(sc['lt_gross'],2)} €</div>
+            <div class="crisis-val red">{fmt(sc['lt_gross'],2)} &euro;</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Premi già incassati</div>
-            <div class="crisis-val green">+{fmt(sc['pt'],2)} €</div>
+            <div class="crisis-val green">+{fmt(sc['pt'],2)} &euro;</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Perdita netta finale</div>
-            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(pn,0)} €</div>
+            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(pn,0)} &euro;</div>
         </div>
         <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Impatto sul margine</div>
@@ -1239,12 +1290,12 @@ st.dataframe(pd.DataFrame({
     "Valore":    [nome, fmt(spot,2), fmt(K,2), f"{fmt(dist,2)}% sotto lo spot",
                   f"{dte} gg", f"{fmt(iv_pct,2)}%", f"{fmt(vol_st,2)}%",
                   vix_str + (" (preimpostato in IV)" if vix_val else ""),
-                  f"{fmt(iv_rank,2)}/100 — {ivr_label}",
-                  f"{fmt(prem,4)}  ({fmt(prem*100,2)} € / contratto 100 azioni)",
-                  str(n_contratti), f"{fmt(mc,0)} €",
-                  f"{fmt(marg_tot,0)} € (da avere sul conto)",
-                  f"+{fmt(ptot,0)} €",
-                  fmt(K-prem,2), f"+{fmt(thday,2)} € / giorno",
+                  f"{fmt(iv_rank,2)}/100 &mdash; {ivr_label}",
+                  f"{fmt(prem,4)}  ({fmt(prem*100,2)} &euro; / contratto 100 azioni)",
+                  str(n_contratti), f"{fmt(mc,0)} &euro;",
+                  f"{fmt(marg_tot,0)} &euro; (da avere sul conto)",
+                  f"+{fmt(ptot,0)} &euro;",
+                  fmt(K-prem,2), f"+{fmt(thday,2)} &euro; / giorno",
                   f"{fmt(rend,2)}% / mese  ({fmt(rend_ann,2)}% annuo composto stimato)"],
 }), use_container_width=True, hide_index=True,
     column_config={
@@ -1256,9 +1307,9 @@ st.dataframe(pd.DataFrame({
 st.markdown("""
 <div class="ph-footer">
     <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:500">Phinance</span><br>
-    Sistemi Quantitativi per il Trading di Opzioni · v5.0<br>
-    Dati: Yahoo Finance &nbsp;·&nbsp; VIX: CBOE &nbsp;·&nbsp; Motore: Black-Scholes<br>
-    <span style="color:rgba(255,255,255,0.03);font-size:0.5rem">───────────────────────────────────────</span><br>
-    Solo a scopo educativo · Non costituisce consulenza finanziaria
+    Sistemi Quantitativi per il Trading di Opzioni &middot; v5.0<br>
+    Dati: Yahoo Finance &nbsp;&middot;&nbsp; VIX: CBOE &nbsp;&middot;&nbsp; Motore: Black-Scholes<br>
+    <span style="color:rgba(255,255,255,0.03);font-size:0.5rem">&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</span><br>
+    Solo a scopo educativo &middot; Non costituisce consulenza finanziaria
 </div>
 """, unsafe_allow_html=True)
