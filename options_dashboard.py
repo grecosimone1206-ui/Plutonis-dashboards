@@ -603,6 +603,11 @@ TICKER_DISPONIBILI = {
 def ora_adesso() -> str:
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
+def fmt(value, decimals=2) -> str:
+    """Formato europeo: separatore migliaia = punto, decimale = virgola."""
+    s = f"{value:,.{decimals}f}"
+    return s.replace(",", "X").replace(".", ",").replace("X", ".")
+
 @st.cache_data(ttl=300)
 def recupera_dati_mercato(ticker: str) -> dict:
     """
@@ -714,12 +719,12 @@ def calc_semaforo(iv, vol, ivr):
     ratio = iv/vol if vol > 0 else 1.0
     # Verde se entrambi i segnali sono positivi
     if ratio >= 1.20 and ivr >= 50:
-        return {"c":"verde",  "l":"Condizioni Ottime",      "d":f"IV {iv:.1f}% è {ratio:.0%} della vol. storica · IV Rank {ivr:.0f}/100 — premi gonfiati, ottimo per vendere"}
+        return {"c":"verde",  "l":"Condizioni Ottime",      "d":f"IV {fmt(iv,1)}% è {ratio:.0%} della vol. storica · IV Rank {fmt(ivr,0)}/100 — premi gonfiati, ottimo per vendere"}
     if ratio >= 1.20 or ivr >= 50:
-        return {"c":"giallo", "l":"Condizioni Parzialmente Favorevoli", "d":f"IV {iv:.1f}% · IV Rank {ivr:.0f}/100 — un segnale positivo, l'altro neutro. Valutare con attenzione"}
+        return {"c":"giallo", "l":"Condizioni Parzialmente Favorevoli", "d":f"IV {fmt(iv,1)}% · IV Rank {fmt(ivr,0)}/100 — un segnale positivo, l'altro neutro. Valutare con attenzione"}
     if ratio >= 0.85:
-        return {"c":"giallo", "l":"Condizioni nella Norma",  "d":f"IV {iv:.1f}% in linea con la storia · IV Rank {ivr:.0f}/100 — valutare il premio"}
-    return          {"c":"rosso",  "l":"Condizioni Sfavorevoli",  "d":f"IV {iv:.1f}% bassa · IV Rank {ivr:.0f}/100 — premi insufficienti, meglio aspettare"}
+        return {"c":"giallo", "l":"Condizioni nella Norma",  "d":f"IV {fmt(iv,1)}% in linea con la storia · IV Rank {fmt(ivr,0)}/100 — valutare il premio"}
+    return          {"c":"rosso",  "l":"Condizioni Sfavorevoli",  "d":f"IV {fmt(iv,1)}% bassa · IV Rank {fmt(ivr,0)}/100 — premi insufficienti, meglio aspettare"}
 
 def strike_target(S, sigma, T, r, pt):
     if T <= 0 or sigma <= 0: return S
@@ -746,9 +751,9 @@ def pnl_chart(S, K, prem, n, mult=100):
     fig.add_trace(go.Scatter(x=px, y=np.minimum(pnl,0), fill='tozeroy', fillcolor='rgba(255,90,90,0.07)',  line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
     fig.add_trace(go.Scatter(x=px, y=pnl, line=dict(color='#00C2FF', width=2), name='P&L',
         hovertemplate='<b>Prezzo:</b> %{x:,.2f}<br><b>P&L:</b> %{y:+,.0f} €<extra></extra>'))
-    fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {K:,.0f}",   font=dict(color='#FFB547', size=11)))
-    fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {S:,.0f}", font=dict(color='#8B9FC0', size=11)))
-    fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {K-prem:,.0f}", font=dict(color='#A855F7', size=11)))
+    fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {fmt(K,0)}",   font=dict(color='#FFB547', size=11)))
+    fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {fmt(S,0)}", font=dict(color='#8B9FC0', size=11)))
+    fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {fmt(K-prem,0)}", font=dict(color='#A855F7', size=11)))
     fig.add_hline(y=0,       line=dict(color='rgba(255,255,255,0.08)', width=1))
     fig.update_layout(
         paper_bgcolor='#080C10', plot_bgcolor='#0C1219',
@@ -880,7 +885,7 @@ ivr_cls   = "alto" if iv_rank >= 60 else "medio" if iv_rank >= 35 else "basso"
 ivr_label = "Alto — Vendi" if iv_rank >= 60 else "Medio — Valuta" if iv_rank >= 35 else "Basso — Aspetta"
 
 # VIX colore
-vix_str = f"{vix_val:.1f}" if vix_val else "N/D"
+vix_str = fmt(vix_val, 1) if vix_val else "N/D"
 vix_cls = "green" if vix_val and vix_val >= 20 else "gold" if vix_val and vix_val >= 15 else "red"
 
 
@@ -909,13 +914,13 @@ st.markdown(f"""
 
 # Prezzo Spot
 if var > 0.05:
-    spot_arrow = f"▲ +{var:.2f}% oggi"
+    spot_arrow = f"▲ +{fmt(var,2)}% oggi"
     spot_cls   = "green"
 elif var < -0.05:
-    spot_arrow = f"▼ {var:.2f}% oggi"
+    spot_arrow = f"▼ {fmt(var,2)}% oggi"
     spot_cls   = "red"
 else:
-    spot_arrow = f"↔ {var:.2f}% oggi"
+    spot_arrow = f"↔ {fmt(var,2)}% oggi"
     spot_cls   = "gold"
 
 # Vol. Storica: alta=verde, media=arancio, bassa=rosso
@@ -962,7 +967,7 @@ with b1:
     st.markdown(f"<div class='ph-delta-{spot_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Prezzo Spot",
-        value=f"{spot:,.2f}",
+        value=fmt(spot, 2),
         delta=spot_arrow,
         delta_color="off",
         help=(
@@ -978,7 +983,7 @@ with b2:
     st.markdown(f"<div class='ph-delta-{vol_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● Vol. Storica 30gg",
-        value=f"{vol_st:.1f}%",
+        value=f"{fmt(vol_st,1)}%",
         delta=vol_arrow,
         delta_color="off",
         help=(
@@ -998,7 +1003,7 @@ with b3:
     st.markdown(f"<div class='ph-delta-{ivr_cls}'>", unsafe_allow_html=True)
     st.metric(
         label="● IV Rank",
-        value=f"{iv_rank:.0f} / 100",
+        value=f"{fmt(iv_rank,0)} / 100",
         delta=ivr_arrow,
         delta_color="off",
         help=(
@@ -1060,23 +1065,23 @@ st.markdown(f"""
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Margine per contratto</div>
-            <div class="panel-val cyan">{mc:,.0f} €</div>
+            <div class="panel-val cyan">{fmt(mc,0)} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Margine totale richiesto</div>
-            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{marg_tot:,.0f} €</div>
+            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{fmt(marg_tot,0)} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Incasso totale premi</div>
-            <div class="panel-val green">+{ptot:,.0f} €</div>
+            <div class="panel-val green">+{fmt(ptot,0)} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.4rem">Theta totale / giorno</div>
-            <div class="panel-val green">+{thday:,.0f} €</div>
+            <div class="panel-val green">+{fmt(thday,0)} €</div>
         </div>
         <div style="padding:0.6rem 1.2rem">
             <div class="panel-key" style="margin-bottom:0.4rem">Rendimento sul margine</div>
-            <div class="panel-val green">{rend:.1f}% / mese · {rend_ann:.1f}% / anno (composto)</div>
+            <div class="panel-val green">{fmt(rend,1)}% / mese · {fmt(rend_ann,1)}% / anno (composto)</div>
         </div>
     </div>
 </div>
@@ -1089,8 +1094,8 @@ with c1:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.0s">
         <div class="kpi-eyebrow">🎯 Strike Consigliato</div>
-        <div class="kpi-value cyan">{K:,.1f}</div>
-        <div class="kpi-sub">{dist:.1f}% sotto lo spot</div>
+        <div class="kpi-value cyan">{fmt(K,1)}</div>
+        <div class="kpi-sub">{fmt(dist,1)}% sotto lo spot</div>
         <div><span class="kpi-badge green">OTM TARGET</span></div>
     </div>
     """, unsafe_allow_html=True)
@@ -1102,7 +1107,7 @@ with c2:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.06s">
         <div class="kpi-eyebrow">✦ Probabilità di Successo</div>
-        <div class="kpi-value {vc}">{prob*100:.1f}%</div>
+        <div class="kpi-value {vc}">{fmt(prob*100,1)}%</div>
         <div class="kpi-sub">Scade senza perdite</div>
         <div><span class="kpi-badge {bc}">{bt}</span></div>
     </div>
@@ -1112,9 +1117,9 @@ with c3:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.12s">
         <div class="kpi-eyebrow">◈ Premio Incassato</div>
-        <div class="kpi-value green">{prem:.2f}</div>
-        <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{ptot:,.0f} €</strong></div>
-        <div><span class="kpi-badge green">{rend:.1f}% sul margine / mese</span></div>
+        <div class="kpi-value green">{fmt(prem,2)}</div>
+        <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{fmt(ptot,0)} €</strong></div>
+        <div><span class="kpi-badge green">{fmt(rend,1)}% sul margine / mese</span></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1122,8 +1127,8 @@ with c4:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.18s">
         <div class="kpi-eyebrow">◎ Margine Richiesto</div>
-        <div class="kpi-value gold">{marg_tot:,.0f} €</div>
-        <div class="kpi-sub">{mc:,.0f} € × {n_contratti} contratti</div>
+        <div class="kpi-value gold">{fmt(marg_tot,0)} €</div>
+        <div class="kpi-sub">{fmt(mc,0)} € × {n_contratti} contratti</div>
         <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
     </div>
     """, unsafe_allow_html=True)
@@ -1141,27 +1146,27 @@ st.markdown(f"""
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0">
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.5rem">Δ Delta (prob. ITM)</div>
-            <div class="panel-val cyan" style="font-size:1rem">{gre['delta']:.4f}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">{abs(gre['delta'])*100:.1f}% prob. ITM</div>
+            <div class="panel-val cyan" style="font-size:1rem">{fmt(gre['delta'],4)}</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">{fmt(abs(gre['delta'])*100,1)}% prob. ITM</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.5rem">Γ Gamma</div>
-            <div class="panel-val" style="font-size:1rem">{gre['gamma']:.6f}</div>
+            <div class="panel-val" style="font-size:1rem">{fmt(gre['gamma'],6)}</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">accelerazione delta</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.5rem">Θ Theta</div>
-            <div class="panel-val green" style="font-size:1rem">+{abs(gre['theta']):.4f} €</div>
+            <div class="panel-val green" style="font-size:1rem">+{fmt(abs(gre['theta']),4)} €</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">guadagno per giorno</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key" style="margin-bottom:0.5rem">ν Vega</div>
-            <div class="panel-val" style="font-size:1rem">{gre['vega']:.4f}</div>
+            <div class="panel-val" style="font-size:1rem">{fmt(gre['vega'],4)}</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">sensib. a +1% IV</div>
         </div>
         <div style="padding:0.8rem 1.2rem">
             <div class="panel-key" style="margin-bottom:0.5rem">ρ Rho</div>
-            <div class="panel-val" style="font-size:1rem">{gre['rho']:.4f}</div>
+            <div class="panel-val" style="font-size:1rem">{fmt(gre['rho'],4)}</div>
             <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">sensib. ai tassi</div>
         </div>
     </div>
@@ -1171,31 +1176,31 @@ st.markdown(f"""
 # ── SCENARIO CRISI — orizzontale full width ──
 st.markdown(f"""
 <div class="crisis-panel" style="animation-delay:0.35s">
-    <div class="crisis-header">⚠ Scenario di Crisi — Crollo {sc['crash']:.0f}%</div>
+    <div class="crisis-header">⚠ Scenario di Crisi — Crollo {fmt(sc['crash'],0)}%</div>
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Prezzo dopo il crollo</div>
-            <div class="crisis-val">{sc['Sc']:,.2f}</div>
+            <div class="crisis-val">{fmt(sc['Sc'],2)}</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita per contratto</div>
-            <div class="crisis-val red">{sc['lc']:,.0f} €</div>
+            <div class="crisis-val red">{fmt(sc['lc'],0)} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita lorda totale</div>
-            <div class="crisis-val red">{sc['lt_gross']:,.0f} €</div>
+            <div class="crisis-val red">{fmt(sc['lt_gross'],0)} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Premi già incassati</div>
-            <div class="crisis-val green">+{sc['pt']:,.0f} €</div>
+            <div class="crisis-val green">+{fmt(sc['pt'],0)} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
             <div class="crisis-key" style="margin-bottom:0.4rem">Perdita netta finale</div>
-            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{pn:,.0f} €</div>
+            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(pn,0)} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem">
             <div class="crisis-key" style="margin-bottom:0.4rem">Impatto sul margine</div>
-            <div class="crisis-val red">{imp:.1f}%</div>
+            <div class="crisis-val red">{fmt(imp,1)}%</div>
         </div>
     </div>
 </div>
@@ -1210,16 +1215,16 @@ st.dataframe(pd.DataFrame({
                   "Premio per Contratto","Numero Contratti","Margine per Contratto",
                   "Margine Totale Richiesto","Incasso Totale Premi",
                   "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
-    "Valore":    [nome, f"{spot:,.2f}", f"{K:,.2f}", f"{dist:.1f}% sotto lo spot",
-                  f"{dte} gg", f"{iv_pct:.1f}%", f"{vol_st:.1f}%",
-                  f"{vix_str}" + (" (preimpostato in IV)" if vix_val else ""),
-                  f"{iv_rank:.0f}/100 — {ivr_label}",
-                  f"{prem:.4f}  ({prem*100:.2f} € / contratto 100 azioni)",
-                  str(n_contratti), f"{mc:,.0f} €",
-                  f"{marg_tot:,.0f} € (da avere sul conto)",
-                  f"+{ptot:,.0f} €",
-                  f"{K-prem:,.2f}", f"+{thday:,.0f} € / giorno",
-                  f"{rend:.1f}% / mese  ({rend_ann:.1f}% annuo composto stimato)"],
+    "Valore":    [nome, fmt(spot,2), fmt(K,2), f"{fmt(dist,1)}% sotto lo spot",
+                  f"{dte} gg", f"{fmt(iv_pct,1)}%", f"{fmt(vol_st,1)}%",
+                  vix_str + (" (preimpostato in IV)" if vix_val else ""),
+                  f"{fmt(iv_rank,0)}/100 — {ivr_label}",
+                  f"{fmt(prem,4)}  ({fmt(prem*100,2)} € / contratto 100 azioni)",
+                  str(n_contratti), f"{fmt(mc,0)} €",
+                  f"{fmt(marg_tot,0)} € (da avere sul conto)",
+                  f"+{fmt(ptot,0)} €",
+                  fmt(K-prem,2), f"+{fmt(thday,0)} € / giorno",
+                  f"{fmt(rend,1)}% / mese  ({fmt(rend_ann,1)}% annuo composto stimato)"],
 }), use_container_width=True, hide_index=True,
     column_config={
         "Parametro": st.column_config.TextColumn(width="medium"),
