@@ -1111,6 +1111,7 @@ st.markdown(f"""
 # ── DETTAGLIO POSIZIONE — 6 mini KPI card con st.columns ──
 st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione <span style='color:var(--text-muted);font-weight:400'>(margine stimato)</span></span>", unsafe_allow_html=True)
 d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
+st.markdown("<div style='margin-bottom:0rem'></div>", unsafe_allow_html=True)
 _s = "background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:0.9rem 1rem;height:110px;max-height:110px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:default"
 _v = "font-family:'DM Sans',sans-serif;font-weight:700;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:clip"
 _e = "font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#3E526A;margin-bottom:0.3rem;white-space:nowrap"
@@ -1128,6 +1129,7 @@ with d5:
 with d6:
     st.markdown(f'<div style="{_s}"><div style="{_e}">Rendimento</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">{fmt(rend,2)}% / mese</div><div style="{_b}">{fmt(rend_ann,2)}% / anno</div></div>', unsafe_allow_html=True)
 
+st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 # ── KPI CARDS — 4 colonne ──
 c1, c2, c3, c4 = st.columns(4, gap="medium")
 
