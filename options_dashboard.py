@@ -795,7 +795,7 @@ with st.sidebar:
     dte    = st.slider("Giorni alla Scadenza (DTE)", 1, 365, 45,
         help=f"Giorni calendariali alla scadenza.\nOttimale: 35-49 giorni.\nUltimo aggiornamento: impostato da te manualmente.")
     iv_pct = st.slider("Volatilità Implicita IV (%)", 1.0, 150.0, 20.0, 0.5,
-        key="iv_pct",
+        key="iv_pct_slider",
         help="Se hai premuto 'Aggiorna', questo campo viene preimpostato automaticamente con il VIX corrente.\nPuoi modificarlo manualmente per confrontare scenari diversi.")
     r_pct  = st.number_input("Tasso Risk-Free (%)", 0.0, 20.0, 4.5, 0.1,
         help="Rendimento BTP/Treasury 10 anni.\nAggiorna ogni 3 mesi circa.")
@@ -812,13 +812,47 @@ with st.sidebar:
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
         help="84% = Delta 0.16 — punto ottimale Tastytrade.\n90% = Delta 0.10 — più conservativo.\n80% = Delta 0.20 — più aggressivo.")
 
-    st.markdown("<div class='sb-section'>Premio</div>", unsafe_allow_html=True)
-    prem_manuale = st.number_input(
-        "Premio per Contratto (0 = auto Black-Scholes)",
-        min_value=0.0, max_value=9999.0, value=0.0, step=0.01,
-        label_visibility="collapsed",
-        help="Se > 0 sovrascrive il premio calcolato da Black-Scholes con il valore reale del mercato (es. bid/ask dal tuo broker).\nLascia 0 per usare il calcolo automatico."
-    )
+    st.markdown("<div class='sb-section'>Dati Reali da IBKR</div>", unsafe_allow_html=True)
+    usa_premio_reale = st.toggle("Usa premio reale",
+        help="Attiva per inserire il premio che vedi su IBKR invece di quello calcolato da Black-Scholes.")
+    if usa_premio_reale:
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) — €</span>", unsafe_allow_html=True)
+
+        def _sync_slider():
+            st.session_state["_pr_val"] = st.session_state["slider_pr"]
+        def _sync_input():
+            st.session_state["_pr_val"] = st.session_state["input_pr"]
+
+        if "_pr_val" not in st.session_state:
+            st.session_state["_pr_val"] = 5.0
+
+        cur = float(st.session_state["_pr_val"])
+        col_s, col_n = st.columns([2, 1])
+        with col_s:
+            st.slider(
+                "Premio (cursore)", 0.01, 500.0, cur, 0.01,
+                label_visibility="collapsed",
+                key="slider_pr",
+                on_change=_sync_slider
+            )
+        with col_n:
+            st.number_input(
+                "Premio (±)", 0.01, 500.0, cur, 0.01,
+                label_visibility="collapsed",
+                key="input_pr",
+                format="%.2f",
+                on_change=_sync_input
+            )
+        premio_reale = float(st.session_state["_pr_val"])
+        st.markdown(
+            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
+            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
+            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
+            f"Premio selezionato: <strong>{premio_reale:.2f} €</strong></div>",
+            unsafe_allow_html=True
+        )
+    else:
+        premio_reale = None
 
 
 # ═══════════════════════════════════════════════════════════
@@ -851,7 +885,7 @@ ts_ivr  = dati["ts_ivrank"]
 
 # Preimposta lo slider IV con il VIX aggiornato e ricarica la pagina
 if aggiorna and vix_val is not None:
-    st.session_state["iv_pct"] = float(vix_val)
+    st.session_state["iv_pct_slider"] = float(vix_val)
     st.rerun()
 
 
