@@ -1104,39 +1104,41 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ── DETTAGLIO POSIZIONE — 6 mini KPI card con st.columns ──
-st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione</span>", unsafe_allow_html=True)
+st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione <span style='color:var(--text-muted);font-weight:400'>(margine stimato)</span></span>", unsafe_allow_html=True)
 d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
+_card = "height:160px;padding:1.1rem 1rem;overflow:hidden"
+_val  = "font-size:1.25rem;white-space:nowrap;overflow:hidden;text-overflow:clip"
+_sub  = "font-size:0.62rem;white-space:nowrap;overflow:hidden;text-overflow:clip"
 with d1:
-    st.markdown(f"""<div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+    st.markdown(f"""<div class="kpi-card" style="{_card}">
         <div class="kpi-eyebrow">Contratti</div>
-        <div class="kpi-value cyan" style="font-size:2.2rem">{n_contratti}</div>
-        <div class="kpi-sub">selezionati</div></div>""", unsafe_allow_html=True)
+        <div class="kpi-value cyan" style="{_val};font-size:2rem">{n_contratti}</div>
+        <div class="kpi-sub" style="{_sub}">selezionati</div></div>""", unsafe_allow_html=True)
 with d2:
-    st.markdown(f"""<div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
-        <div class="kpi-eyebrow">Margine / contratto *</div>
-        <div class="kpi-value cyan" style="font-size:1.4rem">{fmt(mc,2)} €</div>
-        <div class="kpi-sub">stima {fmt(marg_pct,0)}% × strike</div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="kpi-card" style="{_card}">
+        <div class="kpi-eyebrow">Margine / contratto</div>
+        <div class="kpi-value cyan" style="{_val}">{fmt(mc,2)} €</div>
+        <div class="kpi-sub" style="{_sub}">{fmt(marg_pct,0)}% × strike</div></div>""", unsafe_allow_html=True)
 with d3:
-    st.markdown(f"""<div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
-        <div class="kpi-eyebrow">Margine totale *</div>
-        <div class="kpi-value gold" style="font-size:1.4rem">{fmt(marg_tot,2)} €</div>
-        <div class="kpi-sub">da avere sul conto</div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="kpi-card" style="{_card}">
+        <div class="kpi-eyebrow">Margine totale</div>
+        <div class="kpi-value gold" style="{_val}">{fmt(marg_tot,2)} €</div>
+        <div class="kpi-sub" style="{_sub}">da avere sul conto</div></div>""", unsafe_allow_html=True)
 with d4:
-    st.markdown(f"""<div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+    st.markdown(f"""<div class="kpi-card" style="{_card}">
         <div class="kpi-eyebrow">Incasso premi</div>
-        <div class="kpi-value green" style="font-size:1.4rem">+{fmt(ptot,2)} €</div>
-        <div class="kpi-sub">{n_contratti} × {fmt(prem,2)} × 100</div></div>""", unsafe_allow_html=True)
+        <div class="kpi-value green" style="{_val}">+{fmt(ptot,2)} €</div>
+        <div class="kpi-sub" style="{_sub}">{n_contratti} × {fmt(prem,2)} × 100</div></div>""", unsafe_allow_html=True)
 with d5:
-    st.markdown(f"""<div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+    st.markdown(f"""<div class="kpi-card" style="{_card}">
         <div class="kpi-eyebrow">Theta / giorno</div>
-        <div class="kpi-value green" style="font-size:1.4rem">+{fmt(thday,2)} €</div>
-        <div class="kpi-sub">guadagno dal tempo</div></div>""", unsafe_allow_html=True)
+        <div class="kpi-value green" style="{_val}">+{fmt(thday,2)} €</div>
+        <div class="kpi-sub" style="{_sub}">guadagno dal tempo</div></div>""", unsafe_allow_html=True)
 with d6:
-    st.markdown(f"""<div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+    st.markdown(f"""<div class="kpi-card" style="{_card}">
         <div class="kpi-eyebrow">Rendimento</div>
-        <div class="kpi-value green" style="font-size:1.4rem">{fmt(rend,2)}%</div>
-        <div class="kpi-sub">mese · {fmt(rend_ann,2)}% anno</div></div>""", unsafe_allow_html=True)
-st.markdown(f"<div style='font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);margin-bottom:1.5rem'>* Stima indicativa: {fmt(marg_pct,0)}% × strike. Verifica sempre il margine reale su IBKR prima di operare.</div>", unsafe_allow_html=True)
+        <div class="kpi-value green" style="{_val}">{fmt(rend,2)}% / mese</div>
+        <div class="kpi-sub" style="{_sub}">{fmt(rend_ann,2)}% / anno</div></div>""", unsafe_allow_html=True)
 
 # ── KPI CARDS — 4 colonne ──
 c1, c2, c3, c4 = st.columns(4, gap="medium")
