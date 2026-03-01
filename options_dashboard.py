@@ -632,6 +632,8 @@ hr { border-color: var(--border-subtle) !important; }
     transition: opacity 0.2s, visibility 0.2s;
     pointer-events: none;
     white-space: normal;
+    text-transform: none;
+    letter-spacing: 0;
 }
 .greek-tooltip:hover .tip-box {
     visibility: visible;
@@ -1061,7 +1063,7 @@ else:
 
 
 st.markdown(f"""
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-bottom:2rem">
 
   <div class="kpi-card" style="animation-delay:0.0s">
     <div class="kpi-eyebrow">&#9679; Prezzo Spot</div>
