@@ -1088,7 +1088,6 @@ st.markdown(f"""
 
 </div>
 """, unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
 
 # variabili comuni
 pn       = sc["lt"]                                        # perdita netta totale (già al netto del premio)
