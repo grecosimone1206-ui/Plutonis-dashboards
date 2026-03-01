@@ -1136,7 +1136,10 @@ c1, c2, c3, c4 = st.columns(4, gap="medium")
 with c1:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.0s">
-        <div class="kpi-eyebrow">🎯 Strike Consigliato</div>
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Strike Consigliato
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Lo strike viene calcolato automaticamente con Black-Scholes in base alla probabilità di successo che imposti nella sidebar. Ad esempio all'84% corrisponde un delta di circa 0,16 — il punto ottimale secondo la strategia Tastytrade per massimizzare il premio mantenendo alta la probabilità di scadere OTM.</div>
+        </div>
         <div class="kpi-value cyan">{fmt(K,2)}</div>
         <div class="kpi-sub">{fmt(dist,2)}% sotto lo spot</div>
         <div><span class="kpi-badge green">OTM TARGET</span></div>
@@ -1149,7 +1152,10 @@ with c2:
     vc = "green"  if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.06s">
-        <div class="kpi-eyebrow">✦ Probabilità di Successo</div>
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Probabilità di Successo
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Probabilità che l'opzione scada Out of The Money (OTM), cioè che il sottostante rimanga sopra lo strike a scadenza e tu incassi il premio intero. Calcolata con Black-Scholes come N(d2). 84% = ottimale secondo Tastytrade. Sopra 90% = più sicuro ma premio molto basso.</div>
+        </div>
         <div class="kpi-value {vc}">{fmt(prob*100,2)}%</div>
         <div class="kpi-sub">Scade senza perdite</div>
         <div><span class="kpi-badge {bc}">{bt}</span></div>
@@ -1159,7 +1165,10 @@ with c2:
 with c3:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.12s">
-        <div class="kpi-eyebrow">◈ Premio Incassato</div>
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Premio Incassato
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Il premio è il massimo guadagno possibile per questa operazione — lo incassi subito alla vendita. Se l'opzione scade OTM tieni tutto. Se vuoi chiudere prima della scadenza (strategia comune: chiudi al 50% del profitto) riacquisti l'opzione a un prezzo inferiore e incassi la differenza.</div>
+        </div>
         <div class="kpi-value green">{fmt(prem,2)}</div>
         <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{fmt(ptot,0)} €</strong></div>
         <div><span class="kpi-badge green">{fmt(rend,2)}% sul margine / mese</span></div>
@@ -1169,7 +1178,10 @@ with c3:
 with c4:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.18s">
-        <div class="kpi-eyebrow">◎ Margine Richiesto</div>
+        <div class="kpi-eyebrow greek-tooltip">&#9679; Margine Richiesto
+            <span class="tip-icon">?</span>
+            <div class="tip-box">Il margine è la liquidità che il broker blocca sul tuo conto come garanzia per la posizione. Non è un costo — rimane tuo — ma non puoi usarla per altri trade finché l'opzione è aperta. Il valore mostrato è una stima: il margine reale dipende dal broker, verificalo sempre su IBKR prima di operare.</div>
+        </div>
         <div class="kpi-value gold">{fmt(marg_tot,0)} €</div>
         <div class="kpi-sub">{fmt(mc,0)} € × {n_contratti} contratti</div>
         <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
