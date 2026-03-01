@@ -362,10 +362,10 @@ hr { border-color: var(--border-subtle) !important; }
 .panel-title {
     font-family: var(--font-mono);
     font-size: 0.6rem;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-bottom: 1.4rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-subtle);
@@ -392,8 +392,9 @@ hr { border-color: var(--border-subtle) !important; }
 .panel-key {
     font-family: var(--font-mono);
     font-size: 0.68rem;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     letter-spacing: 0.02em;
+    font-weight: 500;
 }
 .panel-val {
     font-family: var(--font-mono);
@@ -428,13 +429,13 @@ hr { border-color: var(--border-subtle) !important; }
 .crisis-header {
     font-family: var(--font-mono);
     font-size: 0.6rem;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(255,90,90,0.5);
+    color: rgba(255,150,150,0.95);
     margin-bottom: 1.4rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255,90,90,0.1);
+    border-bottom: 1px solid rgba(255,90,90,0.2);
 }
 .crisis-row {
     display: flex;
@@ -444,7 +445,7 @@ hr { border-color: var(--border-subtle) !important; }
     border-bottom: 1px solid rgba(255,90,90,0.06);
 }
 .crisis-row:last-child { border-bottom: none; }
-.crisis-key { font-family: var(--font-mono); font-size: 0.68rem; color: rgba(255,140,140,0.85); font-weight: 500; }
+.crisis-key { font-family: var(--font-mono); font-size: 0.63rem; color: rgba(255,150,150,0.9); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .crisis-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
 .crisis-val.red   { color: var(--accent-red); }
 .crisis-val.green { color: var(--accent-green); }
@@ -1290,28 +1291,28 @@ st.markdown(f"""
 <div class="crisis-panel" style="animation-delay:0.35s">
     <div class="crisis-header">⚠ Scenario di Crisi — Crollo {fmt(sc['crash'],0)}%</div>
     <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
-            <div class="crisis-key" style="margin-bottom:0.4rem">Prezzo dopo il crollo</div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column;justify-content:flex-start">
+            <div class="crisis-key" style="margin-bottom:0.6rem;min-height:1.2rem">Prezzo dopo il crollo</div>
             <div class="crisis-val">{fmt(sc['Sc'],2)}</div>
         </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
-            <div class="crisis-key" style="margin-bottom:0.4rem">Perdita per contratto</div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+            <div class="crisis-key" style="margin-bottom:0.6rem">Perdita per contratto</div>
             <div class="crisis-val red">{fmt(sc['lc'],0)} €</div>
         </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
-            <div class="crisis-key" style="margin-bottom:0.4rem">Perdita lorda totale</div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+            <div class="crisis-key" style="margin-bottom:0.6rem">Perdita lorda totale</div>
             <div class="crisis-val red">{fmt(sc['lt_gross'],0)} €</div>
         </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
-            <div class="crisis-key" style="margin-bottom:0.4rem">Premi già incassati</div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+            <div class="crisis-key" style="margin-bottom:0.6rem">Premi già incassati</div>
             <div class="crisis-val green">+{fmt(sc['pt'],0)} €</div>
         </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08)">
-            <div class="crisis-key" style="margin-bottom:0.4rem">Perdita netta finale</div>
+        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+            <div class="crisis-key" style="margin-bottom:0.6rem">Perdita netta finale</div>
             <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(pn,0)} €</div>
         </div>
-        <div style="padding:0.8rem 1.2rem">
-            <div class="crisis-key" style="margin-bottom:0.4rem">Impatto sul margine</div>
+        <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
+            <div class="crisis-key" style="margin-bottom:0.6rem">Impatto sul margine</div>
             <div class="crisis-val red">{fmt(imp,1)}%</div>
         </div>
     </div>
