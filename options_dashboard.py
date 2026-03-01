@@ -266,7 +266,7 @@ hr { border-color: var(--border-subtle) !important; }
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     animation: fadeSlideUp 0.6s ease both;
     height: 100%;
-    min-height: 220px;
+    min-height: 180px;
     cursor: default;
     display: flex;
     flex-direction: column;
@@ -1178,6 +1178,9 @@ with c4:
 
 st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
+# ── GRAFICO ──
+st.plotly_chart(pnl_chart(spot, K, prem, sz["n"]), use_container_width=True)
+st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
 
 # ── GRECHE — orizzontale full width ──
 st.markdown(f"""
