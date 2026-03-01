@@ -272,6 +272,11 @@ hr { border-color: var(--border-subtle) !important; }
     flex-direction: column;
     justify-content: space-between;
 }
+.kpi-card.mini {
+    min-height: unset !important;
+    height: 115px !important;
+    padding: 0.9rem 1rem !important;
+}
 .kpi-card:hover {
     border-color: rgba(0,194,255,0.2);
     transform: translateY(-3px);
@@ -1106,36 +1111,36 @@ st.markdown(f"""
 # ── DETTAGLIO POSIZIONE — 6 mini KPI card con st.columns ──
 st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione <span style='color:var(--text-muted);font-weight:400'>(margine stimato)</span></span>", unsafe_allow_html=True)
 d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
-_card = "height:115px;padding:0.9rem 1rem;overflow:hidden"
+_card = "min-height:unset!important;height:115px!important;padding:0.9rem 1rem!important;overflow:hidden"
 _val  = "font-size:1.25rem;white-space:nowrap;overflow:hidden;text-overflow:clip"
 _sub  = "font-size:0.62rem;white-space:nowrap;overflow:hidden;text-overflow:clip"
 with d1:
-    st.markdown(f"""<div class="kpi-card" style="{_card}">
+    st.markdown(f"""<div class="kpi-card" style="{_card};min-height:unset!important">
         <div class="kpi-eyebrow">Contratti</div>
         <div class="kpi-value cyan" style="{_val};font-size:2rem">{n_contratti}</div>
         <div class="kpi-sub" style="{_sub}">selezionati</div></div>""", unsafe_allow_html=True)
 with d2:
-    st.markdown(f"""<div class="kpi-card" style="{_card}">
+    st.markdown(f"""<div class="kpi-card" style="{_card};min-height:unset!important">
         <div class="kpi-eyebrow">Margine / contratto</div>
         <div class="kpi-value cyan" style="{_val}">{fmt(mc,2)} €</div>
         <div class="kpi-sub" style="{_sub}">{fmt(marg_pct,0)}% × strike</div></div>""", unsafe_allow_html=True)
 with d3:
-    st.markdown(f"""<div class="kpi-card" style="{_card}">
+    st.markdown(f"""<div class="kpi-card" style="{_card};min-height:unset!important">
         <div class="kpi-eyebrow">Margine totale</div>
         <div class="kpi-value gold" style="{_val}">{fmt(marg_tot,2)} €</div>
         <div class="kpi-sub" style="{_sub}">da avere sul conto</div></div>""", unsafe_allow_html=True)
 with d4:
-    st.markdown(f"""<div class="kpi-card" style="{_card}">
+    st.markdown(f"""<div class="kpi-card" style="{_card};min-height:unset!important">
         <div class="kpi-eyebrow">Incasso premi</div>
         <div class="kpi-value green" style="{_val}">+{fmt(ptot,2)} €</div>
         <div class="kpi-sub" style="{_sub}">{n_contratti} × {fmt(prem,2)} × 100</div></div>""", unsafe_allow_html=True)
 with d5:
-    st.markdown(f"""<div class="kpi-card" style="{_card}">
+    st.markdown(f"""<div class="kpi-card" style="{_card};min-height:unset!important">
         <div class="kpi-eyebrow">Theta / giorno</div>
         <div class="kpi-value green" style="{_val}">+{fmt(thday,2)} €</div>
         <div class="kpi-sub" style="{_sub}">guadagno dal tempo</div></div>""", unsafe_allow_html=True)
 with d6:
-    st.markdown(f"""<div class="kpi-card" style="{_card}">
+    st.markdown(f"""<div class="kpi-card" style="{_card};min-height:unset!important">
         <div class="kpi-eyebrow">Rendimento</div>
         <div class="kpi-value green" style="{_val}">{fmt(rend,2)}% / mese</div>
         <div class="kpi-sub" style="{_sub}">{fmt(rend_ann,2)}% / anno</div></div>""", unsafe_allow_html=True)
