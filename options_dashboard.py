@@ -266,7 +266,7 @@ hr { border-color: var(--border-subtle) !important; }
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     animation: fadeSlideUp 0.6s ease both;
     height: 100%;
-    min-height: 180px;
+    min-height: 220px;
     cursor: default;
     display: flex;
     flex-direction: column;
