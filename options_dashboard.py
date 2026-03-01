@@ -1106,7 +1106,7 @@ st.markdown(f"""
 # ── DETTAGLIO POSIZIONE — 6 mini KPI card con st.columns ──
 st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione <span style='color:var(--text-muted);font-weight:400'>(margine stimato)</span></span>", unsafe_allow_html=True)
 d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
-_card = "height:160px;padding:1.1rem 1rem;overflow:hidden"
+_card = "height:115px;padding:0.9rem 1rem;overflow:hidden"
 _val  = "font-size:1.25rem;white-space:nowrap;overflow:hidden;text-overflow:clip"
 _sub  = "font-size:0.62rem;white-space:nowrap;overflow:hidden;text-overflow:clip"
 with d1:
