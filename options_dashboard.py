@@ -1178,9 +1178,7 @@ with c4:
 
 st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
-# ── GRAFICO ──
-st.plotly_chart(pnl_chart(spot, K, prem, sz["n"]), use_container_width=True)
-st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
+
 
 # ── GRECHE — orizzontale full width ──
 st.markdown(f"""
