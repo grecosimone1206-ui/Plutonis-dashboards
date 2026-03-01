@@ -262,11 +262,11 @@ hr { border-color: var(--border-subtle) !important; }
     border-radius: var(--radius-xl);
     padding: 1.6rem 1.6rem;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     animation: fadeSlideUp 0.6s ease both;
     height: 100%;
-    min-height: 220px;
+    min-height: 155px;
     cursor: default;
     display: flex;
     flex-direction: column;
@@ -310,7 +310,7 @@ hr { border-color: var(--border-subtle) !important; }
     color: var(--text-muted);
     margin-bottom: 0.6rem;
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
     text-overflow: ellipsis;
 }
 .kpi-value {
