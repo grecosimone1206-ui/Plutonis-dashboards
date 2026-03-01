@@ -1066,28 +1066,40 @@ st.markdown(f"""
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-bottom:2rem">
 
   <div class="kpi-card" style="animation-delay:0.0s">
-    <div class="kpi-eyebrow">&#9679; Prezzo Spot</div>
+    <div class="kpi-eyebrow greek-tooltip">&#9679; Prezzo Spot
+        <span class="tip-icon">?</span>
+        <div class="tip-box">Prezzo di chiusura pi&ugrave; recente del sottostante selezionato, scaricato in tempo reale da Yahoo Finance. &Egrave; il riferimento base per tutti i calcoli di strike, premio e margine.</div>
+    </div>
     <div class="kpi-value {spot_cls}" style="font-size:1.9rem">{fmt(spot,2)}</div>
     <div class="kpi-sub">Aggiornato: {ts_spot}</div>
     <div><span class="kpi-badge {spot_cls}">{spot_arrow}</span></div>
   </div>
 
   <div class="kpi-card" style="animation-delay:0.06s">
-    <div class="kpi-eyebrow">&#9679; Vol. Storica 30gg</div>
+    <div class="kpi-eyebrow greek-tooltip">&#9679; Vol. Storica 30gg
+        <span class="tip-icon">?</span>
+        <div class="tip-box">Volatilità reale del sottostante negli ultimi 30 giorni, annualizzata. Indica quanto si è mosso il prezzo storicamente. Confrontata con la IV: se IV &gt; Vol. Storica significa che le opzioni sono care &mdash; condizione favorevole per vendere.</div>
+    </div>
     <div class="kpi-value {vol_cls}" style="font-size:1.9rem">{fmt(vol_st,2)}%</div>
     <div class="kpi-sub">Aggiornato: {ts_vol}</div>
     <div><span class="kpi-badge {vol_cls}">{vol_arrow}</span></div>
   </div>
 
   <div class="kpi-card" style="animation-delay:0.12s">
-    <div class="kpi-eyebrow">&#9679; IV Rank</div>
+    <div class="kpi-eyebrow greek-tooltip">&#9679; IV Rank
+        <span class="tip-icon">?</span>
+        <div class="tip-box">Indica quanto è alta la volatilità implicita attuale rispetto agli ultimi 12 mesi. 0 = minimo storico, 100 = massimo storico. Sopra 50 = buon momento per vendere opzioni. Sotto 35 = premi troppo bassi, meglio aspettare.</div>
+    </div>
     <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,0)} / 100</div>
     <div class="kpi-sub">Aggiornato: {ts_ivr}</div>
     <div><span class="kpi-badge {ivr_cls}">{ivr_arrow}</span></div>
   </div>
 
   <div class="kpi-card" style="animation-delay:0.18s">
-    <div class="kpi-eyebrow">&#9679; VIX &mdash; Indice di Paura</div>
+    <div class="kpi-eyebrow greek-tooltip">&#9679; VIX &mdash; Indice di Paura
+        <span class="tip-icon">?</span>
+        <div class="tip-box">Il VIX misura la volatilità implicita attesa sull&apos;S&amp;P 500 nei prossimi 30 giorni. Sotto 15 = mercato tranquillo, premi bassi. 15-20 = normale. Sopra 20 = paura elevata, premi gonfiati &mdash; ottimo per vendere put.</div>
+    </div>
     <div class="kpi-value {vix_cls}" style="font-size:1.9rem">{vix_str}</div>
     <div class="kpi-sub">Aggiornato: {ts_vix}</div>
     <div><span class="kpi-badge {vix_cls}">{vix_arrow}</span></div>
