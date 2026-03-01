@@ -1074,7 +1074,7 @@ st.markdown(f"""
 
   <div class="kpi-card" style="animation-delay:0.12s">
     <div class="kpi-eyebrow">&#9679; IV Rank</div>
-    <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,2)} / 100</div>
+    <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,0)} / 100</div>
     <div class="kpi-sub">Aggiornato: {ts_ivr}</div>
     <div><span class="kpi-badge {ivr_cls}">{ivr_arrow}</span></div>
   </div>
@@ -1104,37 +1104,53 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── DETTAGLIO POSIZIONE — orizzontale full width, subito dopo semaforo ──
+# ── DETTAGLIO POSIZIONE — 6 mini KPI card ──
 st.markdown(f"""
-<div class="panel" style="margin-bottom:1.5rem">
-    <div class="panel-title"><span style="color:var(--accent-green);margin-right:0.4rem">&#9678;</span> Dettaglio Posizione</div>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
-        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Contratti selezionati</div>
-            <div class="panel-val big cyan">{n_contratti}</div>
-        </div>
-        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Margine per contratto</div>
-            <div class="panel-val cyan">{fmt(mc,0)} €</div>
-        </div>
-        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Margine totale richiesto</div>
-            <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent-gold)">{fmt(marg_tot,0)} €</div>
-        </div>
-        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Incasso totale premi</div>
-            <div class="panel-val green">+{fmt(ptot,0)} €</div>
-        </div>
-        <div style="padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key" style="margin-bottom:0.4rem">Theta totale / giorno</div>
-            <div class="panel-val green">+{fmt(thday,0)} €</div>
-        </div>
-        <div style="padding:0.6rem 1.2rem">
-            <div class="panel-key" style="margin-bottom:0.4rem">Rendimento sul margine</div>
-            <div class="panel-val green">{fmt(rend,2)}% / mese · {fmt(rend_ann,2)}% / anno (composto)</div>
-        </div>
-    </div>
+<div style="margin-bottom:0.6rem">
+    <span style="font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)">
+        <span style="color:var(--accent-green);margin-right:0.5rem">&#9678;</span>Dettaglio Posizione
+    </span>
 </div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.8rem;margin-bottom:1.5rem">
+
+    <div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+        <div class="kpi-eyebrow">Contratti</div>
+        <div class="kpi-value cyan" style="font-size:2.2rem">{n_contratti}</div>
+        <div class="kpi-sub">selezionati</div>
+    </div>
+
+    <div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+        <div class="kpi-eyebrow">Margine / contratto *</div>
+        <div class="kpi-value cyan" style="font-size:1.4rem">{fmt(mc,2)} €</div>
+        <div class="kpi-sub">stima {fmt(marg_pct,0)}% × strike</div>
+    </div>
+
+    <div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+        <div class="kpi-eyebrow">Margine totale *</div>
+        <div class="kpi-value gold" style="font-size:1.4rem">{fmt(marg_tot,2)} €</div>
+        <div class="kpi-sub">da avere sul conto</div>
+    </div>
+
+    <div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+        <div class="kpi-eyebrow">Incasso premi</div>
+        <div class="kpi-value green" style="font-size:1.4rem">+{fmt(ptot,2)} €</div>
+        <div class="kpi-sub">{n_contratti} × {fmt(prem,2)} × 100</div>
+    </div>
+
+    <div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+        <div class="kpi-eyebrow">Theta / giorno</div>
+        <div class="kpi-value green" style="font-size:1.4rem">+{fmt(thday,2)} €</div>
+        <div class="kpi-sub">guadagno dal tempo</div>
+    </div>
+
+    <div class="kpi-card" style="min-height:130px;padding:1.2rem 1.4rem">
+        <div class="kpi-eyebrow">Rendimento</div>
+        <div class="kpi-value green" style="font-size:1.4rem">{fmt(rend,2)}%</div>
+        <div class="kpi-sub">mese · {fmt(rend_ann,2)}% anno</div>
+    </div>
+
+</div>
+<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);margin-top:-1rem;margin-bottom:1.5rem">* Stima indicativa: {fmt(marg_pct,0)}% × strike. Verifica sempre il margine reale su IBKR prima di operare.</div>
 """, unsafe_allow_html=True)
 
 # ── KPI CARDS — 4 colonne ──
