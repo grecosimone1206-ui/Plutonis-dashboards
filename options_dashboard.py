@@ -1053,84 +1053,39 @@ else:
     vix_cls   = "gold"
 
 
-st.markdown("<div class='live-bar-wrap'>", unsafe_allow_html=True)
-b1, b2, b3, b4 = st.columns(4, gap="medium")
+st.markdown(f"""
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem">
 
-with b1:
-    st.markdown(f"<div class='ph-delta-{spot_cls}'>", unsafe_allow_html=True)
-    st.metric(
-        label="● Prezzo Spot",
-        value=fmt(spot, 2),
-        delta=spot_arrow,
-        delta_color="off",
-        help=(
-            "PREZZO SPOT\n\n"
-            "Prezzo attuale del sottostante scaricato in tempo reale da Yahoo Finance.\n\n"
-            f"Fonte: Yahoo Finance (chiusura)\n"
-            f"Aggiornato: {ts_spot}"
-        )
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+  <div class="kpi-card" style="animation-delay:0.0s">
+    <div class="kpi-eyebrow">&#9679; Prezzo Spot</div>
+    <div class="kpi-value {spot_cls}" style="font-size:1.9rem">{fmt_eur(spot)}</div>
+    <div class="kpi-sub">Aggiornato: {ts_spot}</div>
+    <div><span class="kpi-badge {spot_cls}">{spot_arrow}</span></div>
+  </div>
 
-with b2:
-    st.markdown(f"<div class='ph-delta-{vol_cls}'>", unsafe_allow_html=True)
-    st.metric(
-        label="● Vol. Storica 30gg",
-        value=f"{fmt(vol_st,1)}%",
-        delta=vol_arrow,
-        delta_color="off",
-        help=(
-            "VOLATILITÀ STORICA 30gg\n\n"
-            "Quanto si è mosso davvero il mercato negli ultimi 30 giorni.\n"
-            "Calcolata su rendimenti logaritmici giornalieri annualizzati (×√252).\n\n"
-            "  ≥ 25% → Alta — premi elevati, favorevole per vendere\n"
-            "  15-25% → Media — nella norma\n"
-            "  < 15% → Bassa — premi scarsi, valuta se conviene\n\n"
-            f"Fonte: Yahoo Finance (storico prezzi)\n"
-            f"Aggiornato: {ts_vol}"
-        )
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+  <div class="kpi-card" style="animation-delay:0.06s">
+    <div class="kpi-eyebrow">&#9679; Vol. Storica 30gg</div>
+    <div class="kpi-value {vol_cls}" style="font-size:1.9rem">{fmt(vol_st,1)}%</div>
+    <div class="kpi-sub">Aggiornato: {ts_vol}</div>
+    <div><span class="kpi-badge {vol_cls}">{vol_arrow}</span></div>
+  </div>
 
-with b3:
-    st.markdown(f"<div class='ph-delta-{ivr_cls}'>", unsafe_allow_html=True)
-    st.metric(
-        label="● IV Rank",
-        value=f"{fmt(iv_rank,0)} / 100",
-        delta=ivr_arrow,
-        delta_color="off",
-        help=(
-            "IV RANK (0 – 100)\n\n"
-            "Dove si trova la volatilità attuale rispetto al suo range degli ultimi 12 mesi.\n\n"
-            "  ≥ 60 → Alto — ottimo per vendere\n"
-            "  35-59 → Medio — valuta con attenzione\n"
-            "  < 35 → Basso — aspetta condizioni migliori\n\n"
-            "Regola pratica: operare solo con IV Rank > 50\n\n"
-            f"Fonte: Calcolato su dati Yahoo Finance\n"
-            f"Aggiornato: {ts_ivr}"
-        )
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+  <div class="kpi-card" style="animation-delay:0.12s">
+    <div class="kpi-eyebrow">&#9679; IV Rank</div>
+    <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,0)} / 100</div>
+    <div class="kpi-sub">Aggiornato: {ts_ivr}</div>
+    <div><span class="kpi-badge {ivr_cls}">{ivr_arrow}</span></div>
+  </div>
 
-with b4:
-    st.markdown(f"<div class='ph-delta-{vix_cls}'>", unsafe_allow_html=True)
-    st.metric(
-        label="● VIX — Indice di Paura",
-        value=vix_str,
-        delta=vix_arrow,
-        delta_color="off",
-        help=(
-            "VIX — CBOE VOLATILITY INDEX\n\n"
-            "Misura la volatilità implicita attesa sull'S&P 500 nei prossimi 30 giorni.\n"
-            "Viene scaricato in automatico e preimpostato nel campo IV della sidebar.\n\n"
-            "  > 20 → Elevato — buono per vendere\n"
-            "  15-20 → Normale — nella norma\n"
-            "  < 15 → Basso — premi scarsi, evitare\n\n"
-            f"Fonte: Yahoo Finance (^VIX)\n"
-            f"Aggiornato: {ts_vix}"
-        )
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+  <div class="kpi-card" style="animation-delay:0.18s">
+    <div class="kpi-eyebrow">&#9679; VIX — Indice di Paura</div>
+    <div class="kpi-value {vix_cls}" style="font-size:1.9rem">{vix_str}</div>
+    <div class="kpi-sub">Aggiornato: {ts_vix}</div>
+    <div><span class="kpi-badge {vix_cls}">{vix_arrow}</span></div>
+  </div>
+
+</div>
+""", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
 # variabili comuni
