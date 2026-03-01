@@ -67,6 +67,7 @@ st.markdown("""
   --shadow-glow-c:   0 0 24px rgba(0,194,255,0.12);
   --font-body:       'DM Sans', sans-serif;
   --font-mono:       'DM Mono', monospace;
+  font-variant-numeric: normal;
 }
 
 /* ── RESET ── */
@@ -79,6 +80,7 @@ html, body,
 }
 [data-testid="stAppViewBlockContainer"] { padding-top: 0 !important; }
 .block-container { padding: 2.5rem 3rem !important; max-width: 100% !important; }
+* { font-variant-numeric: normal !important; }
 
 /* ── SIDEBAR ── */
 [data-testid="stSidebar"] {
@@ -978,7 +980,7 @@ ivr_cls   = "alto" if iv_rank >= 60 else "medio" if iv_rank >= 35 else "basso"
 ivr_label = "Alto — Vendi" if iv_rank >= 60 else "Medio — Valuta" if iv_rank >= 35 else "Basso — Aspetta"
 
 # VIX colore
-vix_str = fmt(vix_val, 1) if vix_val else "N/D"
+vix_str = fmt(vix_val, 2) if vix_val else "N/D"
 vix_cls = "green" if vix_val and vix_val >= 20 else "gold" if vix_val and vix_val >= 15 else "red"
 
 
@@ -1065,14 +1067,14 @@ st.markdown(f"""
 
   <div class="kpi-card" style="animation-delay:0.06s">
     <div class="kpi-eyebrow">&#9679; Vol. Storica 30gg</div>
-    <div class="kpi-value {vol_cls}" style="font-size:1.9rem">{fmt(vol_st,1)}%</div>
+    <div class="kpi-value {vol_cls}" style="font-size:1.9rem">{fmt(vol_st,2)}%</div>
     <div class="kpi-sub">Aggiornato: {ts_vol}</div>
     <div><span class="kpi-badge {vol_cls}">{vol_arrow}</span></div>
   </div>
 
   <div class="kpi-card" style="animation-delay:0.12s">
     <div class="kpi-eyebrow">&#9679; IV Rank</div>
-    <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,0)} / 100</div>
+    <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,2)} / 100</div>
     <div class="kpi-sub">Aggiornato: {ts_ivr}</div>
     <div><span class="kpi-badge {ivr_cls}">{ivr_arrow}</span></div>
   </div>
@@ -1129,7 +1131,7 @@ st.markdown(f"""
         </div>
         <div style="padding:0.6rem 1.2rem">
             <div class="panel-key" style="margin-bottom:0.4rem">Rendimento sul margine</div>
-            <div class="panel-val green">{fmt(rend,1)}% / mese · {fmt(rend_ann,1)}% / anno (composto)</div>
+            <div class="panel-val green">{fmt(rend,2)}% / mese · {fmt(rend_ann,2)}% / anno (composto)</div>
         </div>
     </div>
 </div>
@@ -1142,8 +1144,8 @@ with c1:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.0s">
         <div class="kpi-eyebrow">🎯 Strike Consigliato</div>
-        <div class="kpi-value cyan">{fmt(K,1)}</div>
-        <div class="kpi-sub">{fmt(dist,1)}% sotto lo spot</div>
+        <div class="kpi-value cyan">{fmt(K,2)}</div>
+        <div class="kpi-sub">{fmt(dist,2)}% sotto lo spot</div>
         <div><span class="kpi-badge green">OTM TARGET</span></div>
     </div>
     """, unsafe_allow_html=True)
@@ -1155,7 +1157,7 @@ with c2:
     st.markdown(f"""
     <div class="kpi-card" style="animation-delay:0.06s">
         <div class="kpi-eyebrow">✦ Probabilità di Successo</div>
-        <div class="kpi-value {vc}">{fmt(prob*100,1)}%</div>
+        <div class="kpi-value {vc}">{fmt(prob*100,2)}%</div>
         <div class="kpi-sub">Scade senza perdite</div>
         <div><span class="kpi-badge {bc}">{bt}</span></div>
     </div>
@@ -1167,7 +1169,7 @@ with c3:
         <div class="kpi-eyebrow">◈ Premio Incassato</div>
         <div class="kpi-value green">{fmt(prem,2)}</div>
         <div class="kpi-sub">{n_contratti} contratti → <strong style="color:var(--accent-green)">+{fmt(ptot,0)} €</strong></div>
-        <div><span class="kpi-badge green">{fmt(rend,1)}% sul margine / mese</span></div>
+        <div><span class="kpi-badge green">{fmt(rend,2)}% sul margine / mese</span></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1252,15 +1254,15 @@ st.markdown(f"""
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Perdita per contratto</div>
-            <div class="crisis-val red">{fmt(sc['lc'],0)} €</div>
+            <div class="crisis-val red">{fmt(sc['lc'],2)} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Perdita lorda totale</div>
-            <div class="crisis-val red">{fmt(sc['lt_gross'],0)} €</div>
+            <div class="crisis-val red">{fmt(sc['lt_gross'],2)} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Premi già incassati</div>
-            <div class="crisis-val green">+{fmt(sc['pt'],0)} €</div>
+            <div class="crisis-val green">+{fmt(sc['pt'],2)} €</div>
         </div>
         <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Perdita netta finale</div>
@@ -1268,7 +1270,7 @@ st.markdown(f"""
         </div>
         <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
             <div class="crisis-key" style="margin-bottom:0.6rem">Impatto sul margine</div>
-            <div class="crisis-val red">{fmt(imp,1)}%</div>
+            <div class="crisis-val red">{fmt(imp,2)}%</div>
         </div>
     </div>
 </div>
@@ -1283,16 +1285,16 @@ st.dataframe(pd.DataFrame({
                   "Premio per Contratto","Numero Contratti","Margine per Contratto",
                   "Margine Totale Richiesto","Incasso Totale Premi",
                   "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
-    "Valore":    [nome, fmt(spot,2), fmt(K,2), f"{fmt(dist,1)}% sotto lo spot",
-                  f"{dte} gg", f"{fmt(iv_pct,1)}%", f"{fmt(vol_st,1)}%",
+    "Valore":    [nome, fmt(spot,2), fmt(K,2), f"{fmt(dist,2)}% sotto lo spot",
+                  f"{dte} gg", f"{fmt(iv_pct,2)}%", f"{fmt(vol_st,2)}%",
                   vix_str + (" (preimpostato in IV)" if vix_val else ""),
-                  f"{fmt(iv_rank,0)}/100 — {ivr_label}",
+                  f"{fmt(iv_rank,2)}/100 — {ivr_label}",
                   f"{fmt(prem,4)}  ({fmt(prem*100,2)} € / contratto 100 azioni)",
                   str(n_contratti), f"{fmt(mc,0)} €",
                   f"{fmt(marg_tot,0)} € (da avere sul conto)",
                   f"+{fmt(ptot,0)} €",
-                  fmt(K-prem,2), f"+{fmt(thday,0)} € / giorno",
-                  f"{fmt(rend,1)}% / mese  ({fmt(rend_ann,1)}% annuo composto stimato)"],
+                  fmt(K-prem,2), f"+{fmt(thday,2)} € / giorno",
+                  f"{fmt(rend,2)}% / mese  ({fmt(rend_ann,2)}% annuo composto stimato)"],
 }), use_container_width=True, hide_index=True,
     column_config={
         "Parametro": st.column_config.TextColumn(width="medium"),
