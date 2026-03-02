@@ -666,7 +666,12 @@ TICKER_DISPONIBILI = {
 }
 
 def ora_adesso() -> str:
-    return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    try:
+        import pytz
+        tz = pytz.timezone("Europe/Rome")
+        return datetime.now(tz).strftime("%d/%m/%Y %H:%M:%S")
+    except ImportError:
+        return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 def fmt(value, decimals=2) -> str:
     """Formato europeo: separatore migliaia = punto, decimale = virgola."""
