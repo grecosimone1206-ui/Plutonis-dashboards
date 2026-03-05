@@ -875,17 +875,62 @@ with st.sidebar:
     n_contratti = st.slider("Numero di Contratti", 1, 50, 3,
         help="Quanti contratti vuoi vendere.\nOgni contratto copre 100 azioni del sottostante.")
     marg_pct = st.slider("Margine Broker (%)", 5.0, 50.0, 15.0, 1.0,
-        help="% del valore dello strike bloccata come garanzia dal broker.\nIBKR tipicamente richiede il 15-20% per le put OTM su ETF.\nVerifica nelle impostazioni del tuo conto.")
+        help="% del valore dello strike bloccata come garanzia dal broker.\nIl broker tipicamente richiede il 15-20% per le put OTM su ETF.\nVerifica nelle impostazioni del tuo conto.")
     crash    = st.slider("Scenario di Crisi (%)", 5.0, 50.0, 20.0, 1.0,
         help="Crollo ipotetico usato per calcolare il worst case scenario.")
 
     st.markdown("<div class='sb-section'>Obiettivo Strategia</div>", unsafe_allow_html=True)
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
-        help="84% = Delta 0.16 &mdash; punto ottimale Tastytrade.\n90% = Delta 0.10 &mdash; più conservativo.\n80% = Delta 0.20 &mdash; più aggressivo.")
+        help="84% = Delta 0.16 &mdash; punto ottimale per la strategia.\n90% = Delta 0.10 &mdash; più conservativo.\n80% = Delta 0.20 &mdash; più aggressivo.")
 
-    st.markdown("<div class='sb-section'>Dati Reali da IBKR</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sb-section'>Dati Reali dal Broker</div>", unsafe_allow_html=True)
+
+    # ── IV Rank manuale ──
+    usa_ivrank_reale = st.toggle("Usa IV Rank reale",
+        help="Attiva per inserire l'IV Rank reale che vedi nella schermata del tuo broker.")
+    if usa_ivrank_reale:
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>IV RANK REALE (0&ndash;100)</span>", unsafe_allow_html=True)
+        iv_rank_reale = st.number_input("IV Rank reale", 0.0, 100.0,
+            float(st.session_state.get("_ivr_val", 50.0)), 0.1,
+            label_visibility="collapsed", key="input_ivr", format="%.1f")
+        st.session_state["_ivr_val"] = iv_rank_reale
+        st.markdown(
+            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
+            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
+            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
+            f"IV Rank selezionato: <strong>{iv_rank_reale:.1f} / 100</strong></div>",
+            unsafe_allow_html=True
+        )
+    else:
+        iv_rank_reale = None
+
+    # ── Greche reali ──
+    usa_greche_reali = st.toggle("Usa greche reali",
+        help="Attiva per inserire Delta e Theta reali che vedi sul tuo broker.")
+    if usa_greche_reali:
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>DELTA REALE</span>", unsafe_allow_html=True)
+        delta_reale = st.number_input("Delta reale", 0.0, 1.0,
+            float(st.session_state.get("_delta_val", 0.20)), 0.01,
+            label_visibility="collapsed", key="input_delta", format="%.2f")
+        st.session_state["_delta_val"] = delta_reale
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>THETA REALE (&euro;/giorno)</span>", unsafe_allow_html=True)
+        theta_reale = st.number_input("Theta reale", 0.0, 9999.0,
+            float(st.session_state.get("_theta_val", 10.0)), 0.01,
+            label_visibility="collapsed", key="input_theta", format="%.2f")
+        st.session_state["_theta_val"] = theta_reale
+        st.markdown(
+            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
+            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
+            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
+            f"&#916; {delta_reale:.2f} &nbsp;&middot;&nbsp; &#920; +{theta_reale:.2f} &euro;/gg</div>",
+            unsafe_allow_html=True
+        )
+    else:
+        delta_reale = None
+        theta_reale = None
+
     usa_premio_reale = st.toggle("Usa premio reale",
-        help="Attiva per inserire il premio che vedi su IBKR invece di quello calcolato da Black-Scholes.")
+        help="Attiva per inserire il premio reale che vedi sul tuo broker invece di quello calcolato da Black-Scholes.")
     if usa_premio_reale:
         st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) &mdash; &euro;</span>", unsafe_allow_html=True)
 
@@ -944,7 +989,7 @@ if dati.get("errore"):
 
 spot    = dati["prezzo_spot"]
 vol_st  = dati["vol_storica"]
-iv_rank = dati["iv_rank"]
+iv_rank = iv_rank_reale if iv_rank_reale is not None else dati["iv_rank"]
 vix_val = dati["vix"]
 var     = dati["variazione_gg"]
 nome    = dati["nome"]
@@ -971,7 +1016,7 @@ K     = strike_target(spot, sigma, T, r, prob_t/100.0)
 par   = Par(S=spot, K=K, T=T, r=r, sigma=sigma)
 prem_bs = prezzo_put(par)
 prem     = premio_reale if premio_reale is not None else prem_bs
-prem_fonte = "IBKR (reale)" if premio_reale is not None else "Black-Scholes (stimato)"
+prem_fonte = "Reale (broker)" if premio_reale is not None else "Black-Scholes (stimato)"
 prob  = prob_ok(par)
 gre   = calc_greche(par)
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank, vix_val)
@@ -1157,7 +1202,7 @@ with c1:
     <div class="kpi-card" style="animation-delay:0.0s">
         <div class="kpi-eyebrow greek-tooltip">&#9679; Strike Consigliato
             <span class="tip-icon">?</span>
-            <div class="tip-box">Lo strike viene calcolato automaticamente con Black-Scholes in base alla probabilit&agrave; di successo che imposti nella sidebar. All&apos;84% corrisponde un delta di circa 0,16 &mdash; il punto ottimale secondo la strategia Tastytrade.</div>
+            <div class="tip-box">Lo strike viene calcolato automaticamente con Black-Scholes in base alla probabilit&agrave; di successo che imposti nella sidebar. All&apos;84% corrisponde un delta di circa 0,16 &mdash; il punto ottimale per la strategia.</div>
         </div>
         <div class="kpi-value cyan">{fmt(K,2)}</div>
         <div class="kpi-sub">{fmt(dist,2)}% sotto lo spot</div>
@@ -1173,7 +1218,7 @@ with c2:
     <div class="kpi-card" style="animation-delay:0.06s">
         <div class="kpi-eyebrow greek-tooltip">&#9679; Probabilit&agrave; di Successo
             <span class="tip-icon">?</span>
-            <div class="tip-box">Probabilit&agrave; che l&apos;opzione scada OTM e tu incassi il premio intero. Calcolata con Black-Scholes come N(d2). 84% = ottimale secondo Tastytrade. Sopra 90% = pi&ugrave; sicuro ma premio molto basso.</div>
+            <div class="tip-box">Probabilit&agrave; che l&apos;opzione scada OTM e tu incassi il premio intero. Calcolata con Black-Scholes come N(d2). 84% = ottimale per la strategia. Sopra 90% = pi&ugrave; sicuro ma premio molto basso.</div>
         </div>
         <div class="kpi-value {vc}">{fmt(prob*100,2)}%</div>
         <div class="kpi-sub">Scade senza perdite</div>
@@ -1199,7 +1244,7 @@ with c4:
     <div class="kpi-card" style="animation-delay:0.18s">
         <div class="kpi-eyebrow greek-tooltip">&#9679; Margine Richiesto
             <span class="tip-icon">?</span>
-            <div class="tip-box">Il margine &egrave; la liquidit&agrave; che il broker blocca come garanzia. Non &egrave; un costo &mdash; rimane tuo &mdash; ma non puoi usarla per altri trade. Il valore &egrave; una stima: verifica sempre su IBKR prima di operare.</div>
+            <div class="tip-box">Il margine &egrave; la liquidit&agrave; che il broker blocca come garanzia. Non &egrave; un costo &mdash; rimane tuo &mdash; ma non puoi usarla per altri trade. Il valore &egrave; una stima: verifica sempre sul tuo broker prima di operare.</div>
         </div>
         <div class="kpi-value gold">{fmt(marg_tot,0)} &euro;</div>
         <div class="kpi-sub">{fmt(mc,0)} &euro; &times; {n_contratti} contratti</div>
@@ -1211,54 +1256,32 @@ st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
 
 # ── GRECHE &mdash; orizzontale full width ──
+delta_display = delta_reale if delta_reale is not None else abs(gre['delta'])
+theta_display = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
+delta_fonte = "Reale (broker)" if delta_reale is not None else "Black-Scholes (stimato)"
+theta_fonte = "Reale (broker)" if theta_reale is not None else "Black-Scholes (stimato)"
+
 st.markdown(f"""
 <div class="panel" style="animation-delay:0.3s;margin-bottom:1.5rem">
     <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">&#8721;</span> Lettere Greche</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0">
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0">
+        <div style="padding:1.2rem 1.8rem;border-right:1px solid rgba(255,255,255,0.04)">
             <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
                 &#916; Delta (prob. ITM)
                 <span class="tip-icon">?</span>
-                <div class="tip-box">Misura quanto varia il premio per ogni $1 di movimento del sottostante. Per una put venduta il delta è negativo &mdash; normale. Es. -0,14 significa che se SPY sale di $1 il tuo premio scende di &euro;0,14. In valore assoluto = probabilità che l&apos;opzione scada ITM (in perdita).</div>
+                <div class="tip-box">Misura quanto varia il premio per ogni $1 di movimento del sottostante. In valore assoluto = probabilit&agrave; che l&apos;opzione scada ITM (in perdita). Ottimale: 0.15&ndash;0.20.</div>
             </div>
-            <div class="panel-val cyan" style="font-size:1rem">{fmt(gre['delta'],4)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">{fmt(abs(gre['delta'])*100,1)}% prob. ITM</div>
+            <div class="panel-val cyan" style="font-size:1.6rem">{fmt(delta_display,2)}</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">{fmt(delta_display*100,1)}% prob. ITM &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{delta_fonte}</span></div>
         </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
+        <div style="padding:1.2rem 1.8rem">
             <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                &#915; Gamma
+                &#920; Theta (&euro;/giorno)
                 <span class="tip-icon">?</span>
-                <div class="tip-box">Velocità con cui cambia il delta al variare del prezzo. Gamma basso = posizione stabile. Gamma alto (vicino alla scadenza o allo strike) = il delta cambia rapidamente = rischio maggiore da gestire.</div>
+                <div class="tip-box">Il tuo guadagno quotidiano dal passare del tempo (time decay). Vendendo put incassi theta positivo: ogni giorno che passa il valore dell&apos;opzione diminuisce e tu guadagni. &Egrave; il motore principale della strategia.</div>
             </div>
-            <div class="panel-val" style="font-size:1rem">{fmt(gre['gamma'],6)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">accelerazione delta</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                &#920; Theta
-                <span class="tip-icon">?</span>
-                <div class="tip-box">Il tuo guadagno quotidiano dal passare del tempo (time decay). Vendendo put incassi theta positivo: ogni giorno che passa, anche se il mercato non si muove, il valore dell&apos;opzione diminuisce e tu guadagni. È il motore principale della strategia.</div>
-            </div>
-            <div class="panel-val green" style="font-size:1rem">+{fmt(abs(gre['theta']),4)} &euro;</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">guadagno per giorno</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                v Vega
-                <span class="tip-icon">?</span>
-                <div class="tip-box">Sensibilità del premio alla volatilità implicita (IV). Vendendo opzioni sei "short vega": se la IV sale il tuo premio aumenta di valore (perdita non realizzata). Se la IV scende guadagni. Preferisci vendere con IV alta e aspettare che scenda.</div>
-            </div>
-            <div class="panel-val" style="font-size:1rem">{fmt(gre['vega'],4)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">sensib. a +1% IV</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem">
-            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                &#961; Rho
-                <span class="tip-icon">?</span>
-                <div class="tip-box">Sensibilità del premio ai tassi di interesse. Per opzioni a breve scadenza (30-60 giorni) è il fattore meno rilevante. Diventa significativo solo su opzioni con scadenze molto lunghe (LEAPS).</div>
-            </div>
-            <div class="panel-val" style="font-size:1rem">{fmt(gre['rho'],4)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.3rem">sensib. ai tassi</div>
+            <div class="panel-val green" style="font-size:1.6rem">+{fmt(theta_display,2)} &euro;</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">guadagno per giorno &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{theta_fonte}</span></div>
         </div>
     </div>
 </div>
