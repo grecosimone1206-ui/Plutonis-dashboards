@@ -38,42 +38,275 @@ if "strategia" not in st.session_state:
     st.session_state.strategia = None
 
 if st.session_state.strategia is None:
-    # Nascondi sidebar sulla splash screen
-    st.markdown("<style>[data-testid='stSidebar']{display:none}</style>", unsafe_allow_html=True)
 
+    # ── CSS globale splash ──
     st.markdown("""
-    <div class="splash-container">
-        <div class="splash-logo">Phinance</div>
-        <div class="splash-sub">Sistemi Quantitativi per il Trading di Opzioni</div>
-        <div class="splash-cards">
-            <div class="splash-card" style="--card-accent:#00C2FF">
-                <div class="splash-card-icon">&#9679;</div>
-                <div class="splash-card-title">Put Scoperta</div>
-                <div class="splash-card-sub">Short Put &middot; Vendita Nuda</div>
-                <div class="splash-card-desc">Vendi una put OTM e incassa il premio. Margine variabile. Massimo profitto = premio incassato. Strategia adatta a mercati stabili con IV elevata.</div>
-                <span class="splash-card-badge cyan">Margine variabile</span>
-            </div>
-            <div class="splash-card" style="--card-accent:#00E5A0">
-                <div class="splash-card-icon">&#9670;</div>
-                <div class="splash-card-title">Bull Put Spread</div>
-                <div class="splash-card-sub">Credit Put Spread &middot; Rischio Definito</div>
-                <div class="splash-card-desc">Vendi una put OTM e compra una put pi&ugrave; bassa. Margine fisso e limitato. Rischio massimo definito. Rendimento sul capitale spesso superiore.</div>
-                <span class="splash-card-badge green">Margine fisso</span>
-            </div>
-        </div>
-        <div class="splash-footer">Solo a scopo educativo &middot; Non costituisce consulenza finanziaria</div>
-    </div>
-    """, unsafe_allow_html=True)
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
 
-    col_left, col_right = st.columns(2)
-    with col_left:
-        st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-        if st.button("Apri Put Scoperta", use_container_width=True, type="primary"):
+html, body,
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewBlockContainer"],
+[data-testid="stMain"] {
+    background: #07090D !important;
+    margin: 0; padding: 0;
+}
+[data-testid="stAppViewBlockContainer"] { padding-top: 0 !important; }
+.block-container { padding: 0 !important; max-width: 100% !important; }
+[data-testid="stSidebar"]   { display: none !important; }
+[data-testid="stToolbar"]   { display: none !important; }
+[data-testid="stDecoration"]{ display: none !important; }
+footer                       { display: none !important; }
+#MainMenu                    { display: none !important; }
+
+/* ── Pulsanti Streamlit sovrapposti invisibili ── */
+.stButton > button {
+    position: fixed !important;
+    top: calc(50% + 132px) !important;
+    height: 58px !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    z-index: 99999 !important;
+    border: none !important;
+    background: transparent !important;
+    pointer-events: all !important;
+}
+/* primo button → left tab */
+div[data-testid="column"]:nth-child(1) .stButton > button {
+    left: calc(50% - 226px) !important;
+    width: 210px !important;
+}
+/* secondo button → right tab */
+div[data-testid="column"]:nth-child(2) .stButton > button {
+    left: calc(50% + 16px) !important;
+    width: 210px !important;
+}
+
+/* ── KEYFRAMES ── */
+@keyframes spin-ring {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+@keyframes breathe {
+    0%,100% { opacity: 0.55; }
+    50%      { opacity: 1;    }
+}
+@keyframes fade-up {
+    from { opacity:0; transform:translateY(22px); }
+    to   { opacity:1; transform:translateY(0);    }
+}
+@keyframes dot-beat {
+    0%,100% { box-shadow: 0 0 8px 2px rgba(210,35,35,0.7), 0 0 20px 4px rgba(210,35,35,0.3); }
+    50%      { box-shadow: 0 0 14px 4px rgba(255,60,60,1),  0 0 36px 8px rgba(255,60,60,0.5); }
+}
+
+/* ── SPLASH ROOT ── */
+.ph-splash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #07090D;
+    animation: fade-up 0.8s cubic-bezier(.22,.68,0,1.2) both;
+    z-index: 1;
+}
+
+/* radial ambient */
+.ph-splash::before {
+    content:'';
+    position:absolute;
+    top:38%; left:50%;
+    transform:translate(-50%,-50%);
+    width:700px; height:700px;
+    background: radial-gradient(circle, rgba(180,25,25,0.055) 0%, transparent 65%);
+    pointer-events:none;
+}
+
+/* ── RING WRAPPER ── */
+.ph-ring-wrap {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3.2rem;
+}
+
+/* Rotating conic arc */
+.ph-ring-spin {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0%,
+        transparent 55%,
+        rgba(200,30,30,0.00) 65%,
+        rgba(215,45,45,0.45) 76%,
+        rgba(240,70,70,0.80) 84%,
+        rgba(255,110,110,1)  90%,
+        rgba(240,70,70,0.80) 96%,
+        rgba(210,35,35,0.30) 100%
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.8px), #fff calc(100% - 0.5px));
+    mask:         radial-gradient(farthest-side, transparent calc(100% - 1.8px), #fff calc(100% - 0.5px));
+    animation: spin-ring 3.8s linear infinite;
+    filter: blur(0.3px);
+}
+
+/* Soft outer glow ring (static, breathing) */
+.ph-ring-glow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,30,30,0.12);
+    box-shadow:
+        0 0 24px 6px  rgba(180,20,20,0.10),
+        0 0 60px 14px rgba(180,20,20,0.05);
+    animation: breathe 4.5s ease-in-out infinite;
+}
+
+/* Inner decorative rings */
+.ph-ring-d1 {
+    position:absolute; inset:14px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.035);
+}
+.ph-ring-d2 {
+    position:absolute; inset:28px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.020);
+}
+
+/* ── LOGO TEXT ── */
+.ph-logo-text {
+    position: relative;
+    z-index: 10;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    /* white → pale blue gradient, replicates the image reference */
+    background: linear-gradient(
+        160deg,
+        #FFFFFF  0%,
+        #D8E8FF 35%,
+        #7BBCFF 65%,
+        #4AA0FF 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 24px rgba(100,180,255,0.18));
+    user-select: none;
+}
+
+/* Accent dot after text */
+.ph-logo-text::after {
+    content: '';
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #CC2020;
+    margin-left: 5px;
+    margin-bottom: 7px;
+    vertical-align: bottom;
+    box-shadow: 0 0 8px 2px rgba(210,35,35,0.7), 0 0 20px 4px rgba(210,35,35,0.3);
+    animation: dot-beat 3.8s ease-in-out infinite;
+    -webkit-text-fill-color: initial;
+}
+
+/* ── TABS ── */
+.ph-tabs {
+    display: flex;
+    gap: 1rem;
+    animation: fade-up 0.9s 0.15s cubic-bezier(.22,.68,0,1.2) both;
+}
+
+.ph-tab {
+    position: relative;
+    min-width: 210px;
+    padding: 1rem 2.2rem;
+    border-radius: 14px;
+    border: 1px solid rgba(180,28,28,0.30);
+    background: rgba(160,22,22,0.07);
+    color: rgba(255,255,255,0.68);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    overflow: hidden;
+    transition:
+        border-color   0.25s ease,
+        color          0.25s ease,
+        box-shadow     0.25s ease,
+        transform      0.2s  ease,
+        background     0.25s ease;
+}
+
+/* top shimmer line */
+.ph-tab::after {
+    content:'';
+    position:absolute;
+    top:0; left:15%; right:15%;
+    height:1px;
+    background: linear-gradient(90deg, transparent, rgba(255,80,80,0.55), transparent);
+    opacity:0;
+    transition: opacity 0.25s ease;
+    border-radius:1px;
+}
+
+.ph-tab:hover {
+    border-color: rgba(220,45,45,0.65);
+    color: #ffffff;
+    background: rgba(200,30,30,0.11);
+    box-shadow:
+        0  0 22px  5px rgba(200,28,28,0.18),
+        0  0 50px 12px rgba(200,28,28,0.08),
+        inset 0 0 18px rgba(200,28,28,0.06);
+    transform: translateY(-2px);
+}
+.ph-tab:hover::after { opacity:1; }
+.ph-tab:active { transform: translateY(0); }
+
+</style>
+""", unsafe_allow_html=True)
+
+    # ── HTML della splash ──
+    st.markdown("""
+<div class="ph-splash">
+
+  <div class="ph-ring-wrap">
+    <div class="ph-ring-glow"></div>
+    <div class="ph-ring-spin"></div>
+    <div class="ph-ring-d1"></div>
+    <div class="ph-ring-d2"></div>
+    <span class="ph-logo-text">Phinance</span>
+  </div>
+
+  <div class="ph-tabs">
+    <div class="ph-tab" id="ph-tab-ps">Put Scoperta</div>
+    <div class="ph-tab" id="ph-tab-bps">Bull Put Spread</div>
+  </div>
+
+</div>
+""", unsafe_allow_html=True)
+
+    # ── Pulsanti Streamlit invisibili sovrapposti ai tab via CSS ──
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Put Scoperta", key="splash_ps"):
             st.session_state.strategia = "put_scoperta"
             st.rerun()
-    with col_right:
-        st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-        if st.button("Apri Bull Put Spread", use_container_width=True, type="primary"):
+    with col2:
+        if st.button("Bull Put Spread", key="splash_bps"):
             st.session_state.strategia = "bull_put_spread"
             st.rerun()
 
