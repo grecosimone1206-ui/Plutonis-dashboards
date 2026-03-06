@@ -59,17 +59,77 @@ html, body,
 footer                       { display: none !important; }
 #MainMenu                    { display: none !important; }
 
-/* ── Pulsanti Streamlit nascosti sotto i tab HTML ── */
-.stButton > button {
-    position: fixed !important;
-    bottom: -999px !important;
-    left: -999px !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    width: 1px !important;
-    height: 1px !important;
-    overflow: hidden !important;
+/* ── Pulsanti Streamlit = Tab visibili ── */
+
+/* Contenitore colonne centrato */
+div[data-testid="stHorizontalBlock"] {
+    justify-content: center !important;
+    gap: 1rem !important;
+    max-width: 460px !important;
+    margin: 0 auto !important;
 }
+
+/* Reset colonne */
+div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+}
+
+/* Il pulsante stesso — stile tab rosso */
+div[data-testid="stHorizontalBlock"] .stButton > button {
+    position: relative !important;
+    min-width: 210px !important;
+    height: 54px !important;
+    padding: 0 2.2rem !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(180,28,28,0.32) !important;
+    background: rgba(160,22,22,0.07) !important;
+    color: rgba(255,255,255,0.68) !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+    transition:
+        border-color 0.25s ease,
+        color        0.25s ease,
+        box-shadow   0.25s ease,
+        transform    0.2s  ease,
+        background   0.25s ease !important;
+    bottom: unset !important;
+    left: unset !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+    width: auto !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+    border-color: rgba(220,45,45,0.68) !important;
+    color: #ffffff !important;
+    background: rgba(200,30,30,0.12) !important;
+    box-shadow:
+        0 0 22px  5px rgba(200,28,28,0.20),
+        0 0 50px 12px rgba(200,28,28,0.09),
+        inset 0 0 18px rgba(200,28,28,0.07) !important;
+    transform: translateY(-2px) !important;
+}
+
+div[data-testid="stHorizontalBlock"] .stButton > button:active {
+    transform: translateY(0) !important;
+}
+
+div[data-testid="stHorizontalBlock"] .stButton > button:focus {
+    outline: none !important;
+    box-shadow:
+        0 0 22px  5px rgba(200,28,28,0.20),
+        0 0 50px 12px rgba(200,28,28,0.09) !important;
+}
+
 
 /* ── KEYFRAMES ── */
 @keyframes spin-ring {
@@ -91,15 +151,13 @@ footer                       { display: none !important; }
 
 /* ── SPLASH ROOT ── */
 .ph-splash {
-    position: fixed;
-    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding-top: calc(50vh - 260px);
     background: #07090D;
     animation: fade-up 0.8s cubic-bezier(.22,.68,0,1.2) both;
-    z-index: 1;
 }
 
 /* radial ambient */
@@ -268,7 +326,7 @@ footer                       { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
-    # ── HTML della splash ──
+    # ── HTML della splash (logo + ring, senza tab HTML) ──
     st.markdown("""
 <div class="ph-splash">
 
@@ -280,26 +338,7 @@ footer                       { display: none !important; }
     <span class="ph-logo-text">Phinance</span>
   </div>
 
-  <div class="ph-tabs">
-    <div class="ph-tab" id="ph-tab-ps"  onclick="phClick('Put Scoperta')">Put Scoperta</div>
-    <div class="ph-tab" id="ph-tab-bps" onclick="phClick('Bull Put Spread')">Bull Put Spread</div>
-  </div>
-
 </div>
-
-<script>
-(function(){
-  window.phClick = function(label){
-    var roots = [window.parent.document, document];
-    for(var r=0;r<roots.length;r++){
-      var btns = roots[r].querySelectorAll('button');
-      for(var i=0;i<btns.length;i++){
-        if(btns[i].innerText.trim()===label){ btns[i].click(); return; }
-      }
-    }
-  };
-})();
-</script>
 """, unsafe_allow_html=True)
 
     # ── Pulsanti Streamlit invisibili sovrapposti ai tab via CSS ──
