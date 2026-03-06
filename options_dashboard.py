@@ -59,27 +59,16 @@ html, body,
 footer                       { display: none !important; }
 #MainMenu                    { display: none !important; }
 
-/* ── Pulsanti Streamlit sovrapposti invisibili ── */
+/* ── Pulsanti Streamlit nascosti sotto i tab HTML ── */
 .stButton > button {
     position: fixed !important;
-    top: calc(50% + 132px) !important;
-    height: 58px !important;
+    bottom: -999px !important;
+    left: -999px !important;
     opacity: 0 !important;
-    cursor: pointer !important;
-    z-index: 99999 !important;
-    border: none !important;
-    background: transparent !important;
-    pointer-events: all !important;
-}
-/* primo button → left tab */
-div[data-testid="column"]:nth-child(1) .stButton > button {
-    left: calc(50% - 226px) !important;
-    width: 210px !important;
-}
-/* secondo button → right tab */
-div[data-testid="column"]:nth-child(2) .stButton > button {
-    left: calc(50% + 16px) !important;
-    width: 210px !important;
+    pointer-events: none !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
 }
 
 /* ── KEYFRAMES ── */
@@ -292,11 +281,25 @@ div[data-testid="column"]:nth-child(2) .stButton > button {
   </div>
 
   <div class="ph-tabs">
-    <div class="ph-tab" id="ph-tab-ps">Put Scoperta</div>
-    <div class="ph-tab" id="ph-tab-bps">Bull Put Spread</div>
+    <div class="ph-tab" id="ph-tab-ps"  onclick="phClick('Put Scoperta')">Put Scoperta</div>
+    <div class="ph-tab" id="ph-tab-bps" onclick="phClick('Bull Put Spread')">Bull Put Spread</div>
   </div>
 
 </div>
+
+<script>
+(function(){
+  window.phClick = function(label){
+    var roots = [window.parent.document, document];
+    for(var r=0;r<roots.length;r++){
+      var btns = roots[r].querySelectorAll('button');
+      for(var i=0;i<btns.length;i++){
+        if(btns[i].innerText.trim()===label){ btns[i].click(); return; }
+      }
+    }
+  };
+})();
+</script>
 """, unsafe_allow_html=True)
 
     # ── Pulsanti Streamlit invisibili sovrapposti ai tab via CSS ──
