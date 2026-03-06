@@ -30,9 +30,58 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;──────────────────
-# CSS &mdash; LUXURY FINTECH v4.0
-# &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;──────────────────
+# ═══════════════════════════════════════════════════════════
+# STRATEGIA — SPLASH SCREEN
+# ═══════════════════════════════════════════════════════════
+
+if "strategia" not in st.session_state:
+    st.session_state.strategia = None
+
+if st.session_state.strategia is None:
+    # Nascondi sidebar sulla splash screen
+    st.markdown("<style>[data-testid='stSidebar']{display:none}</style>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="splash-container">
+        <div class="splash-logo">Phinance</div>
+        <div class="splash-sub">Sistemi Quantitativi per il Trading di Opzioni</div>
+        <div class="splash-cards">
+            <div class="splash-card" style="--card-accent:#00C2FF">
+                <div class="splash-card-icon">&#9679;</div>
+                <div class="splash-card-title">Put Scoperta</div>
+                <div class="splash-card-sub">Short Put &middot; Vendita Nuda</div>
+                <div class="splash-card-desc">Vendi una put OTM e incassa il premio. Margine variabile. Massimo profitto = premio incassato. Strategia adatta a mercati stabili con IV elevata.</div>
+                <span class="splash-card-badge cyan">Margine variabile</span>
+            </div>
+            <div class="splash-card" style="--card-accent:#00E5A0">
+                <div class="splash-card-icon">&#9670;</div>
+                <div class="splash-card-title">Bull Put Spread</div>
+                <div class="splash-card-sub">Credit Put Spread &middot; Rischio Definito</div>
+                <div class="splash-card-desc">Vendi una put OTM e compra una put pi&ugrave; bassa. Margine fisso e limitato. Rischio massimo definito. Rendimento sul capitale spesso superiore.</div>
+                <span class="splash-card-badge green">Margine fisso</span>
+            </div>
+        </div>
+        <div class="splash-footer">Solo a scopo educativo &middot; Non costituisce consulenza finanziaria</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_left, col_right = st.columns(2)
+    with col_left:
+        st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+        if st.button("Apri Put Scoperta", use_container_width=True, type="primary"):
+            st.session_state.strategia = "put_scoperta"
+            st.rerun()
+    with col_right:
+        st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+        if st.button("Apri Bull Put Spread", use_container_width=True, type="primary"):
+            st.session_state.strategia = "bull_put_spread"
+            st.rerun()
+
+    st.stop()
+
+STRATEGIA = st.session_state.strategia
+
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap');
@@ -583,6 +632,166 @@ hr { border-color: var(--border-subtle) !important; }
 [data-testid="stColumn"]:has(.ph-delta-green) [data-testid="stMetricDelta"] svg,
 [data-testid="stColumn"]:has(.ph-delta-gold)  [data-testid="stMetricDelta"] svg,
 [data-testid="stColumn"]:has(.ph-delta-red)   [data-testid="stMetricDelta"] svg { display: none !important; }
+/* ── SPLASH SCREEN ── */
+.splash-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    padding: 2rem;
+    animation: fadeSlideUp 0.8s ease both;
+}
+.splash-logo {
+    font-family: var(--font-body);
+    font-size: 3.2rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #00C2FF 0%, #00E5A0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.4rem;
+}
+.splash-sub {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+}
+.splash-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 760px;
+}
+.splash-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: 2rem 2rem 1.8rem;
+    cursor: pointer;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+.splash-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--card-accent, #00C2FF), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.splash-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+.splash-card:hover::before { opacity: 1; }
+.splash-card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+.splash-card-title {
+    font-family: var(--font-body);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.02em;
+}
+.splash-card-sub {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+.splash-card-desc {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+}
+.splash-card-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.7rem;
+    border-radius: 100px;
+    border: 1px solid;
+}
+.splash-card-badge.cyan {
+    color: var(--accent-cyan);
+    border-color: rgba(0,194,255,0.25);
+    background: rgba(0,194,255,0.06);
+}
+.splash-card-badge.green {
+    color: var(--accent-green);
+    border-color: rgba(0,229,160,0.25);
+    background: rgba(0,229,160,0.06);
+}
+.splash-footer {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-top: 2.5rem;
+    text-align: center;
+}
+/* Pannello analisi spread BPS */
+.spread-analysis {
+    background: linear-gradient(135deg, rgba(0,229,160,0.04) 0%, rgba(0,194,255,0.04) 100%);
+    border: 1px solid rgba(0,229,160,0.15);
+    border-radius: var(--radius-xl);
+    padding: 1.4rem 1.8rem;
+    margin-bottom: 1.5rem;
+    animation: fadeSlideUp 0.6s ease both;
+    animation-delay: 0.25s;
+}
+.spread-analysis-title {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-green);
+    margin-bottom: 1rem;
+}
+.spread-rule {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    display: inline-block;
+    margin-top: 0.4rem;
+}
+.spread-rule.ok {
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: var(--accent-green);
+}
+.spread-rule.warn {
+    background: rgba(255,181,71,0.08);
+    border: 1px solid rgba(255,181,71,0.2);
+    color: var(--accent-gold);
+}
+.spread-rule.bad {
+    background: rgba(255,90,90,0.08);
+    border: 1px solid rgba(255,90,90,0.2);
+    color: var(--accent-red);
+}
+
 /* ── TOOLTIP GRECHE ── */
 .greek-tooltip {
     position: relative;
@@ -844,6 +1053,15 @@ def pnl_chart(S, K, prem, n, mult=100):
 # ═══════════════════════════════════════════════════════════
 
 with st.sidebar:
+    # Pulsante cambia strategia
+    strat_label = "&#9679; Put Scoperta" if STRATEGIA == "put_scoperta" else "&#9670; Bull Put Spread"
+    st.markdown(f"<div style='font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.4rem'>Strategia attiva</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-family:var(--font-body);font-size:0.9rem;font-weight:600;color:var(--accent-cyan);margin-bottom:0.6rem'>{strat_label}</div>", unsafe_allow_html=True)
+    if st.button("&#8635; Cambia strategia", use_container_width=True):
+        st.session_state.strategia = None
+        st.rerun()
+    st.markdown("<hr style='border:none;border-top:1px solid var(--border-subtle);margin:1rem 0'>", unsafe_allow_html=True)
+
     st.markdown("<div class='sb-section' style='border-top:none;margin-top:0'>Strumento</div>", unsafe_allow_html=True)
 
     scelta = st.selectbox(
@@ -881,7 +1099,38 @@ with st.sidebar:
 
     st.markdown("<div class='sb-section'>Obiettivo Strategia</div>", unsafe_allow_html=True)
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
-        help="84% = Delta 0.16 &mdash; punto ottimale per la strategia.\n90% = Delta 0.10 &mdash; più conservativo.\n80% = Delta 0.20 &mdash; più aggressivo.")
+        help="84% = Delta 0.16 — punto ottimale per la strategia.\n90% = Delta 0.10 — più conservativo.\n80% = Delta 0.20 — più aggressivo.")
+
+    # Parametri specifici Bull Put Spread
+    if STRATEGIA == "bull_put_spread":
+        st.markdown("<div class='sb-section'>Parametri Spread</div>", unsafe_allow_html=True)
+        larghezza_spread = st.select_slider("Larghezza Spread ($)",
+            options=[5, 10, 15, 20, 25, 30, 50], value=10,
+            help="Differenza in dollari tra lo strike venduto e quello comprato.\nSpread da $10 è lo standard per SPY/QQQ.")
+        credito_reale_bps = st.number_input("Credito netto incassato ($)",
+            min_value=0.01, max_value=500.0,
+            value=float(st.session_state.get("_credito_bps", 1.38)), step=0.01,
+            format="%.2f",
+            help="Il credito netto = premio put venduta - premio put comprata.\nLeggilo direttamente dal tuo broker.")
+        st.session_state["_credito_bps"] = credito_reale_bps
+        # Calcolo % credito su larghezza
+        pct_credito = (credito_reale_bps / larghezza_spread) * 100
+        if pct_credito >= 30:
+            cred_color = "var(--accent-green)"; cred_label = "Ottimale"
+        elif pct_credito >= 25:
+            cred_color = "var(--accent-gold)"; cred_label = "Accettabile"
+        else:
+            cred_color = "var(--accent-red)"; cred_label = "Insufficiente"
+        st.markdown(
+            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:{cred_color};"
+            f"background:rgba(0,0,0,0.2);border:1px solid {cred_color}33;"
+            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
+            f"{pct_credito:.1f}% della larghezza &mdash; <strong>{cred_label}</strong></div>",
+            unsafe_allow_html=True
+        )
+    else:
+        larghezza_spread = None
+        credito_reale_bps = None
 
     st.markdown("<div class='sb-section'>Dati Reali dal Broker</div>", unsafe_allow_html=True)
 
@@ -1032,6 +1281,41 @@ sc        = calc_wcs(spot, K, prem, n_contratti, crash)
 # sz dict compatibilità (usato nel pannello e nel riepilogo)
 sz        = {"n": n_contratti, "mc": mc, "imp": marg_tot, "lib": 0}
 
+# ── CALCOLI BULL PUT SPREAD ──
+if STRATEGIA == "bull_put_spread" and larghezza_spread and credito_reale_bps:
+    bps_K_venduta  = K                                               # strike put venduta (calcolato)
+    bps_K_comprata = K - larghezza_spread                            # strike put comprata
+    bps_credito    = credito_reale_bps                               # credito netto per azione
+    bps_credito_tot = round(bps_credito * 100 * n_contratti, 2)      # credito totale
+    bps_margine_c  = round((larghezza_spread - bps_credito) * 100, 2) # margine per contratto
+    bps_margine_tot = round(bps_margine_c * n_contratti, 2)           # margine totale
+    bps_max_profit  = bps_credito_tot                                 # massimo profitto
+    bps_max_loss    = bps_margine_tot                                 # massima perdita
+    bps_be          = bps_K_venduta - bps_credito                     # break-even
+    bps_rend        = (bps_credito_tot / bps_margine_tot * 100) if bps_margine_tot > 0 else 0
+    bps_rend_ann    = (((1 + bps_rend / 100) ** 12) - 1) * 100
+    bps_pct_largh   = (bps_credito / larghezza_spread) * 100
+    bps_tp          = round(bps_credito_tot * 0.5, 2)                # take profit al 50%
+    bps_sl          = round(bps_credito_tot * 2, 2)                  # stop loss a 2x
+    bps_dist_venduta = (spot - bps_K_venduta) / spot * 100
+    bps_dist_comprata = (spot - bps_K_comprata) / spot * 100
+    # Deviazione standard a scadenza
+    bps_sigma_T     = spot * sigma * np.sqrt(T)
+    bps_dist_sd     = (spot - bps_K_venduta) / bps_sigma_T if bps_sigma_T > 0 else 0
+    # Semaforo regola 25-35%
+    if bps_pct_largh >= 30:
+        bps_regola_cls = "ok"; bps_regola_txt = "Credito ottimale (>30%)"
+    elif bps_pct_largh >= 25:
+        bps_regola_cls = "warn"; bps_regola_txt = "Credito accettabile (25-30%)"
+    else:
+        bps_regola_cls = "bad"; bps_regola_txt = "Credito insufficiente (<25%) — rischio non efficiente"
+else:
+    bps_K_venduta = bps_K_comprata = bps_credito = bps_credito_tot = None
+    bps_margine_c = bps_margine_tot = bps_max_profit = bps_max_loss = None
+    bps_be = bps_rend = bps_rend_ann = bps_pct_largh = bps_tp = bps_sl = None
+    bps_dist_venduta = bps_dist_comprata = bps_dist_sd = bps_sigma_T = None
+    bps_regola_cls = bps_regola_txt = None
+
 # IV Rank badge
 ivr_cls   = "alto" if iv_rank >= 60 else "medio" if iv_rank >= 35 else "basso"
 ivr_label = "Alto &mdash; Vendi" if iv_rank >= 60 else "Medio &mdash; Valuta" if iv_rank >= 35 else "Basso &mdash; Aspetta"
@@ -1046,12 +1330,14 @@ vix_cls = "green" if vix_val and vix_val >= 20 else "gold" if vix_val and vix_va
 # ═══════════════════════════════════════════════════════════
 
 # ── HEADER ──
+strat_header_label = "Vendita Put Scoperta" if STRATEGIA == "put_scoperta" else "Bull Put Spread"
+strat_header_icon  = "&#9679;" if STRATEGIA == "put_scoperta" else "&#9670;"
 st.markdown(f"""
 <div class="ph-header">
     <div style="display:flex;align-items:center;gap:1.2rem">
         <span class="ph-logo">Phinance</span>
         <div style="width:1px;height:2rem;background:var(--border-medium)"></div>
-        <span class="ph-subtitle">Dashboard Vendita Put &middot; Motore Black-Scholes</span>
+        <span class="ph-subtitle">{strat_header_icon} {strat_header_label} &middot; Motore Black-Scholes</span>
     </div>
     <div class="ph-header-right">
         <span class="ph-tag">v5.1 &middot; Yahoo Finance &middot; CBOE VIX</span>
@@ -1254,96 +1540,362 @@ with c4:
 
 st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
+# ══════════════════════════════════════════════════════════
+# DASHBOARD — PUT SCOPERTA
+# ══════════════════════════════════════════════════════════
+if STRATEGIA == "put_scoperta":
 
-# ── GRECHE &mdash; orizzontale full width ──
-delta_display = delta_reale if delta_reale is not None else abs(gre['delta'])
-theta_display = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
-delta_fonte = "Reale (broker)" if delta_reale is not None else "Black-Scholes (stimato)"
-theta_fonte = "Reale (broker)" if theta_reale is not None else "Black-Scholes (stimato)"
+    # ── KPI CARDS &mdash; 4 colonne ──
+    c1, c2, c3, c4 = st.columns(4, gap="medium")
 
-st.markdown(f"""
-<div class="panel" style="animation-delay:0.3s;margin-bottom:1.5rem">
-    <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">&#8721;</span> Lettere Greche</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0">
-        <div style="padding:1.2rem 1.8rem;border-right:1px solid rgba(255,255,255,0.04)">
-            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                &#916; Delta (prob. ITM)
+    with c1:
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.0s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Strike Consigliato
                 <span class="tip-icon">?</span>
-                <div class="tip-box">Misura quanto varia il premio per ogni $1 di movimento del sottostante. In valore assoluto = probabilit&agrave; che l&apos;opzione scada ITM (in perdita). Ottimale: 0.15&ndash;0.20.</div>
+                <div class="tip-box">Lo strike viene calcolato automaticamente con Black-Scholes in base alla probabilit&agrave; di successo che imposti nella sidebar. All&apos;84% corrisponde un delta di circa 0,16 &mdash; il punto ottimale per la strategia.</div>
             </div>
-            <div class="panel-val cyan" style="font-size:1.6rem">{fmt(delta_display,2)}</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">{fmt(delta_display*100,1)}% prob. ITM &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{delta_fonte}</span></div>
+            <div class="kpi-value cyan">{fmt(K,2)}</div>
+            <div class="kpi-sub">{fmt(dist,2)}% sotto lo spot</div>
+            <div><span class="kpi-badge green">OTM TARGET</span></div>
         </div>
-        <div style="padding:1.2rem 1.8rem">
-            <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                &#920; Theta (&euro;/giorno)
+        """, unsafe_allow_html=True)
+
+    with c2:
+        bc = "green" if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
+        bt = "Eccellente" if prob >= 0.90 else "Accettabile" if prob >= 0.80 else "Rischiosa"
+        vc = "green"  if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.06s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Probabilit&agrave; di Successo
                 <span class="tip-icon">?</span>
-                <div class="tip-box">Il tuo guadagno quotidiano dal passare del tempo (time decay). Vendendo put incassi theta positivo: ogni giorno che passa il valore dell&apos;opzione diminuisce e tu guadagni. &Egrave; il motore principale della strategia.</div>
+                <div class="tip-box">Probabilit&agrave; che l&apos;opzione scada OTM e tu incassi il premio intero. Calcolata con Black-Scholes come N(d2). 84% = ottimale per la strategia. Sopra 90% = pi&ugrave; sicuro ma premio molto basso.</div>
             </div>
-            <div class="panel-val green" style="font-size:1.6rem">+{fmt(theta_display,2)} &euro;</div>
-            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">guadagno per giorno &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{theta_fonte}</span></div>
+            <div class="kpi-value {vc}">{fmt(prob*100,2)}%</div>
+            <div class="kpi-sub">Scade senza perdite</div>
+            <div><span class="kpi-badge {bc}">{bt}</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.12s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Premio Incassato
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Il premio &egrave; il massimo guadagno possibile &mdash; lo incassi subito alla vendita. Se l&apos;opzione scade OTM tieni tutto. Strategia comune: chiudi al 50% del profitto riacquistando l&apos;opzione a prezzo inferiore.</div>
+            </div>
+            <div class="kpi-value green">{fmt(prem,2)}</div>
+            <div class="kpi-sub">{n_contratti} contratti &rarr; <strong style="color:var(--accent-green)">+{fmt(ptot,0)} &euro;</strong></div>
+            <div><span class="kpi-badge green">{fmt(rend,2)}% sul margine / mese</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c4:
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.18s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Margine Richiesto
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Il margine &egrave; la liquidit&agrave; che il broker blocca come garanzia. Non &egrave; un costo &mdash; rimane tuo &mdash; ma non puoi usarla per altri trade. Il valore &egrave; una stima: verifica sempre sul tuo broker prima di operare.</div>
+            </div>
+            <div class="kpi-value gold">{fmt(marg_tot,0)} &euro;</div>
+            <div class="kpi-sub">{fmt(mc,0)} &euro; &times; {n_contratti} contratti</div>
+            <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
+
+    # ── GRECHE ──
+    delta_display = delta_reale if delta_reale is not None else abs(gre['delta'])
+    theta_display = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
+    delta_fonte = "Reale (broker)" if delta_reale is not None else "Black-Scholes (stimato)"
+    theta_fonte = "Reale (broker)" if theta_reale is not None else "Black-Scholes (stimato)"
+
+    st.markdown(f"""
+    <div class="panel" style="animation-delay:0.3s;margin-bottom:1.5rem">
+        <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">&#8721;</span> Lettere Greche</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0">
+            <div style="padding:1.2rem 1.8rem;border-right:1px solid rgba(255,255,255,0.04)">
+                <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                    &#916; Delta (prob. ITM)
+                    <span class="tip-icon">?</span>
+                    <div class="tip-box">Misura quanto varia il premio per ogni $1 di movimento del sottostante. In valore assoluto = probabilit&agrave; che l&apos;opzione scada ITM (in perdita). Ottimale: 0.15&ndash;0.20.</div>
+                </div>
+                <div class="panel-val cyan" style="font-size:1.6rem">{fmt(delta_display,2)}</div>
+                <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">{fmt(delta_display*100,1)}% prob. ITM &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{delta_fonte}</span></div>
+            </div>
+            <div style="padding:1.2rem 1.8rem">
+                <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                    &#920; Theta (&euro;/giorno)
+                    <span class="tip-icon">?</span>
+                    <div class="tip-box">Il tuo guadagno quotidiano dal passare del tempo (time decay). Vendendo put incassi theta positivo: ogni giorno che passa il valore dell&apos;opzione diminuisce e tu guadagni. &Egrave; il motore principale della strategia.</div>
+                </div>
+                <div class="panel-val green" style="font-size:1.6rem">+{fmt(theta_display,2)} &euro;</div>
+                <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">guadagno per giorno &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{theta_fonte}</span></div>
+            </div>
         </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# ── SCENARIO CRISI &mdash; orizzontale full width ──
-st.markdown(f"""
-<div class="crisis-panel" style="animation-delay:0.35s">
-    <div class="crisis-header">&#9888; Scenario di Crisi &mdash; Crollo {fmt(sc['crash'],0)}%</div>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column;justify-content:flex-start">
-            <div class="crisis-key" style="margin-bottom:0.6rem;min-height:1.2rem">Prezzo dopo il crollo</div>
-            <div class="crisis-val">{fmt(sc['Sc'],2)}</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-            <div class="crisis-key" style="margin-bottom:0.6rem">Perdita per contratto</div>
-            <div class="crisis-val red">{fmt(sc['lc'],2)} &euro;</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-            <div class="crisis-key" style="margin-bottom:0.6rem">Perdita lorda totale</div>
-            <div class="crisis-val red">{fmt(sc['lt_gross'],2)} &euro;</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-            <div class="crisis-key" style="margin-bottom:0.6rem">Premi già incassati</div>
-            <div class="crisis-val green">+{fmt(sc['pt'],2)} &euro;</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-            <div class="crisis-key" style="margin-bottom:0.6rem">Perdita netta finale</div>
-            <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(pn,0)} &euro;</div>
-        </div>
-        <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
-            <div class="crisis-key" style="margin-bottom:0.6rem">Impatto sul margine</div>
-            <div class="crisis-val red">{fmt(imp,2)}%</div>
+    # ── SCENARIO CRISI ──
+    st.markdown(f"""
+    <div class="crisis-panel" style="animation-delay:0.35s">
+        <div class="crisis-header">&#9888; Scenario di Crisi &mdash; Crollo {fmt(sc['crash'],0)}%</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column;justify-content:flex-start">
+                <div class="crisis-key" style="margin-bottom:0.6rem;min-height:1.2rem">Prezzo dopo il crollo</div>
+                <div class="crisis-val">{fmt(sc['Sc'],2)}</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita per contratto</div>
+                <div class="crisis-val red">{fmt(sc['lc'],2)} &euro;</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita lorda totale</div>
+                <div class="crisis-val red">{fmt(sc['lt_gross'],2)} &euro;</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Premi gi&agrave; incassati</div>
+                <div class="crisis-val green">+{fmt(sc['pt'],2)} &euro;</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita netta finale</div>
+                <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(pn,0)} &euro;</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Impatto sul margine</div>
+                <div class="crisis-val red">{fmt(imp,2)}%</div>
+            </div>
         </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
+    # ── RIEPILOGO PUT SCOPERTA ──
+    st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allow_html=True)
+    st.dataframe(pd.DataFrame({
+        "Parametro": ["Strumento","Prezzo Attuale","Strike Consigliato","Distanza Strike",
+                      "Giorni alla Scadenza","IV Impostata","Vol. Storica 30gg","VIX Corrente","IV Rank",
+                      "Premio per Contratto","Numero Contratti","Margine per Contratto",
+                      "Margine Totale Richiesto","Incasso Totale Premi",
+                      "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
+        "Valore":    [nome, fmt(spot,2), fmt(K,2), f"{fmt(dist,2)}% sotto lo spot",
+                      f"{dte} gg", f"{fmt(iv_pct,2)}%", f"{fmt(vol_st,2)}%",
+                      vix_str + (" (preimpostato in IV)" if vix_val else ""),
+                      f"{fmt(iv_rank,2)}/100 &mdash; {ivr_label}",
+                      f"{fmt(prem,4)}  ({fmt(prem*100,2)} &euro; / contratto 100 azioni)",
+                      str(n_contratti), f"{fmt(mc,0)} &euro;",
+                      f"{fmt(marg_tot,0)} &euro; (da avere sul conto)",
+                      f"+{fmt(ptot,0)} &euro;",
+                      fmt(K-prem,2), f"+{fmt(thday,2)} &euro; / giorno",
+                      f"{fmt(rend,2)}% / mese  ({fmt(rend_ann,2)}% annuo composto stimato)"],
+    }), use_container_width=True, hide_index=True,
+        column_config={
+            "Parametro": st.column_config.TextColumn(width="medium"),
+            "Valore":    st.column_config.TextColumn(width="large"),
+        })
 
-# ── RIEPILOGO ──
-st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allow_html=True)
-st.dataframe(pd.DataFrame({
-    "Parametro": ["Strumento","Prezzo Attuale","Strike Consigliato","Distanza Strike",
-                  "Giorni alla Scadenza","IV Impostata","Vol. Storica 30gg","VIX Corrente","IV Rank",
-                  "Premio per Contratto","Numero Contratti","Margine per Contratto",
-                  "Margine Totale Richiesto","Incasso Totale Premi",
-                  "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
-    "Valore":    [nome, fmt(spot,2), fmt(K,2), f"{fmt(dist,2)}% sotto lo spot",
-                  f"{dte} gg", f"{fmt(iv_pct,2)}%", f"{fmt(vol_st,2)}%",
-                  vix_str + (" (preimpostato in IV)" if vix_val else ""),
-                  f"{fmt(iv_rank,2)}/100 &mdash; {ivr_label}",
-                  f"{fmt(prem,4)}  ({fmt(prem*100,2)} &euro; / contratto 100 azioni)",
-                  str(n_contratti), f"{fmt(mc,0)} &euro;",
-                  f"{fmt(marg_tot,0)} &euro; (da avere sul conto)",
-                  f"+{fmt(ptot,0)} &euro;",
-                  fmt(K-prem,2), f"+{fmt(thday,2)} &euro; / giorno",
-                  f"{fmt(rend,2)}% / mese  ({fmt(rend_ann,2)}% annuo composto stimato)"],
-}), use_container_width=True, hide_index=True,
-    column_config={
-        "Parametro": st.column_config.TextColumn(width="medium"),
-        "Valore":    st.column_config.TextColumn(width="large"),
-    })
+# ══════════════════════════════════════════════════════════
+# DASHBOARD — BULL PUT SPREAD
+# ══════════════════════════════════════════════════════════
+elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
+
+    # ── KPI CARDS BPS ──
+    c1, c2, c3, c4 = st.columns(4, gap="medium")
+
+    with c1:
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.0s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Strike Venduto
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Lo strike della put che vendi &mdash; calcolato con Black-Scholes in base alla probabilit&agrave; di successo impostata. Incassi il premio pi&ugrave; alto. Se SPY rimane sopra questo strike a scadenza tieni tutto il credito.</div>
+            </div>
+            <div class="kpi-value cyan">{fmt(bps_K_venduta,2)}</div>
+            <div class="kpi-sub">{fmt(bps_dist_venduta,2)}% sotto lo spot</div>
+            <div><span class="kpi-badge green">PUT VENDUTA (STO)</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.06s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Strike Comprato
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Lo strike della put che compri come protezione &mdash; distante {larghezza_spread}$ dalla put venduta. Limita la perdita massima. Se SPY scende sotto questo livello la perdita non aumenta ulteriormente.</div>
+            </div>
+            <div class="kpi-value gold">{fmt(bps_K_comprata,2)}</div>
+            <div class="kpi-sub">{fmt(bps_dist_comprata,2)}% sotto lo spot</div>
+            <div><span class="kpi-badge gold">PUT COMPRATA (BTO)</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        cred_cls = "green" if bps_pct_largh >= 30 else "gold" if bps_pct_largh >= 25 else "red"
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.12s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Credito Netto
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Il credito netto &egrave; la differenza tra il premio incassato e quello pagato. Deve essere almeno il 25-30% della larghezza dello spread ({larghezza_spread}$) per avere un valore atteso positivo. Regola professionale fondamentale.</div>
+            </div>
+            <div class="kpi-value {cred_cls}">{fmt(bps_credito,2)}</div>
+            <div class="kpi-sub">{n_contratti} contratti &rarr; <strong style="color:var(--accent-green)">+{fmt(bps_credito_tot,0)} &euro;</strong></div>
+            <div><span class="kpi-badge {cred_cls}">{fmt(bps_pct_largh,1)}% della larghezza</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c4:
+        st.markdown(f"""
+        <div class="kpi-card" style="animation-delay:0.18s">
+            <div class="kpi-eyebrow greek-tooltip">&#9679; Margine Fisso
+                <span class="tip-icon">?</span>
+                <div class="tip-box">Il margine del bull put spread &egrave; fisso e predefinito: (larghezza &mdash; credito) &times; 100. Non varia con il prezzo del sottostante. &Egrave; anche la perdita massima teorica assoluta della posizione.</div>
+            </div>
+            <div class="kpi-value gold">{fmt(bps_margine_tot,0)} &euro;</div>
+            <div class="kpi-sub">{fmt(bps_margine_c,0)} &euro; &times; {n_contratti} contratti</div>
+            <div><span class="kpi-badge gold">FISSO &mdash; RISCHIO DEFINITO</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
+
+    # ── PANNELLO ANALISI SPREAD ──
+    sd_label = f"{fmt(bps_dist_sd,2)} SD" if bps_dist_sd else "N/D"
+    be_dist  = (spot - bps_be) / spot * 100
+    st.markdown(f"""
+    <div class="spread-analysis">
+        <div class="spread-analysis-title">&#9670; Analisi Spread &mdash; Bull Put Spread {fmt(bps_K_venduta,0)} / {fmt(bps_K_comprata,0)}</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1rem">
+            <div>
+                <div class="panel-key" style="margin-bottom:0.3rem">Larghezza</div>
+                <div class="panel-val cyan" style="font-size:1.1rem">${larghezza_spread}</div>
+            </div>
+            <div>
+                <div class="panel-key" style="margin-bottom:0.3rem">Break-even</div>
+                <div class="panel-val" style="font-size:1.1rem">{fmt(bps_be,2)}</div>
+                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">{fmt(be_dist,2)}% sotto spot</div>
+            </div>
+            <div>
+                <div class="panel-key" style="margin-bottom:0.3rem">Distanza in SD</div>
+                <div class="panel-val" style="font-size:1.1rem">{sd_label}</div>
+                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">dal strike venduto</div>
+            </div>
+            <div>
+                <div class="panel-key" style="margin-bottom:0.3rem">Take Profit 50%</div>
+                <div class="panel-val green" style="font-size:1.1rem">+{fmt(bps_tp,0)} &euro;</div>
+                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">chiudi qui</div>
+            </div>
+            <div>
+                <div class="panel-key" style="margin-bottom:0.3rem">Stop Loss 2x</div>
+                <div class="panel-val red" style="font-size:1.1rem">-{fmt(bps_sl,0)} &euro;</div>
+                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">perdita max gestita</div>
+            </div>
+            <div>
+                <div class="panel-key" style="margin-bottom:0.3rem">Rendimento</div>
+                <div class="panel-val green" style="font-size:1.1rem">{fmt(bps_rend,1)}%</div>
+                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">sul margine / mese</div>
+            </div>
+        </div>
+        <div style="margin-top:1rem">
+            <span class="spread-rule {bps_regola_cls}">{bps_regola_txt} &mdash; {fmt(bps_pct_largh,1)}% della larghezza ${larghezza_spread}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── GRECHE BPS ──
+    delta_display = delta_reale if delta_reale is not None else abs(gre['delta'])
+    theta_display = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
+    delta_fonte = "Reale (broker)" if delta_reale is not None else "Black-Scholes (stimato)"
+    theta_fonte = "Reale (broker)" if theta_reale is not None else "Black-Scholes (stimato)"
+
+    st.markdown(f"""
+    <div class="panel" style="animation-delay:0.3s;margin-bottom:1.5rem">
+        <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">&#8721;</span> Lettere Greche dello Spread</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0">
+            <div style="padding:1.2rem 1.8rem;border-right:1px solid rgba(255,255,255,0.04)">
+                <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                    &#916; Delta netto (prob. ITM)
+                    <span class="tip-icon">?</span>
+                    <div class="tip-box">Delta netto dello spread = delta put venduta &mdash; delta put comprata. Valore basso = posizione stabile. Rappresenta la probabilit&agrave; approssimativa che lo spread scada ITM (in perdita massima). Ottimale: sotto 10.</div>
+                </div>
+                <div class="panel-val cyan" style="font-size:1.6rem">{fmt(delta_display,2)}</div>
+                <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">{fmt(delta_display*100,1)}% prob. perdita max &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{delta_fonte}</span></div>
+            </div>
+            <div style="padding:1.2rem 1.8rem">
+                <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
+                    &#920; Theta netto (&euro;/giorno)
+                    <span class="tip-icon">?</span>
+                    <div class="tip-box">Theta netto dello spread = theta put venduta &mdash; theta put comprata. Ogni giorno che passa entrambe le opzioni decadono, ma quella venduta decade pi&ugrave; velocemente &mdash; guadagni la differenza ogni giorno.</div>
+                </div>
+                <div class="panel-val green" style="font-size:1.6rem">+{fmt(theta_display,2)} &euro;</div>
+                <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">guadagno per giorno &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{theta_fonte}</span></div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── SCENARIO CRISI BPS (perdita limitata alla larghezza) ──
+    bps_crisi_spot = spot * (1 - crash / 100)
+    bps_crisi_loss = -bps_margine_tot  # perdita max = margine fisso
+    bps_crisi_pct  = (bps_margine_tot / bps_margine_tot * 100) if bps_margine_tot > 0 else 100
+    st.markdown(f"""
+    <div class="crisis-panel" style="animation-delay:0.35s">
+        <div class="crisis-header">&#9888; Scenario di Crisi &mdash; Crollo {fmt(crash,0)}%</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Prezzo dopo il crollo</div>
+                <div class="crisis-val">{fmt(bps_crisi_spot,2)}</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Strike venduto</div>
+                <div class="crisis-val">{fmt(bps_K_venduta,2)}</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Strike comprato</div>
+                <div class="crisis-val green">{fmt(bps_K_comprata,2)}</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Credito incassato</div>
+                <div class="crisis-val green">+{fmt(bps_credito_tot,2)} &euro;</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita massima</div>
+                <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(bps_crisi_loss,0)} &euro;</div>
+            </div>
+            <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
+                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita limitata a</div>
+                <div class="crisis-val green">${larghezza_spread} per azione</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── RIEPILOGO BPS ──
+    st.markdown("<div class='section-label'>Riepilogo Operazione &mdash; Bull Put Spread</div>", unsafe_allow_html=True)
+    st.dataframe(pd.DataFrame({
+        "Parametro": ["Strumento","Prezzo Attuale","Strike Venduto (STO)","Strike Comprato (BTO)",
+                      "Larghezza Spread","Giorni alla Scadenza","IV Impostata","VIX Corrente","IV Rank",
+                      "Credito Netto per Azione","Credito come % Larghezza","Numero Contratti",
+                      "Margine per Contratto (fisso)","Margine Totale Richiesto",
+                      "Credito Totale Incassato","Break-even","Take Profit (50%)",
+                      "Stop Loss (2x credito)","Rendimento sul Margine"],
+        "Valore":    [nome, fmt(spot,2), fmt(bps_K_venduta,2), fmt(bps_K_comprata,2),
+                      f"${larghezza_spread}", f"{dte} gg", f"{fmt(iv_pct,2)}%",
+                      vix_str, f"{fmt(iv_rank,2)}/100",
+                      f"{fmt(bps_credito,4)} ({fmt(bps_credito*100,2)} &euro; / contratto)",
+                      f"{fmt(bps_pct_largh,1)}% &mdash; {bps_regola_txt}",
+                      str(n_contratti), f"{fmt(bps_margine_c,0)} &euro;",
+                      f"{fmt(bps_margine_tot,0)} &euro; (da avere sul conto)",
+                      f"+{fmt(bps_credito_tot,0)} &euro;",
+                      fmt(bps_be,2), f"+{fmt(bps_tp,0)} &euro;",
+                      f"-{fmt(bps_sl,0)} &euro;",
+                      f"{fmt(bps_rend,2)}% / mese  ({fmt(bps_rend_ann,2)}% annuo stimato)"],
+    }), use_container_width=True, hide_index=True,
+        column_config={
+            "Parametro": st.column_config.TextColumn(width="medium"),
+            "Valore":    st.column_config.TextColumn(width="large"),
+        })
+
+elif STRATEGIA == "bull_put_spread":
+    st.info("Inserisci il credito netto e la larghezza dello spread nella sidebar per visualizzare l'analisi.")
 
 # ── FOOTER ──
 st.markdown("""
