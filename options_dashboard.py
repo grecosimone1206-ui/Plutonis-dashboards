@@ -37,13 +37,6 @@ st.set_page_config(
 if "strategia" not in st.session_state:
     st.session_state.strategia = None
 
-# Legge il query param impostato dai tab HTML
-_qp = st.query_params.get("s", None)
-if _qp in ("put_scoperta", "bull_put_spread"):
-    st.session_state.strategia = _qp
-    st.query_params.clear()
-    st.rerun()
-
 if st.session_state.strategia is None:
 
     # ── CSS globale splash ──
@@ -263,7 +256,6 @@ footer                       { display: none !important; }
 
     st.markdown("""
 <div class="ph-splash">
-
   <div class="ph-ring-wrap">
     <div class="ph-ring-glow"></div>
     <div class="ph-ring-spin"></div>
@@ -271,23 +263,91 @@ footer                       { display: none !important; }
     <div class="ph-ring-d2"></div>
     <span class="ph-logo-text">Phinance</span>
   </div>
-
-  <div class="ph-tabs">
-    <div class="ph-tab" onclick="goTo('put_scoperta')">Put Scoperta</div>
-    <div class="ph-tab" onclick="goTo('bull_put_spread')">Bull Put Spread</div>
-  </div>
-
+  <div class="ph-tab-label">Seleziona una strategia</div>
 </div>
 
-<script>
-function goTo(s) {
-  var url = window.location.href.split('?')[0] + '?s=' + s;
-  window.location.href = url;
+<style>
+.ph-tab-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    text-align: center;
 }
-</script>
+
+/* ── Centra il contenitore colonne ── */
+section.main > div.block-container > div:nth-child(2) div[data-testid="stHorizontalBlock"],
+div[data-testid="stHorizontalBlock"] {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    margin: 0 auto !important;
+    max-width: 500px !important;
+}
+div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 0.5rem !important;
+}
+
+/* ── Stile pulsanti = tab rossi ── */
+div[data-testid="stHorizontalBlock"] .stButton > button {
+    min-width: 200px !important;
+    height: 52px !important;
+    padding: 0 2rem !important;
+    border-radius: 13px !important;
+    border: 1px solid rgba(170,25,25,0.38) !important;
+    background: rgba(150,18,18,0.08) !important;
+    color: rgba(255,255,255,0.65) !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.93rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.015em !important;
+    cursor: pointer !important;
+    transition:
+        border-color 0.22s ease,
+        color        0.22s ease,
+        box-shadow   0.22s ease,
+        transform    0.18s ease,
+        background   0.22s ease !important;
+    box-shadow: none !important;
+    outline: none !important;
+    width: 100% !important;
+}
+div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+    border-color: rgba(215,40,40,0.72) !important;
+    color: #ffffff !important;
+    background: rgba(195,28,28,0.13) !important;
+    box-shadow:
+        0 0 20px 4px  rgba(195,25,25,0.22),
+        0 0 48px 10px rgba(195,25,25,0.10),
+        inset 0 0 16px rgba(195,25,25,0.07) !important;
+    transform: translateY(-2px) !important;
+}
+div[data-testid="stHorizontalBlock"] .stButton > button:active {
+    transform: translateY(0px) !important;
+}
+div[data-testid="stHorizontalBlock"] .stButton > button:focus:not(:active) {
+    outline: none !important;
+    box-shadow: none !important;
+}
+</style>
 """, unsafe_allow_html=True)
 
-    st.stop()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Put Scoperta", key="splash_ps", use_container_width=True):
+            st.session_state.strategia = "put_scoperta"
+            st.rerun()
+    with col2:
+        if st.button("Bull Put Spread", key="splash_bps", use_container_width=True):
+            st.session_state.strategia = "bull_put_spread"
+            st.rerun()
 
 STRATEGIA = st.session_state.strategia
 
