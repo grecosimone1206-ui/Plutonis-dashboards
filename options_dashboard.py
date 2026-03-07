@@ -37,6 +37,13 @@ st.set_page_config(
 if "strategia" not in st.session_state:
     st.session_state.strategia = None
 
+# Legge il query param impostato dai tab HTML
+_qp = st.query_params.get("s", None)
+if _qp in ("put_scoperta", "bull_put_spread"):
+    st.session_state.strategia = _qp
+    st.query_params.clear()
+    st.rerun()
+
 if st.session_state.strategia is None:
 
     # ── CSS globale splash ──
@@ -58,78 +65,6 @@ html, body,
 [data-testid="stDecoration"]{ display: none !important; }
 footer                       { display: none !important; }
 #MainMenu                    { display: none !important; }
-
-/* ── Pulsanti Streamlit = Tab visibili — SOLO nella splash ── */
-
-/* Contenitore colonne centrato */
-.ph-splash-btns > div[data-testid="stHorizontalBlock"] {
-    justify-content: center !important;
-    gap: 1rem !important;
-    max-width: 460px !important;
-    margin: 0 auto !important;
-}
-
-/* Reset colonne */
-.ph-splash-btns > div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-    flex: 0 0 auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-}
-
-/* Il pulsante stesso — stile tab rosso */
-.ph-splash-btns .stButton > button {
-    position: relative !important;
-    min-width: 210px !important;
-    height: 54px !important;
-    padding: 0 2.2rem !important;
-    border-radius: 14px !important;
-    border: 1px solid rgba(180,28,28,0.32) !important;
-    background: rgba(160,22,22,0.07) !important;
-    color: rgba(255,255,255,0.68) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.95rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
-    cursor: pointer !important;
-    overflow: hidden !important;
-    transition:
-        border-color 0.25s ease,
-        color        0.25s ease,
-        box-shadow   0.25s ease,
-        transform    0.2s  ease,
-        background   0.25s ease !important;
-    bottom: unset !important;
-    left: unset !important;
-    opacity: 1 !important;
-    pointer-events: all !important;
-    width: auto !important;
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-.ph-splash-btns .stButton > button:hover {
-    border-color: rgba(220,45,45,0.68) !important;
-    color: #ffffff !important;
-    background: rgba(200,30,30,0.12) !important;
-    box-shadow:
-        0 0 22px  5px rgba(200,28,28,0.20),
-        0 0 50px 12px rgba(200,28,28,0.09),
-        inset 0 0 18px rgba(200,28,28,0.07) !important;
-    transform: translateY(-2px) !important;
-}
-
-.ph-splash-btns .stButton > button:active {
-    transform: translateY(0) !important;
-}
-
-.ph-splash-btns .stButton > button:focus {
-    outline: none !important;
-    box-shadow:
-        0 0 22px  5px rgba(200,28,28,0.20),
-        0 0 50px 12px rgba(200,28,28,0.09) !important;
-}
-
 
 /* ── KEYFRAMES ── */
 @keyframes spin-ring {
@@ -326,7 +261,6 @@ footer                       { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
-    # ── HTML della splash (logo + ring, senza tab HTML) ──
     st.markdown("""
 <div class="ph-splash">
 
@@ -338,21 +272,20 @@ footer                       { display: none !important; }
     <span class="ph-logo-text">Phinance</span>
   </div>
 
-</div>
-""", unsafe_allow_html=True)
+  <div class="ph-tabs">
+    <div class="ph-tab" onclick="goTo('put_scoperta')">Put Scoperta</div>
+    <div class="ph-tab" onclick="goTo('bull_put_spread')">Bull Put Spread</div>
+  </div>
 
-    # ── Pulsanti Streamlit = tab rossi (dentro wrapper per isolare CSS) ──
-    st.markdown("<div class='ph-splash-btns'>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Put Scoperta", key="splash_ps"):
-            st.session_state.strategia = "put_scoperta"
-            st.rerun()
-    with col2:
-        if st.button("Bull Put Spread", key="splash_bps"):
-            st.session_state.strategia = "bull_put_spread"
-            st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+</div>
+
+<script>
+function goTo(s) {
+  var url = window.location.href.split('?')[0] + '?s=' + s;
+  window.location.href = url;
+}
+</script>
+""", unsafe_allow_html=True)
 
     st.stop()
 
