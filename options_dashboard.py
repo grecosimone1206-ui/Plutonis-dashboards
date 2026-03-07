@@ -263,40 +263,35 @@ footer                       { display: none !important; }
     <div class="ph-ring-d2"></div>
     <span class="ph-logo-text">Phinance</span>
   </div>
-  <div class="ph-tab-label">Seleziona una strategia</div>
 </div>
+""", unsafe_allow_html=True)
 
+    # CSS scoped con attributo key univoco sui pulsanti
+    st.markdown("""
 <style>
-.ph-tab-label {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 400;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.2);
-    margin-top: 0;
-    margin-bottom: 0.8rem;
-    text-align: center;
+/* Centra solo i pulsanti splash — identificati dalla loro key univoca */
+button[data-testid="baseButton-secondary"][kind="secondary"]:is([data-key="splash_ps"], [data-key="splash_bps"]) {
+    display: block;
 }
 
-/* ── Centra il contenitore colonne ── */
-section.main > div.block-container > div:nth-child(2) div[data-testid="stHorizontalBlock"],
-div[data-testid="stHorizontalBlock"] {
+/* Contenitore pulsanti splash centrato */
+div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) {
     display: flex !important;
     justify-content: center !important;
     gap: 0 !important;
+    max-width: 460px !important;
     margin: 0 auto !important;
-    max-width: 500px !important;
+    margin-top: -0.5rem !important;
 }
-div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) > div[data-testid="column"] {
     flex: 0 0 auto !important;
     width: auto !important;
     min-width: 0 !important;
     padding: 0 0.5rem !important;
 }
 
-/* ── Stile pulsanti = tab rossi ── */
-div[data-testid="stHorizontalBlock"] .stButton > button {
+/* Stile tab rosso — solo pulsanti splash */
+div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button {
     min-width: 200px !important;
     height: 52px !important;
     padding: 0 2rem !important;
@@ -317,9 +312,9 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
         background   0.22s ease !important;
     box-shadow: none !important;
     outline: none !important;
-    width: 100% !important;
+    width: auto !important;
 }
-div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button:hover {
     border-color: rgba(215,40,40,0.72) !important;
     color: #ffffff !important;
     background: rgba(195,28,28,0.13) !important;
@@ -329,10 +324,10 @@ div[data-testid="stHorizontalBlock"] .stButton > button:hover {
         inset 0 0 16px rgba(195,25,25,0.07) !important;
     transform: translateY(-2px) !important;
 }
-div[data-testid="stHorizontalBlock"] .stButton > button:active {
+div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button:active {
     transform: translateY(0px) !important;
 }
-div[data-testid="stHorizontalBlock"] .stButton > button:focus:not(:active) {
+div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button:focus:not(:active) {
     outline: none !important;
     box-shadow: none !important;
 }
@@ -341,11 +336,11 @@ div[data-testid="stHorizontalBlock"] .stButton > button:focus:not(:active) {
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Put Scoperta", key="splash_ps", use_container_width=True):
+        if st.button("Put Scoperta", key="splash_ps", use_container_width=False):
             st.session_state.strategia = "put_scoperta"
             st.rerun()
     with col2:
-        if st.button("Bull Put Spread", key="splash_bps", use_container_width=True):
+        if st.button("Bull Put Spread", key="splash_bps", use_container_width=False):
             st.session_state.strategia = "bull_put_spread"
             st.rerun()
 
