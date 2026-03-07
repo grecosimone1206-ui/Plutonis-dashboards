@@ -809,11 +809,12 @@ hr { border-color: var(--border-subtle) !important; }
 
 /* ── SIDEBAR SECTIONS ── */
 .sb-section {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--accent-cyan);
     padding: 1rem 0 0.5rem 0;
     margin-top: 0.5rem;
     border-top: 1px solid var(--border-subtle);
