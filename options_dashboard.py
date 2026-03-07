@@ -59,10 +59,10 @@ html, body,
 footer                       { display: none !important; }
 #MainMenu                    { display: none !important; }
 
-/* ── Pulsanti Streamlit = Tab visibili ── */
+/* ── Pulsanti Streamlit = Tab visibili — SOLO nella splash ── */
 
 /* Contenitore colonne centrato */
-div[data-testid="stHorizontalBlock"] {
+.ph-splash-btns > div[data-testid="stHorizontalBlock"] {
     justify-content: center !important;
     gap: 1rem !important;
     max-width: 460px !important;
@@ -70,7 +70,7 @@ div[data-testid="stHorizontalBlock"] {
 }
 
 /* Reset colonne */
-div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+.ph-splash-btns > div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
     flex: 0 0 auto !important;
     width: auto !important;
     min-width: 0 !important;
@@ -78,7 +78,7 @@ div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
 }
 
 /* Il pulsante stesso — stile tab rosso */
-div[data-testid="stHorizontalBlock"] .stButton > button {
+.ph-splash-btns .stButton > button {
     position: relative !important;
     min-width: 210px !important;
     height: 54px !important;
@@ -108,7 +108,7 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     outline: none !important;
 }
 
-div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+.ph-splash-btns .stButton > button:hover {
     border-color: rgba(220,45,45,0.68) !important;
     color: #ffffff !important;
     background: rgba(200,30,30,0.12) !important;
@@ -119,11 +119,11 @@ div[data-testid="stHorizontalBlock"] .stButton > button:hover {
     transform: translateY(-2px) !important;
 }
 
-div[data-testid="stHorizontalBlock"] .stButton > button:active {
+.ph-splash-btns .stButton > button:active {
     transform: translateY(0) !important;
 }
 
-div[data-testid="stHorizontalBlock"] .stButton > button:focus {
+.ph-splash-btns .stButton > button:focus {
     outline: none !important;
     box-shadow:
         0 0 22px  5px rgba(200,28,28,0.20),
@@ -341,7 +341,8 @@ div[data-testid="stHorizontalBlock"] .stButton > button:focus {
 </div>
 """, unsafe_allow_html=True)
 
-    # ── Pulsanti Streamlit invisibili sovrapposti ai tab via CSS ──
+    # ── Pulsanti Streamlit = tab rossi (dentro wrapper per isolare CSS) ──
+    st.markdown("<div class='ph-splash-btns'>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Put Scoperta", key="splash_ps"):
@@ -351,6 +352,7 @@ div[data-testid="stHorizontalBlock"] .stButton > button:focus {
         if st.button("Bull Put Spread", key="splash_bps"):
             st.session_state.strategia = "bull_put_spread"
             st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.stop()
 
@@ -1742,7 +1744,7 @@ _v = "font-family:'DM Sans',sans-serif;font-weight:700;letter-spacing:-0.03em;wh
 _e = "font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#3E526A;margin-bottom:0.3rem;white-space:nowrap"
 _b = "font-family:'DM Mono',monospace;font-size:0.6rem;color:#3E526A;white-space:nowrap;overflow:hidden"
 with d1:
-    st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
 with d2:
     st.markdown(f'<div style="{_s}"><div style="{_e}">Margine / contratto</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(mc,2)} &euro;</div><div style="{_b}">{fmt(marg_pct,0)}% × strike</div></div>', unsafe_allow_html=True)
 with d3:
