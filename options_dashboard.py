@@ -59,6 +59,78 @@ html, body,
 footer                       { display: none !important; }
 #MainMenu                    { display: none !important; }
 
+/* ── Pulsanti Streamlit = Tab visibili ── */
+
+/* Contenitore colonne centrato */
+div[data-testid="stHorizontalBlock"] {
+    justify-content: center !important;
+    gap: 1rem !important;
+    max-width: 460px !important;
+    margin: 0 auto !important;
+}
+
+/* Reset colonne */
+div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+}
+
+/* Il pulsante stesso — stile tab rosso */
+div[data-testid="stHorizontalBlock"] .stButton > button {
+    position: relative !important;
+    min-width: 210px !important;
+    height: 54px !important;
+    padding: 0 2.2rem !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(180,28,28,0.32) !important;
+    background: rgba(160,22,22,0.07) !important;
+    color: rgba(255,255,255,0.68) !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+    transition:
+        border-color 0.25s ease,
+        color        0.25s ease,
+        box-shadow   0.25s ease,
+        transform    0.2s  ease,
+        background   0.25s ease !important;
+    bottom: unset !important;
+    left: unset !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+    width: auto !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+    border-color: rgba(220,45,45,0.68) !important;
+    color: #ffffff !important;
+    background: rgba(200,30,30,0.12) !important;
+    box-shadow:
+        0 0 22px  5px rgba(200,28,28,0.20),
+        0 0 50px 12px rgba(200,28,28,0.09),
+        inset 0 0 18px rgba(200,28,28,0.07) !important;
+    transform: translateY(-2px) !important;
+}
+
+div[data-testid="stHorizontalBlock"] .stButton > button:active {
+    transform: translateY(0) !important;
+}
+
+div[data-testid="stHorizontalBlock"] .stButton > button:focus {
+    outline: none !important;
+    box-shadow:
+        0 0 22px  5px rgba(200,28,28,0.20),
+        0 0 50px 12px rgba(200,28,28,0.09) !important;
+}
+
+
 /* ── KEYFRAMES ── */
 @keyframes spin-ring {
     from { transform: rotate(0deg); }
@@ -254,8 +326,10 @@ footer                       { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
+    # ── HTML della splash (logo + ring, senza tab HTML) ──
     st.markdown("""
 <div class="ph-splash">
+
   <div class="ph-ring-wrap">
     <div class="ph-ring-glow"></div>
     <div class="ph-ring-spin"></div>
@@ -263,86 +337,22 @@ footer                       { display: none !important; }
     <div class="ph-ring-d2"></div>
     <span class="ph-logo-text">Phinance</span>
   </div>
+
 </div>
 """, unsafe_allow_html=True)
 
-    # CSS scoped con attributo key univoco sui pulsanti
-    st.markdown("""
-<style>
-/* Centra solo i pulsanti splash — identificati dalla loro key univoca */
-button[data-testid="baseButton-secondary"][kind="secondary"]:is([data-key="splash_ps"], [data-key="splash_bps"]) {
-    display: block;
-}
-
-/* Contenitore pulsanti splash centrato */
-div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) {
-    display: flex !important;
-    justify-content: center !important;
-    gap: 0 !important;
-    max-width: 460px !important;
-    margin: 0 auto !important;
-    margin-top: -0.5rem !important;
-}
-div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) > div[data-testid="column"] {
-    flex: 0 0 auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-    padding: 0 0.5rem !important;
-}
-
-/* Stile tab rosso — solo pulsanti splash */
-div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button {
-    min-width: 200px !important;
-    height: 52px !important;
-    padding: 0 2rem !important;
-    border-radius: 13px !important;
-    border: 1px solid rgba(170,25,25,0.38) !important;
-    background: rgba(150,18,18,0.08) !important;
-    color: rgba(255,255,255,0.65) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.93rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.015em !important;
-    cursor: pointer !important;
-    transition:
-        border-color 0.22s ease,
-        color        0.22s ease,
-        box-shadow   0.22s ease,
-        transform    0.18s ease,
-        background   0.22s ease !important;
-    box-shadow: none !important;
-    outline: none !important;
-    width: auto !important;
-}
-div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button:hover {
-    border-color: rgba(215,40,40,0.72) !important;
-    color: #ffffff !important;
-    background: rgba(195,28,28,0.13) !important;
-    box-shadow:
-        0 0 20px 4px  rgba(195,25,25,0.22),
-        0 0 48px 10px rgba(195,25,25,0.10),
-        inset 0 0 16px rgba(195,25,25,0.07) !important;
-    transform: translateY(-2px) !important;
-}
-div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button:active {
-    transform: translateY(0px) !important;
-}
-div[data-testid="stHorizontalBlock"]:has(button[data-key="splash_ps"]) .stButton > button:focus:not(:active) {
-    outline: none !important;
-    box-shadow: none !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
+    # ── Pulsanti Streamlit invisibili sovrapposti ai tab via CSS ──
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Put Scoperta", key="splash_ps", use_container_width=False):
+        if st.button("Put Scoperta", key="splash_ps"):
             st.session_state.strategia = "put_scoperta"
             st.rerun()
     with col2:
-        if st.button("Bull Put Spread", key="splash_bps", use_container_width=False):
+        if st.button("Bull Put Spread", key="splash_bps"):
             st.session_state.strategia = "bull_put_spread"
             st.rerun()
+
+    st.stop()
 
 STRATEGIA = st.session_state.strategia
 
