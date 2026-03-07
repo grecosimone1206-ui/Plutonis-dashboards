@@ -1756,66 +1756,6 @@ with d5:
 with d6:
     st.markdown(f'<div style="{_s}"><div style="{_e}">Rendimento</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">{fmt(rend,2)}% / mese</div><div style="{_b}">{fmt(rend_ann,2)}% / anno</div></div>', unsafe_allow_html=True)
 
-st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
-# ── KPI CARDS &mdash; 4 colonne ──
-c1, c2, c3, c4 = st.columns(4, gap="medium")
-
-with c1:
-    st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.0s">
-        <div class="kpi-eyebrow greek-tooltip">&#9679; Strike Consigliato
-            <span class="tip-icon">?</span>
-            <div class="tip-box">Lo strike viene calcolato automaticamente con Black-Scholes in base alla probabilit&agrave; di successo che imposti nella sidebar. All&apos;84% corrisponde un delta di circa 0,16 &mdash; il punto ottimale per la strategia.</div>
-        </div>
-        <div class="kpi-value cyan">{fmt(K,2)}</div>
-        <div class="kpi-sub">{fmt(dist,2)}% sotto lo spot</div>
-        <div><span class="kpi-badge green">OTM TARGET</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c2:
-    bc = "green" if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
-    bt = "Eccellente" if prob >= 0.90 else "Accettabile" if prob >= 0.80 else "Rischiosa"
-    vc = "green"  if prob >= 0.90 else "gold" if prob >= 0.80 else "red"
-    st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.06s">
-        <div class="kpi-eyebrow greek-tooltip">&#9679; Probabilit&agrave; di Successo
-            <span class="tip-icon">?</span>
-            <div class="tip-box">Probabilit&agrave; che l&apos;opzione scada OTM e tu incassi il premio intero. Calcolata con Black-Scholes come N(d2). 84% = ottimale per la strategia. Sopra 90% = pi&ugrave; sicuro ma premio molto basso.</div>
-        </div>
-        <div class="kpi-value {vc}">{fmt(prob*100,2)}%</div>
-        <div class="kpi-sub">Scade senza perdite</div>
-        <div><span class="kpi-badge {bc}">{bt}</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c3:
-    st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.12s">
-        <div class="kpi-eyebrow greek-tooltip">&#9679; Premio Incassato
-            <span class="tip-icon">?</span>
-            <div class="tip-box">Il premio &egrave; il massimo guadagno possibile &mdash; lo incassi subito alla vendita. Se l&apos;opzione scade OTM tieni tutto. Strategia comune: chiudi al 50% del profitto riacquistando l&apos;opzione a prezzo inferiore.</div>
-        </div>
-        <div class="kpi-value green">{fmt(prem,2)}</div>
-        <div class="kpi-sub">{n_contratti} contratti &rarr; <strong style="color:var(--accent-green)">+{fmt(ptot,0)} &euro;</strong></div>
-        <div><span class="kpi-badge green">{fmt(rend,2)}% sul margine / mese</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with c4:
-    st.markdown(f"""
-    <div class="kpi-card" style="animation-delay:0.18s">
-        <div class="kpi-eyebrow greek-tooltip">&#9679; Margine Richiesto
-            <span class="tip-icon">?</span>
-            <div class="tip-box">Il margine &egrave; la liquidit&agrave; che il broker blocca come garanzia. Non &egrave; un costo &mdash; rimane tuo &mdash; ma non puoi usarla per altri trade. Il valore &egrave; una stima: verifica sempre sul tuo broker prima di operare.</div>
-        </div>
-        <div class="kpi-value gold">{fmt(marg_tot,0)} &euro;</div>
-        <div class="kpi-sub">{fmt(mc,0)} &euro; &times; {n_contratti} contratti</div>
-        <div><span class="kpi-badge gold">DA AVERE SUL CONTO</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
 # DASHBOARD — PUT SCOPERTA
