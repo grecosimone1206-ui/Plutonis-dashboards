@@ -1457,44 +1457,48 @@ with st.sidebar:
         delta_reale = None
         theta_reale = None
 
-    usa_premio_reale = st.toggle("Usa premio reale",
-        help="Attiva per inserire il premio reale che vedi sul tuo broker invece di quello calcolato da Black-Scholes.")
-    if usa_premio_reale:
-        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) &mdash; &euro;</span>", unsafe_allow_html=True)
+    # ── Premio reale — solo put scoperta ──
+    if STRATEGIA == "put_scoperta":
+        usa_premio_reale = st.toggle("Usa premio reale",
+            help="Attiva per inserire il premio reale che vedi sul tuo broker invece di quello calcolato da Black-Scholes.")
+        if usa_premio_reale:
+            st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PREMIO REALE (BID) &mdash; &euro;</span>", unsafe_allow_html=True)
 
-        def _sync_slider():
-            st.session_state["_pr_val"] = st.session_state["slider_pr"]
-        def _sync_input():
-            st.session_state["_pr_val"] = st.session_state["input_pr"]
+            def _sync_slider():
+                st.session_state["_pr_val"] = st.session_state["slider_pr"]
+            def _sync_input():
+                st.session_state["_pr_val"] = st.session_state["input_pr"]
 
-        if "_pr_val" not in st.session_state:
-            st.session_state["_pr_val"] = 5.0
+            if "_pr_val" not in st.session_state:
+                st.session_state["_pr_val"] = 5.0
 
-        cur = float(st.session_state["_pr_val"])
-        col_s, col_n = st.columns([2, 1])
-        with col_s:
-            st.slider(
-                "Premio (cursore)", 0.01, 500.0, cur, 0.01,
-                label_visibility="collapsed",
-                key="slider_pr",
-                on_change=_sync_slider
+            cur = float(st.session_state["_pr_val"])
+            col_s, col_n = st.columns([2, 1])
+            with col_s:
+                st.slider(
+                    "Premio (cursore)", 0.01, 500.0, cur, 0.01,
+                    label_visibility="collapsed",
+                    key="slider_pr",
+                    on_change=_sync_slider
+                )
+            with col_n:
+                st.number_input(
+                    "Premio (±)", 0.01, 500.0, cur, 0.01,
+                    label_visibility="collapsed",
+                    key="input_pr",
+                    format="%.2f",
+                    on_change=_sync_input
+                )
+            premio_reale = float(st.session_state["_pr_val"])
+            st.markdown(
+                f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
+                f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
+                f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
+                f"Premio selezionato: <strong>{premio_reale:.2f} &euro;</strong></div>",
+                unsafe_allow_html=True
             )
-        with col_n:
-            st.number_input(
-                "Premio (±)", 0.01, 500.0, cur, 0.01,
-                label_visibility="collapsed",
-                key="input_pr",
-                format="%.2f",
-                on_change=_sync_input
-            )
-        premio_reale = float(st.session_state["_pr_val"])
-        st.markdown(
-            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
-            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
-            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-            f"Premio selezionato: <strong>{premio_reale:.2f} &euro;</strong></div>",
-            unsafe_allow_html=True
-        )
+        else:
+            premio_reale = None
     else:
         premio_reale = None
 
