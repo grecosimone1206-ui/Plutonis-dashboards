@@ -1428,27 +1428,31 @@ with st.sidebar:
     else:
         iv_rank_reale = None
 
-    # ── Greche reali ──
-    usa_greche_reali = st.toggle("Usa greche reali",
-        help="Attiva per inserire Delta e Theta reali che vedi sul tuo broker.")
-    if usa_greche_reali:
-        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>DELTA REALE</span>", unsafe_allow_html=True)
-        delta_reale = st.number_input("Delta reale", 0.0, 1.0,
-            float(st.session_state.get("_delta_val", 0.20)), 0.01,
-            label_visibility="collapsed", key="input_delta", format="%.2f")
-        st.session_state["_delta_val"] = delta_reale
-        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>THETA REALE (&euro;/giorno)</span>", unsafe_allow_html=True)
-        theta_reale = st.number_input("Theta reale", 0.0, 9999.0,
-            float(st.session_state.get("_theta_val", 10.0)), 0.01,
-            label_visibility="collapsed", key="input_theta", format="%.2f")
-        st.session_state["_theta_val"] = theta_reale
-        st.markdown(
-            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
-            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
-            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-            f"&#916; {delta_reale:.2f} &nbsp;&middot;&nbsp; &#920; +{theta_reale:.2f} &euro;/gg</div>",
-            unsafe_allow_html=True
-        )
+    # ── Greche reali — solo put scoperta ──
+    if STRATEGIA == "put_scoperta":
+        usa_greche_reali = st.toggle("Usa greche reali",
+            help="Attiva per inserire Delta e Theta reali che vedi sul tuo broker.")
+        if usa_greche_reali:
+            st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>DELTA REALE</span>", unsafe_allow_html=True)
+            delta_reale = st.number_input("Delta reale", 0.0, 1.0,
+                float(st.session_state.get("_delta_val", 0.20)), 0.01,
+                label_visibility="collapsed", key="input_delta", format="%.2f")
+            st.session_state["_delta_val"] = delta_reale
+            st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>THETA REALE (&euro;/giorno)</span>", unsafe_allow_html=True)
+            theta_reale = st.number_input("Theta reale", 0.0, 9999.0,
+                float(st.session_state.get("_theta_val", 10.0)), 0.01,
+                label_visibility="collapsed", key="input_theta", format="%.2f")
+            st.session_state["_theta_val"] = theta_reale
+            st.markdown(
+                f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
+                f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
+                f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
+                f"&#916; {delta_reale:.2f} &nbsp;&middot;&nbsp; &#920; +{theta_reale:.2f} &euro;/gg</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            delta_reale = None
+            theta_reale = None
     else:
         delta_reale = None
         theta_reale = None
@@ -1979,7 +1983,7 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
     _b = "font-family:'DM Mono',monospace;font-size:0.6rem;color:#3E526A;white-space:nowrap;overflow:hidden"
     bps_thday = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
     st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione</span>", unsafe_allow_html=True)
-    d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
+    d1,d2,d3,d4,d5 = st.columns(5, gap="small")
     with d1:
         st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
     with d2:
@@ -1991,8 +1995,6 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
         st.markdown(f'<div style="{_s}"><div style="{_e}">Credito netto</div><div style="{_v};font-size:1.2rem;color:{cred_col}">+{fmt(bps_credito_tot,2)} &euro;</div><div style="{_b}">{fmt(bps_pct_largh,1)}% della larghezza</div></div>', unsafe_allow_html=True)
     with d5:
         st.markdown(f'<div style="{_s}"><div style="{_e}">Margine fisso</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(bps_margine_tot,2)} &euro;</div><div style="{_b}">rischio definito</div></div>', unsafe_allow_html=True)
-    with d6:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Theta / giorno</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(bps_thday,2)} &euro;</div><div style="{_b}">guadagno dal tempo</div></div>', unsafe_allow_html=True)
     st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
     # ── PANNELLO ANALISI SPREAD ──
@@ -2034,38 +2036,6 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
         </div>
         <div style="margin-top:1rem">
             <span class="spread-rule {bps_regola_cls}">{bps_regola_txt} &mdash; {fmt(bps_pct_largh,1)}% della larghezza ${larghezza_spread}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── GRECHE BPS ──
-    delta_display = delta_reale if delta_reale is not None else abs(gre['delta'])
-    theta_display = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
-    delta_fonte = "Reale (broker)" if delta_reale is not None else "Black-Scholes (stimato)"
-    theta_fonte = "Reale (broker)" if theta_reale is not None else "Black-Scholes (stimato)"
-
-    st.markdown(f"""
-    <div class="panel" style="animation-delay:0.3s;margin-bottom:1.5rem">
-        <div class="panel-title"><span style="color:var(--accent-cyan);margin-right:0.4rem">&#8721;</span> Lettere Greche dello Spread</div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0">
-            <div style="padding:1.2rem 1.8rem;border-right:1px solid rgba(255,255,255,0.04)">
-                <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                    &#916; Delta netto (prob. ITM)
-                    <span class="tip-icon">?</span>
-                    <div class="tip-box">Delta netto dello spread = delta put venduta &mdash; delta put comprata. Valore basso = posizione stabile. Rappresenta la probabilit&agrave; approssimativa che lo spread scada ITM (in perdita massima). Ottimale: sotto 10.</div>
-                </div>
-                <div class="panel-val cyan" style="font-size:1.6rem">{fmt(delta_display,2)}</div>
-                <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">{fmt(delta_display*100,1)}% prob. perdita max &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{delta_fonte}</span></div>
-            </div>
-            <div style="padding:1.2rem 1.8rem">
-                <div class="panel-key greek-tooltip" style="margin-bottom:0.5rem">
-                    &#920; Theta netto (&euro;/giorno)
-                    <span class="tip-icon">?</span>
-                    <div class="tip-box">Theta netto dello spread = theta put venduta &mdash; theta put comprata. Ogni giorno che passa entrambe le opzioni decadono, ma quella venduta decade pi&ugrave; velocemente &mdash; guadagni la differenza ogni giorno.</div>
-                </div>
-                <div class="panel-val green" style="font-size:1.6rem">+{fmt(theta_display,2)} &euro;</div>
-                <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">guadagno per giorno &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{theta_fonte}</span></div>
-            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
