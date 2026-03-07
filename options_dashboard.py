@@ -1733,46 +1733,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── DETTAGLIO POSIZIONE — condizionale per strategia ──
-_s = "background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:0.9rem 1rem;height:110px;max-height:110px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:default"
-_v = "font-family:'DM Sans',sans-serif;font-weight:700;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:clip"
-_e = "font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#3E526A;margin-bottom:0.3rem;white-space:nowrap"
-_b = "font-family:'DM Mono',monospace;font-size:0.6rem;color:#3E526A;white-space:nowrap;overflow:hidden"
-
-if STRATEGIA == "put_scoperta":
-    st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione <span style='color:var(--text-muted);font-weight:400'>(margine stimato)</span></span>", unsafe_allow_html=True)
-    d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
-    with d1:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
-    with d2:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Margine / contratto</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(mc,2)} &euro;</div><div style="{_b}">{fmt(marg_pct,0)}% × strike</div></div>', unsafe_allow_html=True)
-    with d3:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Margine totale</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(marg_tot,2)} &euro;</div><div style="{_b}">da avere sul conto</div></div>', unsafe_allow_html=True)
-    with d4:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Incasso premi</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(ptot,2)} &euro;</div><div style="{_b}">{n_contratti} × {fmt(prem,2)} × 100</div></div>', unsafe_allow_html=True)
-    with d5:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Theta / giorno</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(thday,2)} &euro;</div><div style="{_b}">guadagno dal tempo</div></div>', unsafe_allow_html=True)
-    with d6:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Rendimento</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">{fmt(rend,2)}% / mese</div><div style="{_b}">{fmt(rend_ann,2)}% / anno</div></div>', unsafe_allow_html=True)
-
-elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
-    bps_thday = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
-    st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione</span>", unsafe_allow_html=True)
-    d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
-    with d1:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
-    with d2:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Strike venduto</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(bps_K_venduta,2)}</div><div style="{_b}">put venduta (STO)</div></div>', unsafe_allow_html=True)
-    with d3:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Strike comprato</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(bps_K_comprata,2)}</div><div style="{_b}">put comprata (BTO)</div></div>', unsafe_allow_html=True)
-    with d4:
-        cred_col = "var(--accent-green)" if bps_pct_largh >= 30 else "var(--accent-gold)" if bps_pct_largh >= 25 else "var(--accent-red)"
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Credito netto</div><div style="{_v};font-size:1.2rem;color:{cred_col}">+{fmt(bps_credito_tot,2)} &euro;</div><div style="{_b}">{fmt(bps_pct_largh,1)}% della larghezza</div></div>', unsafe_allow_html=True)
-    with d5:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Margine fisso</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(bps_margine_tot,2)} &euro;</div><div style="{_b}">rischio definito</div></div>', unsafe_allow_html=True)
-    with d6:
-        st.markdown(f'<div style="{_s}"><div style="{_e}">Theta / giorno</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(bps_thday,2)} &euro;</div><div style="{_b}">guadagno dal tempo</div></div>', unsafe_allow_html=True)
-
 
 # ══════════════════════════════════════════════════════════
 # DASHBOARD — PUT SCOPERTA
@@ -1837,6 +1797,27 @@ if STRATEGIA == "put_scoperta":
         </div>
         """, unsafe_allow_html=True)
 
+    st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
+
+    # ── DETTAGLIO POSIZIONE ──
+    _s = "background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:0.9rem 1rem;height:110px;max-height:110px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:default"
+    _v = "font-family:'DM Sans',sans-serif;font-weight:700;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:clip"
+    _e = "font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#3E526A;margin-bottom:0.3rem;white-space:nowrap"
+    _b = "font-family:'DM Mono',monospace;font-size:0.6rem;color:#3E526A;white-space:nowrap;overflow:hidden"
+    st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione <span style='color:var(--text-muted);font-weight:400'>(margine stimato)</span></span>", unsafe_allow_html=True)
+    d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
+    with d1:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
+    with d2:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Margine / contratto</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(mc,2)} &euro;</div><div style="{_b}">{fmt(marg_pct,0)}% × strike</div></div>', unsafe_allow_html=True)
+    with d3:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Margine totale</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(marg_tot,2)} &euro;</div><div style="{_b}">da avere sul conto</div></div>', unsafe_allow_html=True)
+    with d4:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Incasso premi</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(ptot,2)} &euro;</div><div style="{_b}">{n_contratti} × {fmt(prem,2)} × 100</div></div>', unsafe_allow_html=True)
+    with d5:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Theta / giorno</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(thday,2)} &euro;</div><div style="{_b}">guadagno dal tempo</div></div>', unsafe_allow_html=True)
+    with d6:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Rendimento</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">{fmt(rend,2)}% / mese</div><div style="{_b}">{fmt(rend_ann,2)}% / anno</div></div>', unsafe_allow_html=True)
     st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
     # ── GRECHE ──
@@ -1989,6 +1970,29 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
         </div>
         """, unsafe_allow_html=True)
 
+    st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
+
+    # ── DETTAGLIO POSIZIONE BPS ──
+    _s = "background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:0.9rem 1rem;height:110px;max-height:110px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:default"
+    _v = "font-family:'DM Sans',sans-serif;font-weight:700;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:clip"
+    _e = "font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#3E526A;margin-bottom:0.3rem;white-space:nowrap"
+    _b = "font-family:'DM Mono',monospace;font-size:0.6rem;color:#3E526A;white-space:nowrap;overflow:hidden"
+    bps_thday = theta_reale if theta_reale is not None else abs(gre['theta']) * 100
+    st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Dettaglio Posizione</span>", unsafe_allow_html=True)
+    d1,d2,d3,d4,d5,d6 = st.columns(6, gap="small")
+    with d1:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Contratti</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{n_contratti}</div><div style="{_b}">selezionati</div></div>', unsafe_allow_html=True)
+    with d2:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Strike venduto</div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(bps_K_venduta,2)}</div><div style="{_b}">put venduta (STO)</div></div>', unsafe_allow_html=True)
+    with d3:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Strike comprato</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(bps_K_comprata,2)}</div><div style="{_b}">put comprata (BTO)</div></div>', unsafe_allow_html=True)
+    with d4:
+        cred_col = "var(--accent-green)" if bps_pct_largh >= 30 else "var(--accent-gold)" if bps_pct_largh >= 25 else "var(--accent-red)"
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Credito netto</div><div style="{_v};font-size:1.2rem;color:{cred_col}">+{fmt(bps_credito_tot,2)} &euro;</div><div style="{_b}">{fmt(bps_pct_largh,1)}% della larghezza</div></div>', unsafe_allow_html=True)
+    with d5:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Margine fisso</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(bps_margine_tot,2)} &euro;</div><div style="{_b}">rischio definito</div></div>', unsafe_allow_html=True)
+    with d6:
+        st.markdown(f'<div style="{_s}"><div style="{_e}">Theta / giorno</div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(bps_thday,2)} &euro;</div><div style="{_b}">guadagno dal tempo</div></div>', unsafe_allow_html=True)
     st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
     # ── PANNELLO ANALISI SPREAD ──
