@@ -1370,32 +1370,22 @@ def genera_pdf_scenari(strategia, params):
 
     def build_prezzi_scenario(scenario_tipo, K_strike, n_punti=25, K_comprata=None):
         """
-        3 scenari con fasce di prezzo FISSE relative allo strike.
-        scenario_tipo: 'positivo' | 'medio' | 'negativo'
-        
-        Positivo: 5 sotto K_c, 8 tra K_c e K_v, 12 sopra K_v  (focus sul profitto)
-        Medio:    3 sotto K_c, 10 tra K_c e K_v, 12 sopra K_v (focus sulla zona critica)
-        Negativo: 8 sotto K_c, 12 tra K_c e K_v, 5 sopra K_v  (focus sulla perdita)
+        Fasce di prezzo ancorate allo spot corrente:
+        - positivo:  spot → spot +10%   (25 prezzi equidistanti)
+        - medio:     spot -5% → spot +5%
+        - negativo:  spot -10% → spot
         """
-        K_c_ref = K_comprata if K_comprata is not None else K_strike * 0.976
-        largh   = max(K_strike - K_c_ref, K_strike * 0.015)
-
         if scenario_tipo == "positivo":
-            n_a, n_b, n_c = 3, 7, 15   # molti prezzi sopra lo strike
+            low  = spot
+            high = spot * 1.10
         elif scenario_tipo == "medio":
-            n_a, n_b, n_c = 3, 10, 12  # zona critica densa
+            low  = spot * 0.95
+            high = spot * 1.05
         else:  # negativo
-            n_a, n_b, n_c = 5, 12, 8   # molti prezzi sotto lo strike
+            low  = spot * 0.90
+            high = spot
 
-        zona_a = np.linspace(K_c_ref - largh * 2.5, K_c_ref - largh * 0.1, n_a)
-        zona_b = np.linspace(K_c_ref,               K_strike - largh * 0.01, n_b)
-        zona_c = np.linspace(K_strike,               K_strike + largh * 5.0,  n_c)
-
-        prezzi = np.sort(np.unique(np.concatenate([zona_a, zona_b, zona_c])))
-        if len(prezzi) > n_punti:
-            idx = np.round(np.linspace(0, len(prezzi)-1, n_punti)).astype(int)
-            prezzi = prezzi[idx]
-        return list(prezzi)
+        return list(np.linspace(low, high, n_punti))
 
     scenari_dati = [
         ("SCENARIO POSITIVO", p75, "positivo",
@@ -1589,10 +1579,11 @@ def genera_pdf_scenari(strategia, params):
         story.append(Spacer(1, 0.3*cm))
         story.append(Paragraph(sc_nome, ps(f"sct{idx}", "Helvetica-Bold", 14,
                                             sc_color, TA_LEFT, spaceAfter=2)))
+        sc_range = {"positivo": "Spot → +10%", "medio": "-5% → +5%", "negativo": "-10% → Spot"}
         story.append(Paragraph(
-            f"Valori calcolati con Black-Scholes &nbsp;|&nbsp; "
-            f"Fascia prezzi: <b>{min(prezzi_sc):.2f} – {max(prezzi_sc):.2f}</b> &nbsp;|&nbsp; "
-            f"T residuo: <b>{int(T*365//2)} giorni</b>",
+            f"Fascia: <b>{sc_range[sc_tipo]}</b> &nbsp;|&nbsp; "
+            f"Prezzi: <b>{min(prezzi_sc):.2f} – {max(prezzi_sc):.2f}</b> &nbsp;|&nbsp; "
+            f"Valori BS a T residuo: <b>{int(T*365//2)} gg</b>",
             ps(f"scs{idx}", "Helvetica", 8, MUTED, TA_LEFT, spaceAfter=4)))
         story.append(HRFlowable(width="100%", thickness=0.5, color=sc_color))
         story.append(Spacer(1, 0.3*cm))
