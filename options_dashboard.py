@@ -1362,16 +1362,14 @@ with st.sidebar:
         float(st.session_state.get("_iv_pct_init", 20.0)), 0.5,
         key="iv_pct_slider",
         help="Se hai premuto 'Aggiorna', questo campo viene preimpostato automaticamente con il VIX corrente.\nPuoi modificarlo manualmente per confrontare scenari diversi.")
-    r_pct  = st.number_input("Tasso Risk-Free (%)", 0.0, 20.0, 4.5, 0.1,
-        help="Rendimento BTP/Treasury 10 anni.\nAggiorna ogni 3 mesi circa.")
+    r_pct = 4.5  # tasso risk-free fisso
 
     st.markdown("<div class='sb-section'>Posizione & Rischio</div>", unsafe_allow_html=True)
     n_contratti = st.slider("Numero di Contratti", 1, 50, 3,
         help="Quanti contratti vuoi vendere.\nOgni contratto copre 100 azioni del sottostante.")
     marg_pct = st.slider("Margine Broker (%)", 5.0, 50.0, 15.0, 1.0,
         help="% del valore dello strike bloccata come garanzia dal broker.\nIl broker tipicamente richiede il 15-20% per le put OTM su ETF.\nVerifica nelle impostazioni del tuo conto.")
-    crash    = st.slider("Scenario di Crisi (%)", 5.0, 50.0, 20.0, 1.0,
-        help="Crollo ipotetico usato per calcolare il worst case scenario.")
+    crash = 20.0  # scenario crisi fisso (usato internamente per calc_wcs)
 
     st.markdown("<div class='sb-section'>Obiettivo Strategia</div>", unsafe_allow_html=True)
     prob_t = st.slider("Probabilità di Successo (%)", 70.0, 99.0, 84.0, 1.0,
@@ -1861,56 +1859,21 @@ if STRATEGIA == "put_scoperta":
     </div>
     """, unsafe_allow_html=True)
 
-    # ── SCENARIO CRISI ──
-    st.markdown(f"""
-    <div class="crisis-panel" style="animation-delay:0.35s">
-        <div class="crisis-header">&#9888; Scenario di Crisi &mdash; Crollo {fmt(sc['crash'],0)}%</div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column;justify-content:flex-start">
-                <div class="crisis-key" style="margin-bottom:0.6rem;min-height:1.2rem">Prezzo dopo il crollo</div>
-                <div class="crisis-val">{fmt(sc['Sc'],2)}</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita per contratto</div>
-                <div class="crisis-val red">{fmt(sc['lc'],2)} &euro;</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita lorda totale</div>
-                <div class="crisis-val red">{fmt(sc['lt_gross'],2)} &euro;</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Premi gi&agrave; incassati</div>
-                <div class="crisis-val green">+{fmt(sc['pt'],2)} &euro;</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita netta finale</div>
-                <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(pn,0)} &euro;</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Impatto sul margine</div>
-                <div class="crisis-val red">{fmt(imp,2)}%</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
     # ── RIEPILOGO PUT SCOPERTA ──
     st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allow_html=True)
     st.dataframe(pd.DataFrame({
         "Parametro": ["Strumento","Prezzo Attuale","Strike Consigliato","Distanza Strike",
-                      "Giorni alla Scadenza","IV Impostata","Vol. Storica 30gg","VIX Corrente","IV Rank",
+                      "Giorni alla Scadenza",
                       "Premio per Contratto","Numero Contratti","Margine per Contratto",
                       "Margine Totale Richiesto","Incasso Totale Premi",
                       "Punto di Pareggio","Theta Giornaliero","Rendimento sul Margine"],
         "Valore":    [nome, fmt(spot,2), fmt(K,2), f"{fmt(dist,2)}% sotto lo spot",
-                      f"{dte} gg", f"{fmt(iv_pct,2)}%", f"{fmt(vol_st,2)}%",
-                      vix_str + (" (preimpostato in IV)" if vix_val else ""),
-                      f"{fmt(iv_rank,2)}/100 &mdash; {ivr_label}",
-                      f"{fmt(prem,4)}  ({fmt(prem*100,2)} &euro; / contratto 100 azioni)",
-                      str(n_contratti), f"{fmt(mc,0)} &euro;",
-                      f"{fmt(marg_tot,0)} &euro; (da avere sul conto)",
-                      f"+{fmt(ptot,0)} &euro;",
-                      fmt(K-prem,2), f"+{fmt(thday,2)} &euro; / giorno",
+                      f"{dte} gg",
+                      f"{fmt(prem,4)}  ({fmt(prem*100,2)} € / contratto 100 azioni)",
+                      str(n_contratti), f"{fmt(mc,0)} €",
+                      f"{fmt(marg_tot,0)} € (da avere sul conto)",
+                      f"+{fmt(ptot,0)} €",
+                      fmt(K-prem,2), f"+{fmt(thday,2)} € / giorno",
                       f"{fmt(rend,2)}% / mese  ({fmt(rend_ann,2)}% annuo composto stimato)"],
     }), use_container_width=True, hide_index=True,
         column_config={
@@ -2023,61 +1986,23 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
     st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
 
-    # ── SCENARIO CRISI BPS (perdita limitata alla larghezza) ──
-    bps_crisi_spot = spot * (1 - crash / 100)
-    bps_crisi_loss = -bps_margine_tot  # perdita max = margine fisso
-    bps_crisi_pct  = (bps_margine_tot / bps_margine_tot * 100) if bps_margine_tot > 0 else 100
-    st.markdown(f"""
-    <div class="crisis-panel" style="animation-delay:0.35s">
-        <div class="crisis-header">&#9888; Scenario di Crisi &mdash; Crollo {fmt(crash,0)}%</div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0">
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Prezzo dopo il crollo</div>
-                <div class="crisis-val">{fmt(bps_crisi_spot,2)}</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Strike venduto</div>
-                <div class="crisis-val">{fmt(bps_K_venduta,2)}</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Strike comprato</div>
-                <div class="crisis-val green">{fmt(bps_K_comprata,2)}</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Credito incassato</div>
-                <div class="crisis-val green">+{fmt(bps_credito_tot,2)} &euro;</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;border-right:1px solid rgba(255,90,90,0.08);display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita massima</div>
-                <div class="crisis-val red" style="font-size:1rem;font-weight:700">{fmt(bps_crisi_loss,0)} &euro;</div>
-            </div>
-            <div style="padding:0.8rem 1.2rem;display:flex;flex-direction:column">
-                <div class="crisis-key" style="margin-bottom:0.6rem">Perdita limitata a</div>
-                <div class="crisis-val green">${larghezza_spread} per azione</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
     # ── RIEPILOGO BPS ──
     st.markdown("<div class='section-label'>Riepilogo Operazione &mdash; Bull Put Spread</div>", unsafe_allow_html=True)
     st.dataframe(pd.DataFrame({
         "Parametro": ["Strumento","Prezzo Attuale","Strike Venduto (STO)","Strike Comprato (BTO)",
-                      "Larghezza Spread","Giorni alla Scadenza","IV Impostata","VIX Corrente","IV Rank",
-                      "Credito Netto per Azione","Credito come % Larghezza","Numero Contratti",
+                      "Larghezza Spread","Giorni alla Scadenza",
+                      "Credito Netto per Azione","Numero Contratti",
                       "Margine per Contratto (fisso)","Margine Totale Richiesto",
                       "Credito Totale Incassato","Break-even","Take Profit (50%)",
                       "Stop Loss (2x credito)","Rendimento sul Margine"],
         "Valore":    [nome, fmt(spot,2), fmt(bps_K_venduta,2), fmt(bps_K_comprata,2),
-                      f"${larghezza_spread}", f"{dte} gg", f"{fmt(iv_pct,2)}%",
-                      vix_str, f"{fmt(iv_rank,2)}/100",
-                      f"{fmt(bps_credito,4)} ({fmt(bps_credito*100,2)} &euro; / contratto)",
-                      f"{fmt(bps_pct_largh,1)}% &mdash; {bps_regola_txt}",
-                      str(n_contratti), f"{fmt(bps_margine_c,0)} &euro;",
-                      f"{fmt(bps_margine_tot,0)} &euro; (da avere sul conto)",
-                      f"+{fmt(bps_credito_tot,0)} &euro;",
-                      fmt(bps_be,2), f"+{fmt(bps_tp,0)} &euro;",
-                      f"-{fmt(bps_sl,0)} &euro;",
+                      f"${larghezza_spread}", f"{dte} gg",
+                      f"{fmt(bps_credito,4)} ({fmt(bps_credito*100,2)} € / contratto)",
+                      str(n_contratti), f"{fmt(bps_margine_c,0)} €",
+                      f"{fmt(bps_margine_tot,0)} € (da avere sul conto)",
+                      f"+{fmt(bps_credito_tot,0)} €",
+                      fmt(bps_be,2), f"+{fmt(bps_tp,0)} €",
+                      f"-{fmt(bps_sl,0)} €",
                       f"{fmt(bps_rend,2)}% / mese  ({fmt(bps_rend_ann,2)}% annuo stimato)"],
     }), use_container_width=True, hide_index=True,
         column_config={
