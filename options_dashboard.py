@@ -1365,12 +1365,27 @@ def genera_pdf_scenari(strategia, params):
     p50  = float(np.percentile(prezzi_sim, 50))   # scenario medio
     p10  = float(np.percentile(prezzi_sim, 10))   # scenario negativo
 
-    def build_prezzi_scenario(centro, K_strike, n_punti=25):
-        """25 prezzi che attraversano sempre la zona dello strike,
-        con distribuzione centrata sul percentile dello scenario."""
-        low  = min(centro * 0.90, K_strike * 0.88)
-        high = max(centro * 1.08, K_strike * 1.06)
-        return sorted(np.linspace(low, high, n_punti))
+    def build_prezzi_scenario(percentile_centro, K_strike, n_punti=25, K_comprata=None):
+        """
+        25 prezzi concentrati nelle zone più informative:
+        - 3 prezzi sotto K_comprata (perdita max, zona piatta)
+        - 10 prezzi tra K_comprata e K_venduta (perdita parziale, zona variabile)
+        - 12 prezzi intorno e sopra K_venduto (break-even e profitto)
+        Offset proporzionale verso il centro scenario.
+        """
+        offset = (percentile_centro - K_strike) * 0.25
+        K_c_ref = K_comprata if K_comprata is not None else K_strike * 0.976
+
+        zona_a = np.linspace(K_c_ref * 0.91,  K_c_ref * 0.99,  3)   # sotto K_c
+        zona_b = np.linspace(K_c_ref,          K_strike,        10)  # tra i due strike
+        zona_c = np.linspace(K_strike,          K_strike * 1.09, 12) # sopra K_v
+
+        prezzi = np.unique(np.concatenate([zona_a, zona_b, zona_c]))
+        prezzi = np.sort(prezzi + offset)
+        if len(prezzi) > n_punti:
+            idx = np.round(np.linspace(0, len(prezzi)-1, n_punti)).astype(int)
+            prezzi = prezzi[idx]
+        return list(prezzi)
 
     scenari_dati = [
         ("SCENARIO POSITIVO", p75,
@@ -1553,8 +1568,9 @@ def genera_pdf_scenari(strategia, params):
     # PAGINE SCENARI
     # ═══════════════════════════════════════════════════════
     for idx, (sc_nome, centro, sc_commento, sc_color) in enumerate(scenari_dati):
-        K_strike_ref = K if strategia == "put_scoperta" else K_v
-        prezzi_sc = build_prezzi_scenario(centro, K_strike_ref)
+        K_strike_ref   = K if strategia == "put_scoperta" else K_v
+        K_comprata_ref = None if strategia == "put_scoperta" else K_c
+        prezzi_sc = build_prezzi_scenario(centro, K_strike_ref, K_comprata=K_comprata_ref)
 
         # Titolo scenario
         story.append(Spacer(1, 0.3*cm))
