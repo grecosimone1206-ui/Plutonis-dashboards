@@ -1368,30 +1368,28 @@ def genera_pdf_scenari(strategia, params):
     p50  = float(np.percentile(prezzi_sim, 50))   # scenario medio
     p10  = float(np.percentile(prezzi_sim, 10))   # scenario negativo
 
-    def build_prezzi_scenario(percentile_centro, K_strike, n_punti=25, K_comprata=None):
+    def build_prezzi_scenario(scenario_tipo, K_strike, n_punti=25, K_comprata=None):
         """
-        25 prezzi SEMPRE ancorati allo strike reale, indipendentemente dal percentile.
-        Il percentile_centro determina solo il PESO (quante righe sopra vs sotto).
-        Zona critica (tra K_c e K_v) sempre fitta — è lì che il P&L cambia.
+        3 scenari con fasce di prezzo FISSE relative allo strike.
+        scenario_tipo: 'positivo' | 'medio' | 'negativo'
+        
+        Positivo: 5 sotto K_c, 8 tra K_c e K_v, 12 sopra K_v  (focus sul profitto)
+        Medio:    3 sotto K_c, 10 tra K_c e K_v, 12 sopra K_v (focus sulla zona critica)
+        Negativo: 8 sotto K_c, 12 tra K_c e K_v, 5 sopra K_v  (focus sulla perdita)
         """
         K_c_ref = K_comprata if K_comprata is not None else K_strike * 0.976
         largh   = max(K_strike - K_c_ref, K_strike * 0.015)
 
-        # Peso: quante righe sopra lo strike (profitto) vs sotto
-        sigma_T   = sigma * np.sqrt(T)
-        dist_norm = (percentile_centro - K_strike) / (K_strike * sigma_T + 1e-9)
-        dist_norm = max(-2.0, min(2.0, dist_norm))
-        n_sopra   = int(round(13 + dist_norm * 3.5))
-        n_sopra   = max(8, min(18, n_sopra))
-        n_sotto   = n_punti - n_sopra
+        if scenario_tipo == "positivo":
+            n_a, n_b, n_c = 3, 7, 15   # molti prezzi sopra lo strike
+        elif scenario_tipo == "medio":
+            n_a, n_b, n_c = 3, 10, 12  # zona critica densa
+        else:  # negativo
+            n_a, n_b, n_c = 5, 12, 8   # molti prezzi sotto lo strike
 
-        # Sotto K_v: diviso in zona perdita max (sotto K_c) e zona parziale (tra K_c e K_v)
-        n_a = max(2, n_sotto // 3)       # sotto K_c (perdita max, piatto)
-        n_b = n_sotto - n_a              # tra K_c e K_v (P&L variabile — zona più densa)
-
-        zona_a = np.linspace(K_c_ref - largh * 2.0, K_c_ref - largh * 0.05, n_a)
+        zona_a = np.linspace(K_c_ref - largh * 2.5, K_c_ref - largh * 0.1, n_a)
         zona_b = np.linspace(K_c_ref,               K_strike - largh * 0.01, n_b)
-        zona_c = np.linspace(K_strike,               K_strike + largh * 4.0,  n_sopra)
+        zona_c = np.linspace(K_strike,               K_strike + largh * 5.0,  n_c)
 
         prezzi = np.sort(np.unique(np.concatenate([zona_a, zona_b, zona_c])))
         if len(prezzi) > n_punti:
@@ -1400,13 +1398,13 @@ def genera_pdf_scenari(strategia, params):
         return list(prezzi)
 
     scenari_dati = [
-        ("SCENARIO POSITIVO", p75,
+        ("SCENARIO POSITIVO", p75, "positivo",
          f"{nome} si mantiene sopra lo strike — il time decay lavora a favore.",
          colors.HexColor("#00E5A0")),
-        ("SCENARIO MEDIO", p50,
+        ("SCENARIO MEDIO", p50, "medio",
          f"{nome} si avvicina al break-even — esito incerto, gestione attiva consigliata.",
          colors.HexColor("#FFB547")),
-        ("SCENARIO NEGATIVO", p10,
+        ("SCENARIO NEGATIVO", p10, "negativo",
          f"{nome} crolla sotto lo strike — perdita significativa, valutare stop loss.",
          colors.HexColor("#FF5A5A")),
     ]
@@ -1582,18 +1580,19 @@ def genera_pdf_scenari(strategia, params):
     # ═══════════════════════════════════════════════════════
     # PAGINE SCENARI
     # ═══════════════════════════════════════════════════════
-    for idx, (sc_nome, centro, sc_commento, sc_color) in enumerate(scenari_dati):
+    for idx, (sc_nome, centro, sc_tipo, sc_commento, sc_color) in enumerate(scenari_dati):
         K_strike_ref   = K if strategia == "put_scoperta" else K_v
         K_comprata_ref = None if strategia == "put_scoperta" else K_c
-        prezzi_sc = build_prezzi_scenario(centro, K_strike_ref, K_comprata=K_comprata_ref)
+        prezzi_sc = build_prezzi_scenario(sc_tipo, K_strike_ref, K_comprata=K_comprata_ref)
 
         # Titolo scenario
         story.append(Spacer(1, 0.3*cm))
         story.append(Paragraph(sc_nome, ps(f"sct{idx}", "Helvetica-Bold", 14,
                                             sc_color, TA_LEFT, spaceAfter=2)))
         story.append(Paragraph(
-            f"Centro scenario: <b>{centro:.2f}</b> &nbsp;|&nbsp; "
-            f"Fascia prezzi: <b>{min(prezzi_sc):.2f} – {max(prezzi_sc):.2f}</b>",
+            f"Valori calcolati con Black-Scholes &nbsp;|&nbsp; "
+            f"Fascia prezzi: <b>{min(prezzi_sc):.2f} – {max(prezzi_sc):.2f}</b> &nbsp;|&nbsp; "
+            f"T residuo: <b>{int(T*365//2)} giorni</b>",
             ps(f"scs{idx}", "Helvetica", 8, MUTED, TA_LEFT, spaceAfter=4)))
         story.append(HRFlowable(width="100%", thickness=0.5, color=sc_color))
         story.append(Spacer(1, 0.3*cm))
@@ -1605,12 +1604,27 @@ def genera_pdf_scenari(strategia, params):
             header = ["Prezzo SPY", "Put Venduta", "Put Comprata", "Valore Spread", "P&L / az. (€)", "P&L Totale (€)", "Esito"]
 
         rows = [header]
+
+        # Usiamo BS per prezzare le opzioni con T residuo = metà del DTE originale
+        # Questo simula il valore realistico dell'opzione a metà vita del trade
+        T_residuo = max(T * 0.5, 1/365)
+
+        # Funzione BS put interna alla generazione
+        def bs_put_price(S, K_opt, T_opt, r_opt, sigma_opt):
+            if T_opt <= 0 or S <= 0:
+                return max(K_opt - S, 0)
+            d1 = (np.log(S / K_opt) + (r_opt + 0.5 * sigma_opt**2) * T_opt) / (sigma_opt * np.sqrt(T_opt))
+            d2 = d1 - sigma_opt * np.sqrt(T_opt)
+            from scipy.stats import norm
+            put = K_opt * np.exp(-r_opt * T_opt) * norm.cdf(-d2) - S * norm.cdf(-d1)
+            return max(round(put, 2), 0.0)
+
         for sp in prezzi_sc:
             if strategia == "put_scoperta":
-                val_put   = max(K - sp, 0)
-                pnl_az    = prem - val_put
-                pnl_tot   = round(pnl_az * n * mult, 0)
-                esito      = "✓ Profitto" if pnl_tot >= 0 else "✗ Perdita"
+                val_put = bs_put_price(sp, K, T_residuo, r, sigma)
+                pnl_az  = round(prem - val_put, 2)
+                pnl_tot = round(pnl_az * n * mult, 0)
+                esito   = "✓ Profitto" if pnl_tot >= 0 else "✗ Perdita"
                 rows.append([
                     f"{sp:.2f}",
                     f"{val_put:.2f}",
@@ -1619,21 +1633,12 @@ def genera_pdf_scenari(strategia, params):
                     esito,
                 ])
             else:
-                # Valore a scadenza: max(K-S, 0)
-                val_v_scad = max(K_v - sp, 0)
-                val_c_scad = max(K_c - sp, 0)
-                # Se abbiamo i prezzi reali, mostriamo anche il valore corrente stimato
-                # proporzionalmente: val_reale * (val_scad / val_aperta) capped
-                if pv_reale and pc_reale and val_v_scad > 0:
-                    val_v = round(val_v_scad, 2)
-                    val_c = round(val_c_scad, 2)
-                else:
-                    val_v = round(val_v_scad, 2)
-                    val_c = round(val_c_scad, 2)
-                val_spr   = round(val_v - val_c, 2)
-                pnl_az    = round(credito - val_spr, 2)
-                pnl_tot   = round(pnl_az * n * mult, 0)
-                esito      = "✓ Profitto" if pnl_tot >= 0 else "✗ Perdita"
+                val_v   = bs_put_price(sp, K_v, T_residuo, r, sigma)
+                val_c   = bs_put_price(sp, K_c, T_residuo, r, sigma)
+                val_spr = round(val_v - val_c, 2)
+                pnl_az  = round(credito - val_spr, 2)
+                pnl_tot = round(pnl_az * n * mult, 0)
+                esito   = "✓ Profitto" if pnl_tot >= 0 else "✗ Perdita"
                 rows.append([
                     f"{sp:.2f}",
                     f"{val_v:.2f}",
