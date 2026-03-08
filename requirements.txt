@@ -5,3 +5,4 @@ scipy
 plotly
 yfinance
 pytz
+reportlab
