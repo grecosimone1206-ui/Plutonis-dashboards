@@ -32,7 +32,20 @@ try:
     from reportlab.pdfgen import canvas as rl_canvas
     REPORTLAB_OK = True
 except ImportError:
-    REPORTLAB_OK = False
+    import subprocess, sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "reportlab", "-q"])
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.lib.units import cm
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+        from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
+                                         Table, TableStyle, HRFlowable, PageBreak)
+        from reportlab.pdfgen import canvas as rl_canvas
+        REPORTLAB_OK = True
+    except ImportError:
+        REPORTLAB_OK = False
 
 # &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;──────────────────
 # CONFIGURAZIONE PAGINA
