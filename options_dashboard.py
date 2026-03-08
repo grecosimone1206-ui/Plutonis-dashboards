@@ -2005,45 +2005,22 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
     # ── PANNELLO ANALISI SPREAD ──
     sd_label = f"{fmt(bps_dist_sd,2)} SD" if bps_dist_sd else "N/D"
     be_dist  = (spot - bps_be) / spot * 100
-    st.markdown(f"""
-    <div class="spread-analysis">
-        <div class="spread-analysis-title">&#9670; Analisi Spread &mdash; Bull Put Spread {fmt(bps_K_venduta,0)} / {fmt(bps_K_comprata,0)}</div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1rem">
-            <div>
-                <div class="panel-key" style="margin-bottom:0.3rem">Larghezza</div>
-                <div class="panel-val cyan" style="font-size:1.1rem">${larghezza_spread}</div>
-            </div>
-            <div>
-                <div class="panel-key" style="margin-bottom:0.3rem">Break-even</div>
-                <div class="panel-val" style="font-size:1.1rem">{fmt(bps_be,2)}</div>
-                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">{fmt(be_dist,2)}% sotto spot</div>
-            </div>
-            <div>
-                <div class="panel-key" style="margin-bottom:0.3rem">Distanza in SD</div>
-                <div class="panel-val" style="font-size:1.1rem">{sd_label}</div>
-                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">dal strike venduto</div>
-            </div>
-            <div>
-                <div class="panel-key" style="margin-bottom:0.3rem">Take Profit 50%</div>
-                <div class="panel-val green" style="font-size:1.1rem">+{fmt(bps_tp,0)} &euro;</div>
-                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">chiudi qui</div>
-            </div>
-            <div>
-                <div class="panel-key" style="margin-bottom:0.3rem">Stop Loss 2x</div>
-                <div class="panel-val red" style="font-size:1.1rem">-{fmt(bps_sl,0)} &euro;</div>
-                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">perdita max gestita</div>
-            </div>
-            <div>
-                <div class="panel-key" style="margin-bottom:0.3rem">Rendimento</div>
-                <div class="panel-val green" style="font-size:1.1rem">{fmt(bps_rend,1)}%</div>
-                <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted)">sul margine / mese</div>
-            </div>
-        </div>
-        <div style="margin-top:1rem">
-            <span class="spread-rule {bps_regola_cls}">{bps_regola_txt} &mdash; {fmt(bps_pct_largh,1)}% della larghezza ${larghezza_spread}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9670;</span>Analisi Spread &mdash; Bull Put Spread {fmt(bps_K_venduta,0)} / {fmt(bps_K_comprata,0)}</span>", unsafe_allow_html=True)
+    a1,a2,a3,a4,a5,a6 = st.columns(6, gap="small")
+    with a1:
+        st.markdown(f"""<div style="{_s}"><div style="{_e}" class="greek-tooltip">Larghezza<span class="tip-icon">?</span><div class="tip-box">Differenza in dollari tra lo strike venduto e quello comprato. Determina il rischio massimo per azione: se lo spread scade ITM perdi al massimo questa cifra meno il credito incassato.</div></div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">${larghezza_spread}</div><div style="{_b}">tra i due strike</div></div>""", unsafe_allow_html=True)
+    with a2:
+        st.markdown(f"""<div style="{_s}"><div style="{_e}" class="greek-tooltip">Break-even<span class="tip-icon">?</span><div class="tip-box">Punto esatto sotto cui inizi a perdere denaro. Calcolato come strike venduto meno il credito incassato per azione. Sopra questo livello a scadenza il trade &egrave; profittevole.</div></div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{fmt(bps_be,2)}</div><div style="{_b}">{fmt(be_dist,2)}% sotto spot</div></div>""", unsafe_allow_html=True)
+    with a3:
+        st.markdown(f"""<div style="{_s}"><div style="{_e}" class="greek-tooltip">Distanza SD<span class="tip-icon">?</span><div class="tip-box">Quante deviazioni standard di distanza si trova lo strike venduto rispetto allo spot attuale. Sopra 1 SD = molto OTM, alta probabilit&agrave; di successo. Sotto 0.5 SD = rischioso.</div></div><div style="{_v};font-size:1.2rem;color:var(--accent-cyan)">{sd_label}</div><div style="{_b}">dal strike venduto</div></div>""", unsafe_allow_html=True)
+    with a4:
+        st.markdown(f"""<div style="{_s}"><div style="{_e}" class="greek-tooltip">Take Profit 50%<span class="tip-icon">?</span><div class="tip-box">Livello consigliato per chiudere il trade in anticipo. Riacquistando lo spread a met&agrave; del credito incassato si libera il margine e si riduce il rischio residuo. &Egrave; la gestione standard tastytrade.</div></div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">+{fmt(bps_tp,0)} &euro;</div><div style="{_b}">chiudi qui</div></div>""", unsafe_allow_html=True)
+    with a5:
+        st.markdown(f"""<div style="{_s}"><div style="{_e}" class="greek-tooltip">Stop Loss 2x<span class="tip-icon">?</span><div class="tip-box">Livello di uscita in perdita: se il costo per chiudere lo spread raggiunge il doppio del credito incassato, esci. Limita la perdita massima gestita a 2 volte il premio ricevuto.</div></div><div style="{_v};font-size:1.2rem;color:var(--accent-red)">-{fmt(bps_sl,0)} &euro;</div><div style="{_b}">perdita max gestita</div></div>""", unsafe_allow_html=True)
+    with a6:
+        st.markdown(f"""<div style="{_s}"><div style="{_e}" class="greek-tooltip">Rendimento<span class="tip-icon">?</span><div class="tip-box">Rendimento percentuale sul margine bloccato se il trade va a profitto intero. Calcolato come credito totale diviso margine totale. Non include il costo del capitale nel tempo.</div></div><div style="{_v};font-size:1.2rem;color:var(--accent-green)">{fmt(bps_rend,1)}%</div><div style="{_b}">sul margine / mese</div></div>""", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
+
 
     # ── SCENARIO CRISI BPS (perdita limitata alla larghezza) ──
     bps_crisi_spot = spot * (1 - crash / 100)
