@@ -1367,21 +1367,31 @@ def genera_pdf_scenari(strategia, params):
 
     def build_prezzi_scenario(percentile_centro, K_strike, n_punti=25, K_comprata=None):
         """
-        25 prezzi concentrati nelle zone più informative:
-        - 3 prezzi sotto K_comprata (perdita max, zona piatta)
-        - 10 prezzi tra K_comprata e K_venduta (perdita parziale, zona variabile)
-        - 12 prezzi intorno e sopra K_venduto (break-even e profitto)
-        Offset proporzionale verso il centro scenario.
+        25 prezzi SEMPRE ancorati allo strike reale.
+        Il percentile_centro sposta il peso: positivo → più prezzi sopra (profitto),
+        negativo → più prezzi sotto (perdita).
         """
-        offset = (percentile_centro - K_strike) * 0.25
         K_c_ref = K_comprata if K_comprata is not None else K_strike * 0.976
+        largh   = max(K_strike - K_c_ref, K_strike * 0.02)
 
-        zona_a = np.linspace(K_c_ref * 0.91,  K_c_ref * 0.99,  3)   # sotto K_c
-        zona_b = np.linspace(K_c_ref,          K_strike,        10)  # tra i due strike
-        zona_c = np.linspace(K_strike,          K_strike * 1.09, 12) # sopra K_v
+        # Peso dinamico basato su distanza percentile dallo strike
+        sigma_T = sigma * np.sqrt(T)
+        dist_norm = (percentile_centro - K_strike) / (K_strike * sigma_T + 1e-9)
+        dist_norm = max(-2.0, min(2.0, dist_norm))
+        # n_sopra: 8 (scenario negativo) → 18 (scenario positivo)
+        n_sopra = int(round(13 + dist_norm * 3.5))
+        n_sopra = max(8, min(18, n_sopra))
+        n_sotto = n_punti - n_sopra
+
+        n_a = max(2, n_sotto // 3)
+        n_b = n_sotto - n_a
+
+        zona_a = np.linspace(K_c_ref - largh * 1.5, K_c_ref - largh * 0.05, n_a)
+        zona_b = np.linspace(K_c_ref, K_strike - 0.01, n_b)
+        zona_c = np.linspace(K_strike, K_strike + largh * 4.0, n_sopra)
 
         prezzi = np.unique(np.concatenate([zona_a, zona_b, zona_c]))
-        prezzi = np.sort(prezzi + offset)
+        prezzi = np.sort(prezzi)
         if len(prezzi) > n_punti:
             idx = np.round(np.linspace(0, len(prezzi)-1, n_punti)).astype(int)
             prezzi = prezzi[idx]
