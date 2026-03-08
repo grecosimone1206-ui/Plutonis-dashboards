@@ -1365,9 +1365,12 @@ def genera_pdf_scenari(strategia, params):
     p50  = float(np.percentile(prezzi_sim, 50))   # scenario medio
     p10  = float(np.percentile(prezzi_sim, 10))   # scenario negativo
 
-    def build_prezzi_scenario(centro, n_punti=25):
-        ampiezza = spot * sigma * np.sqrt(T) * 0.8
-        return sorted(np.linspace(centro - ampiezza, centro + ampiezza, n_punti))
+    def build_prezzi_scenario(centro, K_strike, n_punti=25):
+        """25 prezzi che attraversano sempre la zona dello strike,
+        con distribuzione centrata sul percentile dello scenario."""
+        low  = min(centro * 0.90, K_strike * 0.88)
+        high = max(centro * 1.08, K_strike * 1.06)
+        return sorted(np.linspace(low, high, n_punti))
 
     scenari_dati = [
         ("SCENARIO POSITIVO", p75,
@@ -1550,7 +1553,8 @@ def genera_pdf_scenari(strategia, params):
     # PAGINE SCENARI
     # ═══════════════════════════════════════════════════════
     for idx, (sc_nome, centro, sc_commento, sc_color) in enumerate(scenari_dati):
-        prezzi_sc = build_prezzi_scenario(centro, 25)
+        K_strike_ref = K if strategia == "put_scoperta" else K_v
+        prezzi_sc = build_prezzi_scenario(centro, K_strike_ref)
 
         # Titolo scenario
         story.append(Spacer(1, 0.3*cm))
