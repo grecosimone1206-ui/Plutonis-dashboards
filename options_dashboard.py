@@ -1808,12 +1808,12 @@ with st.sidebar:
         def _sync_pv_input():  st.session_state["_pv_val"] = st.session_state["input_pv"]
         if "_pv_val" not in st.session_state: st.session_state["_pv_val"] = 2.50
         cur_pv = float(st.session_state["_pv_val"])
-        col_s, col_n = st.columns([2,1])
-        with col_s:
-            st.slider("pv slider", 0.01, 500.0, cur_pv, 0.01,
+        col_pv_s, col_pv_n = st.columns([2,1])
+        with col_pv_s:
+            st.slider("pv slider", 0.01, 200.0, min(cur_pv, 200.0), 0.01,
                 label_visibility="collapsed", key="slider_pv", on_change=_sync_pv_slider)
-        with col_n:
-            st.number_input("pv input", 0.01, 500.0, cur_pv, 0.01,
+        with col_pv_n:
+            st.number_input("pv input", 0.01, 200.0, min(cur_pv, 200.0), 0.01,
                 label_visibility="collapsed", key="input_pv", format="%.2f", on_change=_sync_pv_input)
         prezzo_put_venduta = float(st.session_state["_pv_val"])
 
@@ -1823,11 +1823,12 @@ with st.sidebar:
         def _sync_pc_input():  st.session_state["_pc_val"] = st.session_state["input_pc"]
         if "_pc_val" not in st.session_state: st.session_state["_pc_val"] = 1.12
         cur_pc = float(st.session_state["_pc_val"])
-        with col_s:
-            st.slider("pc slider", 0.01, 500.0, cur_pc, 0.01,
+        col_pc_s, col_pc_n = st.columns([2,1])
+        with col_pc_s:
+            st.slider("pc slider", 0.01, 200.0, min(cur_pc, 200.0), 0.01,
                 label_visibility="collapsed", key="slider_pc", on_change=_sync_pc_slider)
-        with col_n:
-            st.number_input("pc input", 0.01, 500.0, cur_pc, 0.01,
+        with col_pc_n:
+            st.number_input("pc input", 0.01, 200.0, min(cur_pc, 200.0), 0.01,
                 label_visibility="collapsed", key="input_pc", format="%.2f", on_change=_sync_pc_input)
         prezzo_put_comprata = float(st.session_state["_pc_val"])
 
