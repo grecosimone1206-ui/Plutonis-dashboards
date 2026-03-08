@@ -1367,31 +1367,30 @@ def genera_pdf_scenari(strategia, params):
 
     def build_prezzi_scenario(percentile_centro, K_strike, n_punti=25, K_comprata=None):
         """
-        25 prezzi SEMPRE ancorati allo strike reale.
-        Il percentile_centro sposta il peso: positivo → più prezzi sopra (profitto),
-        negativo → più prezzi sotto (perdita).
+        25 prezzi SEMPRE ancorati allo strike reale, indipendentemente dal percentile.
+        Il percentile_centro determina solo il PESO (quante righe sopra vs sotto).
+        Zona critica (tra K_c e K_v) sempre fitta — è lì che il P&L cambia.
         """
         K_c_ref = K_comprata if K_comprata is not None else K_strike * 0.976
-        largh   = max(K_strike - K_c_ref, K_strike * 0.02)
+        largh   = max(K_strike - K_c_ref, K_strike * 0.015)
 
-        # Peso dinamico basato su distanza percentile dallo strike
-        sigma_T = sigma * np.sqrt(T)
+        # Peso: quante righe sopra lo strike (profitto) vs sotto
+        sigma_T   = sigma * np.sqrt(T)
         dist_norm = (percentile_centro - K_strike) / (K_strike * sigma_T + 1e-9)
         dist_norm = max(-2.0, min(2.0, dist_norm))
-        # n_sopra: 8 (scenario negativo) → 18 (scenario positivo)
-        n_sopra = int(round(13 + dist_norm * 3.5))
-        n_sopra = max(8, min(18, n_sopra))
-        n_sotto = n_punti - n_sopra
+        n_sopra   = int(round(13 + dist_norm * 3.5))
+        n_sopra   = max(8, min(18, n_sopra))
+        n_sotto   = n_punti - n_sopra
 
-        n_a = max(2, n_sotto // 3)
-        n_b = n_sotto - n_a
+        # Sotto K_v: diviso in zona perdita max (sotto K_c) e zona parziale (tra K_c e K_v)
+        n_a = max(2, n_sotto // 3)       # sotto K_c (perdita max, piatto)
+        n_b = n_sotto - n_a              # tra K_c e K_v (P&L variabile — zona più densa)
 
-        zona_a = np.linspace(K_c_ref - largh * 1.5, K_c_ref - largh * 0.05, n_a)
-        zona_b = np.linspace(K_c_ref, K_strike - 0.01, n_b)
-        zona_c = np.linspace(K_strike, K_strike + largh * 4.0, n_sopra)
+        zona_a = np.linspace(K_c_ref - largh * 2.0, K_c_ref - largh * 0.05, n_a)
+        zona_b = np.linspace(K_c_ref,               K_strike - largh * 0.01, n_b)
+        zona_c = np.linspace(K_strike,               K_strike + largh * 4.0,  n_sopra)
 
-        prezzi = np.unique(np.concatenate([zona_a, zona_b, zona_c]))
-        prezzi = np.sort(prezzi)
+        prezzi = np.sort(np.unique(np.concatenate([zona_a, zona_b, zona_c])))
         if len(prezzi) > n_punti:
             idx = np.round(np.linspace(0, len(prezzi)-1, n_punti)).astype(int)
             prezzi = prezzi[idx]
@@ -1399,13 +1398,13 @@ def genera_pdf_scenari(strategia, params):
 
     scenari_dati = [
         ("SCENARIO POSITIVO", p75,
-         "SPY si mantiene sopra lo strike — il time decay lavora a favore.",
+         f"{nome} si mantiene sopra lo strike — il time decay lavora a favore.",
          colors.HexColor("#00E5A0")),
         ("SCENARIO MEDIO", p50,
-         "SPY si avvicina al break-even — esito incerto, gestione attiva consigliata.",
+         f"{nome} si avvicina al break-even — esito incerto, gestione attiva consigliata.",
          colors.HexColor("#FFB547")),
         ("SCENARIO NEGATIVO", p10,
-         "SPY crolla sotto lo strike — perdita significativa, valutare stop loss.",
+         f"{nome} crolla sotto lo strike — perdita significativa, valutare stop loss.",
          colors.HexColor("#FF5A5A")),
     ]
 
