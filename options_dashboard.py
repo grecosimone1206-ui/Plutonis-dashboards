@@ -1354,6 +1354,9 @@ def genera_pdf_scenari(strategia, params):
         credito    = params["bps_credito"]
         n          = params["n_contratti"]
         mult       = 100
+        # Prezzi reali singole opzioni (dal broker)
+        pv_reale   = params.get("prezzo_put_venduta")   # prezzo put venduta (bid)
+        pc_reale   = params.get("prezzo_put_comprata")  # prezzo put comprata (ask)
 
     # ── Simulazione Monte Carlo per definire le fasce di prezzo ──────────────
     np.random.seed(42)
@@ -1517,11 +1520,14 @@ def genera_pdf_scenari(strategia, params):
             ["IV", f"{sigma*100:.1f}%", "Credito totale", f"+{prem*n*mult:.0f} €"],
         ]
     else:
+        pv_str = f"{pv_reale:.2f}" if pv_reale else f"{credito:.4f} (netto)"
+        pc_str = f"{pc_reale:.2f}" if pc_reale else "—"
         param_rows = [
-            ["Strumento", nome, "Strike venduto", f"{K_v:.2f}"],
-            ["Prezzo Spot", f"{spot:.2f}", "Strike comprato", f"{K_c:.2f}"],
-            ["DTE", f"{dte} giorni", "Credito netto/az.", f"{credito:.4f}"],
-            ["IV", f"{sigma*100:.1f}%", "Credito totale", f"+{credito*n*mult:.0f} €"],
+            ["Strumento", nome,              "Strike venduto",   f"{K_v:.2f}"],
+            ["Prezzo Spot", f"{spot:.2f}",   "Strike comprato",  f"{K_c:.2f}"],
+            ["DTE", f"{dte} giorni",         "Put venduta (bid)", pv_str],
+            ["IV", f"{sigma*100:.1f}%",      "Put comprata (ask)", pc_str],
+            ["Contratti", str(n),            "Credito netto",    f"{credito:.2f} ({credito*n*mult:.0f} €)"],
         ]
 
     param_style = TableStyle([
@@ -1613,10 +1619,19 @@ def genera_pdf_scenari(strategia, params):
                     esito,
                 ])
             else:
-                val_v     = max(K_v - sp, 0)
-                val_c     = max(K_c - sp, 0)
-                val_spr   = val_v - val_c
-                pnl_az    = credito - val_spr
+                # Valore a scadenza: max(K-S, 0)
+                val_v_scad = max(K_v - sp, 0)
+                val_c_scad = max(K_c - sp, 0)
+                # Se abbiamo i prezzi reali, mostriamo anche il valore corrente stimato
+                # proporzionalmente: val_reale * (val_scad / val_aperta) capped
+                if pv_reale and pc_reale and val_v_scad > 0:
+                    val_v = round(val_v_scad, 2)
+                    val_c = round(val_c_scad, 2)
+                else:
+                    val_v = round(val_v_scad, 2)
+                    val_c = round(val_c_scad, 2)
+                val_spr   = round(val_v - val_c, 2)
+                pnl_az    = round(credito - val_spr, 2)
                 pnl_tot   = round(pnl_az * n * mult, 0)
                 esito      = "✓ Profitto" if pnl_tot >= 0 else "✗ Perdita"
                 rows.append([
@@ -1786,16 +1801,47 @@ with st.sidebar:
     # Parametri specifici Bull Put Spread
     if STRATEGIA == "bull_put_spread":
         st.markdown("<div class='sb-section'>Parametri Spread</div>", unsafe_allow_html=True)
+
+        # Prezzo put venduta
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PUT VENDUTA — prezzo bid ($)</span>", unsafe_allow_html=True)
+        def _sync_pv_slider(): st.session_state["_pv_val"] = st.session_state["slider_pv"]
+        def _sync_pv_input():  st.session_state["_pv_val"] = st.session_state["input_pv"]
+        if "_pv_val" not in st.session_state: st.session_state["_pv_val"] = 2.50
+        cur_pv = float(st.session_state["_pv_val"])
+        col_s, col_n = st.columns([2,1])
+        with col_s:
+            st.slider("pv slider", 0.01, 500.0, cur_pv, 0.01,
+                label_visibility="collapsed", key="slider_pv", on_change=_sync_pv_slider)
+        with col_n:
+            st.number_input("pv input", 0.01, 500.0, cur_pv, 0.01,
+                label_visibility="collapsed", key="input_pv", format="%.2f", on_change=_sync_pv_input)
+        prezzo_put_venduta = float(st.session_state["_pv_val"])
+
+        # Prezzo put comprata
+        st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em'>PUT COMPRATA — prezzo ask ($)</span>", unsafe_allow_html=True)
+        def _sync_pc_slider(): st.session_state["_pc_val"] = st.session_state["slider_pc"]
+        def _sync_pc_input():  st.session_state["_pc_val"] = st.session_state["input_pc"]
+        if "_pc_val" not in st.session_state: st.session_state["_pc_val"] = 1.12
+        cur_pc = float(st.session_state["_pc_val"])
+        with col_s:
+            st.slider("pc slider", 0.01, 500.0, cur_pc, 0.01,
+                label_visibility="collapsed", key="slider_pc", on_change=_sync_pc_slider)
+        with col_n:
+            st.number_input("pc input", 0.01, 500.0, cur_pc, 0.01,
+                label_visibility="collapsed", key="input_pc", format="%.2f", on_change=_sync_pc_input)
+        prezzo_put_comprata = float(st.session_state["_pc_val"])
+
+        # Larghezza spread
         larghezza_spread = st.select_slider("Larghezza Spread ($)",
             options=[5, 10, 15, 20, 25, 30, 50], value=10,
-            help="Differenza in dollari tra lo strike venduto e quello comprato.\nSpread da $10 è lo standard per SPY/QQQ.")
-        credito_reale_bps = st.number_input("Credito netto incassato ($)",
-            min_value=0.01, max_value=500.0,
-            value=float(st.session_state.get("_credito_bps", 1.38)), step=0.01,
-            format="%.2f",
-            help="Il credito netto = premio put venduta - premio put comprata.\nLeggilo direttamente dal tuo broker.")
+            help="Differenza in dollari tra lo strike venduto e quello comprato.")
+
+        # Credito netto calcolato automaticamente
+        credito_reale_bps = round(prezzo_put_venduta - prezzo_put_comprata, 2)
+        credito_reale_bps = max(0.01, credito_reale_bps)
         st.session_state["_credito_bps"] = credito_reale_bps
-        # Calcolo % credito su larghezza
+
+        # Badge credito
         pct_credito = (credito_reale_bps / larghezza_spread) * 100
         if pct_credito >= 30:
             cred_color = "var(--accent-green)"; cred_label = "Ottimale"
@@ -1807,12 +1853,15 @@ with st.sidebar:
             f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:{cred_color};"
             f"background:rgba(0,0,0,0.2);border:1px solid {cred_color}33;"
             f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-            f"{pct_credito:.1f}% della larghezza &mdash; <strong>{cred_label}</strong></div>",
+            f"Credito netto: <strong>{credito_reale_bps:.2f}$</strong> &nbsp;·&nbsp; "
+            f"{pct_credito:.1f}% della larghezza &nbsp;·&nbsp; <strong>{cred_label}</strong></div>",
             unsafe_allow_html=True
         )
     else:
         larghezza_spread = None
         credito_reale_bps = None
+        prezzo_put_venduta = None
+        prezzo_put_comprata = None
 
     st.markdown("<div class='sb-section'>Dati Reali dal Broker</div>", unsafe_allow_html=True)
 
@@ -2033,6 +2082,8 @@ if genera_pdf_btn:
         "K": K, "prem": prem,
         "bps_K_venduta": bps_K_venduta, "bps_K_comprata": bps_K_comprata,
         "bps_credito": bps_credito,
+        "prezzo_put_venduta": prezzo_put_venduta if STRATEGIA == "bull_put_spread" else None,
+        "prezzo_put_comprata": prezzo_put_comprata if STRATEGIA == "bull_put_spread" else None,
     }
     with st.spinner("Generazione report PDF in corso…"):
         pdf_bytes = genera_pdf_scenari(STRATEGIA, pdf_params)
