@@ -1473,7 +1473,7 @@ def genera_pdf_scenari(strategia, params):
     # PAGINA 1 — COPERTINA / INTRO
     # ═══════════════════════════════════════════════════════
     story.append(Spacer(1, 0.8*cm))
-    story.append(Paragraph("Analisi Scenari Monte Carlo", s_title))
+    story.append(Paragraph("Analisi Scenari — Report Operativo", s_title))
 
     strat_nome = "Vendita Put Scoperta" if strategia == "put_scoperta" else "Bull Put Spread"
     story.append(Paragraph(f"{nome} &nbsp;·&nbsp; {strat_nome} &nbsp;·&nbsp; Generato il {data_oggi}", s_subtitle))
@@ -1483,18 +1483,17 @@ def genera_pdf_scenari(strategia, params):
 
     # Box intro
     intro_txt = (
-        "Questo documento presenta una simulazione Monte Carlo applicata alla tua posizione su opzioni. "
-        "Il modello proietta 10.000 possibili percorsi di prezzo del sottostante dalla data odierna fino "
-        "alla scadenza dell'opzione, utilizzando il Moto Browniano Geometrico con i parametri di "
-        "volatilità implicita e tasso risk-free correnti. "
-        "I risultati sono raggruppati in tre macro scenari — Positivo, Medio e Negativo — identificati "
-        "rispettivamente dal 75°, 50° e 10° percentile della distribuzione simulata. "
-        "Per ogni scenario vengono mostrati 25 prezzi rappresentativi con il valore teorico delle opzioni "
-        "a scadenza (calcolato con la formula di payoff: max(Strike - Prezzo, 0)) e il P&amp;L risultante. "
+        "Questo documento analizza la tua posizione su opzioni attraverso tre scenari di mercato distinti, "
+        "costruiti su fasce di prezzo percentuali ancorate al prezzo spot corrente. "
+        "Lo scenario Negativo copre una discesa fino al \u221210% dallo spot, lo scenario Medio una fascia simmetrica "
+        "\xb15%, e lo scenario Positivo un rialzo fino al +10%. "
+        "Per ciascuno vengono mostrati 25 livelli di prezzo rappresentativi con il valore teorico delle opzioni "
+        "calcolato tramite il modello Black-Scholes a tempo residuo pari a met\xe0 del DTE originale, "
+        "simulando cos\xec una valutazione realistica a met\xe0 vita del trade \u2014 non a scadenza. "
         "<br/><br/>"
-        "<b>Nota metodologica:</b> i valori delle opzioni sono calcolati a scadenza (non prima). "
-        "Il P&amp;L include il credito/premio già incassato al momento dell'apertura del trade. "
-        "La simulazione ha scopo esclusivamente educativo e non costituisce consulenza finanziaria."
+        "<b>Nota metodologica:</b> i valori delle opzioni sono stimati con Black-Scholes a T residuo = DTE/2. "
+        "Il P&amp;L include il credito netto gi\xe0 incassato all\u2019apertura del trade. "
+        "Il documento ha scopo esclusivamente educativo e non costituisce consulenza finanziaria."
     )
     story.append(Paragraph(intro_txt, s_body))
     story.append(Spacer(1, 0.5*cm))
@@ -1529,9 +1528,12 @@ def genera_pdf_scenari(strategia, params):
         ("TEXTCOLOR",   (1,0), (1,-1),  WHITE),
         ("TEXTCOLOR",   (3,0), (3,-1),  CYAN),
         ("PADDING",     (0,0), (-1,-1), 6),
-        ("ROUNDEDCORNERS", [4]),
+        ("VALIGN",      (0,0), (-1,-1), "MIDDLE"),
+        ("WORDWRAP",    (0,0), (-1,-1), True),
     ])
-    col_w = [(W - 3*cm) / 4] * 4
+    # Colonne: label sinistra (stretta), valore sinistra (larga), label destra (stretta), valore destra
+    total_w = W - 3*cm
+    col_w = [total_w*0.18, total_w*0.32, total_w*0.22, total_w*0.28]
     param_tbl = Table(param_rows, colWidths=col_w, style=param_style)
     story.append(param_tbl)
     story.append(Spacer(1, 0.5*cm))
@@ -1560,7 +1562,9 @@ def genera_pdf_scenari(strategia, params):
         ("TEXTCOLOR",   (0,0), (0,-1),  MUTED),
         ("TEXTCOLOR",   (2,0), (2,-1),  MUTED),
         ("TEXTCOLOR",   (1,0), (1,-1),  CYAN),
-        ("TEXTCOLOR",   (3,0), (3,-1),  GREEN),
+        ("TEXTCOLOR",   (3,0), (3,0),   GREEN),   # Scenari sopra lo strike ✓ — verde
+        ("TEXTCOLOR",   (3,1), (3,1),   RED),     # Scenari sotto lo strike ✗ — rosso
+        ("TEXTCOLOR",   (3,2), (3,2),   WHITE),   # Deviazione std — bianco neutro
         ("PADDING",     (0,0), (-1,-1), 6),
     ])
     stat_tbl = Table(stat_rows, colWidths=col_w, style=stat_style)
