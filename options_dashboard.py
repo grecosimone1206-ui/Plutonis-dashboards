@@ -1460,7 +1460,7 @@ def genera_pdf_scenari(strategia, params):
 
     story.append(Paragraph(
         "Questo report analizza la posizione su una fascia <b>\u221210% / +10%</b> rispetto allo spot, "
-        "con 40 livelli equidistanti. Valori calcolati con <b>Black-Scholes</b> a T residuo = DTE/2.",
+        "con 30 livelli equidistanti. Valori calcolati con <b>Black-Scholes</b> a T residuo = DTE/2.",
         s_body))
     story.append(Paragraph(
         "Il P&L include il credito gi\xe0 incassato. Solo a scopo educativo — non costituisce consulenza finanziaria.",
@@ -1534,13 +1534,13 @@ def genera_pdf_scenari(strategia, params):
     # ═══════════════════════════════════════════════════════
     # PAGINA 2 — SCENARIO UNICO spot -10% → +10% (40 righe)
     # ═══════════════════════════════════════════════════════
-    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 40))  # 40 righe
+    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 30))  # 40 righe
 
     story.append(Spacer(1, 0.3*cm))
     story.append(Paragraph("Scenario Completo: Spot \u221210% \u2192 +10%", ps(
         "sc_title", "Helvetica-Bold", 13, CYAN, TA_LEFT, spaceAfter=2)))
     story.append(Paragraph(
-        f"Fascia: <b>{spot*0.90:.2f} \u2013 {spot*1.10:.2f}</b>  \u00b7  40 livelli  \u00b7  "
+        f"Fascia: <b>{spot*0.90:.2f} \u2013 {spot*1.10:.2f}</b>  \u00b7  30 livelli  \u00b7  "
         f"BS a T residuo: <b>{max(int(T*365*0.5), 1)} gg</b>  \u00b7  IV: <b>{sigma*100:.1f}%</b>",
         ps("sc_sub", "Helvetica", 8, MUTED, TA_LEFT, spaceAfter=4)))
     story.append(HRFlowable(width="100%", thickness=0.5, color=CYAN))
@@ -1623,7 +1623,7 @@ def genera_pdf_scenari(strategia, params):
 
     pnl_medio = float(np.mean(pnl_vals))
     story.append(Paragraph(
-        f"<b>Riepilogo:</b> {n_prof}/40 livelli in profitto, {40-n_prof} in perdita.  "
+        f"<b>Riepilogo:</b> {n_prof}/30 livelli in profitto, {30-n_prof} in perdita.  "
         f"P&amp;L medio: <b>{pnl_medio:+.0f} \u20ac</b>  \u00b7  "
         f"Break-even: <b>{be_str}</b>  \u00b7  Perdita max: <b>{perdita_max}</b>.",
         s_comment))
