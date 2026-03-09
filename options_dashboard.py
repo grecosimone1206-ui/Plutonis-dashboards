@@ -1621,10 +1621,8 @@ def genera_pdf_scenari(strategia, params):
         be_str      = f"{K_v - credito:.2f}"
         perdita_max = f"{-(K_v-K_c-credito)*n*mult:.0f} \u20ac"
 
-    pnl_medio = float(np.mean(pnl_vals))
     story.append(Paragraph(
         f"<b>Riepilogo:</b> {n_prof}/30 livelli in profitto, {30-n_prof} in perdita.  "
-        f"P&amp;L medio: <b>{pnl_medio:+.0f} \u20ac</b>  \u00b7  "
         f"Break-even: <b>{be_str}</b>  \u00b7  Perdita max: <b>{perdita_max}</b>.",
         s_comment))
 
