@@ -1383,7 +1383,7 @@ def genera_pdf_scenari(strategia, params):
     buf = io.BytesIO()
     W, H = A4
 
-    # Palette colori
+    # Palette — testi fuori tabella su sfondo scuro
     BG      = colors.HexColor("#080C10")
     CYAN    = colors.HexColor("#00C2FF")
     GREEN   = colors.HexColor("#00E5A0")
@@ -1391,14 +1391,19 @@ def genera_pdf_scenari(strategia, params):
     RED     = colors.HexColor("#FF5A5A")
     MUTED   = colors.HexColor("#8B9FC0")
     SURFACE = colors.HexColor("#0F1E2E")
-    BORDER  = colors.HexColor("#1A2E45")
+    BORDER  = colors.HexColor("#243550")
     WHITE   = colors.HexColor("#E8EDF5")
     DARK    = colors.HexColor("#060A0E")
+    TEXT    = colors.HexColor("#C8D4E8")   # testo leggibile su sfondo scuro
 
     strat_label = "Vendita Put Scoperta" if strategia == "put_scoperta" else "Bull Put Spread"
 
     def on_page(canv, doc):
         canv.saveState()
+        # Sfondo scuro sull'intera pagina
+        canv.setFillColor(BG)
+        canv.rect(0, 0, W, H, fill=1, stroke=0)
+        # Header band
         canv.setFillColor(DARK)
         canv.rect(0, H - 1.6*cm, W, 1.6*cm, fill=1, stroke=0)
         canv.setFont("Helvetica-Bold", 12)
@@ -1426,19 +1431,20 @@ def genera_pdf_scenari(strategia, params):
         topMargin=2.4*cm, bottomMargin=1.8*cm,
     )
 
-    def ps(name, font="Helvetica", size=9, color=WHITE, align=TA_LEFT,
+    def ps(name, font="Helvetica", size=9, color=None, align=TA_LEFT,
            leading=None, spaceBefore=0, spaceAfter=0):
+        c = color if color is not None else TEXT
         return ParagraphStyle(name, fontName=font, fontSize=size,
-                              textColor=color, alignment=align,
+                              textColor=c, alignment=align,
                               leading=leading or size*1.4,
                               spaceBefore=spaceBefore, spaceAfter=spaceAfter)
 
     s_title   = ps("title", "Helvetica-Bold", 18, CYAN,  TA_LEFT, spaceAfter=4)
-    s_sub     = ps("sub",   "Helvetica",       9, WHITE, TA_LEFT, spaceAfter=2)
-    s_h2      = ps("h2",    "Helvetica-Bold", 11, WHITE, TA_LEFT, spaceBefore=8, spaceAfter=4)
-    s_body    = ps("body",  "Helvetica",       8, WHITE, TA_LEFT, leading=13, spaceAfter=3)
+    s_sub     = ps("sub",   "Helvetica",       9, MUTED, TA_LEFT, spaceAfter=2)
+    s_h2      = ps("h2",    "Helvetica-Bold", 11, CYAN,  TA_LEFT, spaceBefore=8, spaceAfter=4)
+    s_body    = ps("body",  "Helvetica",       8, TEXT,  TA_LEFT, leading=13, spaceAfter=3)
     s_nota    = ps("nota",  "Helvetica",       7, MUTED, TA_LEFT, leading=11, spaceAfter=3)
-    s_comment = ps("comm",  "Helvetica",       8, WHITE, TA_LEFT, leading=12)
+    s_comment = ps("comm",  "Helvetica",       8, TEXT,  TA_LEFT, leading=12)
 
     story = []
 
@@ -1447,57 +1453,42 @@ def genera_pdf_scenari(strategia, params):
     # ═══════════════════════════════════════════════════════
     story.append(Spacer(1, 0.5*cm))
     story.append(Paragraph("Analisi Scenari — Report Operativo", s_title))
-    story.append(Paragraph(
-        f"{nome}  ·  {strat_label}  ·  Generato il {data_oggi}", s_sub))
+    story.append(Paragraph(f"{nome}  ·  {strat_label}  ·  Generato il {data_oggi}", s_sub))
     story.append(Spacer(1, 0.3*cm))
     story.append(HRFlowable(width="100%", thickness=0.5, color=BORDER))
     story.append(Spacer(1, 0.35*cm))
 
-    intro_txt = (
-        "Questo report analizza la tua posizione su opzioni su una fascia di prezzo da "
-        "<b>\u221210% a +10%</b> rispetto al prezzo spot corrente, con 50 livelli di prezzo equidistanti. "
-        "I valori delle opzioni sono calcolati con il modello <b>Black-Scholes</b> a un tempo residuo "
-        "pari a met\xe0 del DTE originale (DTE/2), simulando una valutazione realistica "
-        "a met\xe0 vita del trade \u2014 non a scadenza."
-    )
-    story.append(Paragraph(intro_txt, s_body))
     story.append(Paragraph(
-        "Nota: il P&L include il credito/premio gi\xe0 incassato all\u2019apertura. "
-        "Documento a scopo esclusivamente educativo, non costituisce consulenza finanziaria.",
+        "Questo report analizza la posizione su una fascia <b>\u221210% / +10%</b> rispetto allo spot, "
+        "con 40 livelli equidistanti. Valori calcolati con <b>Black-Scholes</b> a T residuo = DTE/2.",
+        s_body))
+    story.append(Paragraph(
+        "Il P&L include il credito gi\xe0 incassato. Solo a scopo educativo — non costituisce consulenza finanziaria.",
         s_nota))
-    story.append(Spacer(1, 0.35*cm))
+    story.append(Spacer(1, 0.3*cm))
 
     # ── Tabella parametri ────────────────────────────────────────────────────
     story.append(Paragraph("Parametri operazione", s_h2))
     if strategia == "put_scoperta":
         param_rows = [
-            ["Strumento",   Paragraph(nome, ps("pn", size=8, color=WHITE)),
-             "Strike",      f"{K:.2f}"],
-            ["Prezzo Spot", f"{spot:.2f}",
-             "Premio / az.",f"{prem:.4f}"],
-            ["DTE",         f"{dte} giorni",
-             "Contratti",   str(n)],
-            ["IV",          f"{sigma*100:.1f}%",
-             "Credito tot.",f"+{prem*n*mult:.0f} \u20ac"],
+            ["Strumento",   nome,          "Strike",           f"{K:.2f}"],
+            ["Prezzo Spot", f"{spot:.2f}", "Premio / az.",     f"{prem:.4f}"],
+            ["DTE",         f"{dte} gg",   "Contratti",        str(n)],
+            ["IV",          f"{sigma*100:.1f}%", "Credito tot.", f"+{prem*n*mult:.0f} \u20ac"],
         ]
     else:
         pv_str = f"{pv_reale:.2f}" if pv_reale else f"{credito:.4f}"
         pc_str = f"{pc_reale:.2f}" if pc_reale else "\u2014"
         param_rows = [
-            ["Strumento",    Paragraph(nome, ps("pn2", size=8, color=WHITE)),
-             "Strike venduto", f"{K_v:.2f}"],
-            ["Prezzo Spot",  f"{spot:.2f}",
-             "Strike comprato", f"{K_c:.2f}"],
-            ["DTE",          f"{dte} giorni",
-             "Put venduta (bid)", pv_str],
-            ["IV",           f"{sigma*100:.1f}%",
-             "Put comprata (ask)", pc_str],
-            ["Contratti",    str(n),
-             "Credito netto", f"{credito:.2f}  (+{credito*n*mult:.0f} \u20ac)"],
+            ["Strumento",    nome,              "Strike vend.",     f"{K_v:.2f}"],
+            ["Prezzo Spot",  f"{spot:.2f}",     "Strike comp.",     f"{K_c:.2f}"],
+            ["DTE",          f"{dte} gg",       "Put vend. (bid)",  pv_str],
+            ["IV",           f"{sigma*100:.1f}%","Put comp. (ask)", pc_str],
+            ["Contratti",    str(n),            "Credito netto",    f"{credito:.2f} (+{credito*n*mult:.0f}\u20ac)"],
         ]
 
     total_w = W - 3*cm
-    col_w4  = [total_w*0.20, total_w*0.30, total_w*0.25, total_w*0.25]
+    col_w4  = [total_w*0.20, total_w*0.30, total_w*0.24, total_w*0.26]
     param_style = TableStyle([
         ("BACKGROUND",  (0,0), (-1,-1), SURFACE),
         ("GRID",        (0,0), (-1,-1), 0.3, BORDER),
@@ -1510,20 +1501,18 @@ def genera_pdf_scenari(strategia, params):
         ("TEXTCOLOR",   (3,0), (3,-1),  CYAN),
         ("PADDING",     (0,0), (-1,-1), 6),
         ("VALIGN",      (0,0), (-1,-1), "MIDDLE"),
+        ("WORDWRAP",    (0,0), (-1,-1), True),
     ])
     story.append(Table(param_rows, colWidths=col_w4, style=param_style))
-    story.append(Spacer(1, 0.4*cm))
+    story.append(Spacer(1, 0.3*cm))
 
     # ── Sintesi statistica ───────────────────────────────────────────────────
     story.append(HRFlowable(width="100%", thickness=0.3, color=BORDER))
     story.append(Paragraph("Sintesi statistica Monte Carlo (10.000 percorsi)", s_h2))
     stat_rows = [
-        ["Prezzo mediano a scadenza", f"{p50:.2f}",
-         "Prob. sopra lo strike",     f"{pct_pos:.1f}%  \u2713"],
-        ["Prezzo al 75\xb0 percentile", f"{p75:.2f}",
-         "Prob. sotto lo strike",     f"{pct_neg:.1f}%  \u2717"],
-        ["Prezzo al 10\xb0 percentile", f"{p10:.2f}",
-         "Deviazione std. simulata",  f"{float(np.std(prezzi_sim)):.2f}"],
+        ["Prezzo mediano",      f"{p50:.2f}",  "Prob. sopra strike",   f"{pct_pos:.1f}%  \u2713"],
+        ["P75\xb0 percentile",  f"{p75:.2f}",  "Prob. sotto strike",   f"{pct_neg:.1f}%  \u2717"],
+        ["P10\xb0 percentile",  f"{p10:.2f}",  "Dev. std. simulata",   f"{float(np.std(prezzi_sim)):.2f}"],
     ]
     stat_style = TableStyle([
         ("BACKGROUND",  (0,0), (-1,-1), SURFACE),
@@ -1543,19 +1532,19 @@ def genera_pdf_scenari(strategia, params):
     story.append(PageBreak())
 
     # ═══════════════════════════════════════════════════════
-    # PAGINA 2 — SCENARIO UNICO spot -10% → +10%
+    # PAGINA 2 — SCENARIO UNICO spot -10% → +10% (40 righe)
     # ═══════════════════════════════════════════════════════
+    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 40))  # 40 per stare in una pagina
+
     story.append(Spacer(1, 0.3*cm))
     story.append(Paragraph("Scenario Completo: Spot \u221210% \u2192 +10%", ps(
-        "sc_title", "Helvetica-Bold", 14, CYAN, TA_LEFT, spaceAfter=2)))
+        "sc_title", "Helvetica-Bold", 13, CYAN, TA_LEFT, spaceAfter=2)))
     story.append(Paragraph(
-        f"Fascia: <b>{spot*0.90:.2f} \u2013 {spot*1.10:.2f}</b>  \u00b7  "
-        f"50 livelli equidistanti  \u00b7  "
-        f"Valori BS a T residuo: <b>{max(int(T*365*0.5), 1)} gg</b>  \u00b7  "
-        f"IV: <b>{sigma*100:.1f}%</b>",
+        f"Fascia: <b>{spot*0.90:.2f} \u2013 {spot*1.10:.2f}</b>  \u00b7  40 livelli  \u00b7  "
+        f"BS a T residuo: <b>{max(int(T*365*0.5), 1)} gg</b>  \u00b7  IV: <b>{sigma*100:.1f}%</b>",
         ps("sc_sub", "Helvetica", 8, MUTED, TA_LEFT, spaceAfter=4)))
     story.append(HRFlowable(width="100%", thickness=0.5, color=CYAN))
-    story.append(Spacer(1, 0.25*cm))
+    story.append(Spacer(1, 0.2*cm))
 
     # Costruisci righe tabella
     if strategia == "put_scoperta":
@@ -1569,7 +1558,7 @@ def genera_pdf_scenari(strategia, params):
             vp     = bs_put_price(sp, K, T_residuo, r, sigma)
             pnl_az = round(prem - vp, 2)
             pnl_t  = round(pnl_az * n * mult, 0)
-            esito  = "\u2713 Profitto" if pnl_t >= 0 else "\u2717 Perdita"
+            esito  = "\u2713 Prof." if pnl_t >= 0 else "\u2717 Perd."
             rows.append([f"{sp:.2f}", f"{vp:.2f}", f"{pnl_az:+.2f}", f"{pnl_t:+.0f}", esito])
         else:
             vv     = bs_put_price(sp, K_v, T_residuo, r, sigma)
@@ -1577,46 +1566,40 @@ def genera_pdf_scenari(strategia, params):
             vspr   = round(vv - vc, 2)
             pnl_az = round(credito - vspr, 2)
             pnl_t  = round(pnl_az * n * mult, 0)
-            esito  = "\u2713 Profitto" if pnl_t >= 0 else "\u2717 Perdita"
+            esito  = "\u2713 Prof." if pnl_t >= 0 else "\u2717 Perd."
             rows.append([f"{sp:.2f}", f"{vv:.2f}", f"{vc:.2f}", f"{vspr:.2f}",
                          f"{pnl_az:+.2f}", f"{pnl_t:+.0f}", esito])
 
-    # Colonne proporzionali
     if strategia == "put_scoperta":
-        cw = [total_w*0.18, total_w*0.16, total_w*0.18, total_w*0.22, total_w*0.26]
+        cw = [total_w*0.19, total_w*0.17, total_w*0.19, total_w*0.22, total_w*0.23]
     else:
         cw = [total_w*0.14, total_w*0.12, total_w*0.12, total_w*0.12,
-              total_w*0.14, total_w*0.18, total_w*0.18]
+              total_w*0.14, total_w*0.17, total_w*0.19]
 
     tbl_style = [
-        # Header
         ("BACKGROUND",    (0,0),  (-1,0),  SURFACE),
         ("FONTNAME",      (0,0),  (-1,0),  "Helvetica-Bold"),
         ("FONTSIZE",      (0,0),  (-1,0),  7),
         ("TEXTCOLOR",     (0,0),  (-1,0),  CYAN),
         ("ALIGN",         (0,0),  (-1,0),  "CENTER"),
-        ("BOTTOMPADDING", (0,0),  (-1,0),  5),
-        ("TOPPADDING",    (0,0),  (-1,0),  5),
-        # Body
+        ("BOTTOMPADDING", (0,0),  (-1,0),  4),
+        ("TOPPADDING",    (0,0),  (-1,0),  4),
         ("FONTNAME",      (0,1),  (-1,-1), "Helvetica"),
         ("FONTSIZE",      (0,1),  (-1,-1), 7),
         ("TEXTCOLOR",     (0,1),  (-1,-1), WHITE),
         ("ALIGN",         (1,1),  (-1,-1), "RIGHT"),
         ("ALIGN",         (0,1),  (0,-1),  "CENTER"),
         ("ALIGN",         (-1,1), (-1,-1), "CENTER"),
-        # Grid
         ("GRID",          (0,0),  (-1,-1), 0.25, BORDER),
         ("ROWBACKGROUNDS",(0,1),  (-1,-1), [BG, SURFACE]),
-        ("PADDING",       (0,1),  (-1,-1), 3),
-        # Prezzo colonna 0 in cyan bold
+        ("TOPPADDING",    (0,1),  (-1,-1), 2),
+        ("BOTTOMPADDING", (0,1),  (-1,-1), 2),
         ("TEXTCOLOR",     (0,1),  (0,-1),  CYAN),
         ("FONTNAME",      (0,1),  (0,-1),  "Helvetica-Bold"),
     ]
 
-    # Colora P&L e Esito riga per riga
     for i, row in enumerate(rows[1:], start=1):
-        esito_val = row[-1]
-        clr_e = GREEN if "\u2713" in esito_val else RED
+        clr_e = GREEN if "\u2713" in row[-1] else RED
         clr_p = GREEN if "+" in row[-2] else RED
         tbl_style.append(("TEXTCOLOR", (-1, i), (-1, i), clr_e))
         tbl_style.append(("FONTNAME",  (-1, i), (-1, i), "Helvetica-Bold"))
@@ -1624,28 +1607,25 @@ def genera_pdf_scenari(strategia, params):
         tbl_style.append(("FONTNAME",  (-2, i), (-2, i), "Helvetica-Bold"))
 
     story.append(Table(rows, colWidths=cw, style=TableStyle(tbl_style), repeatRows=1))
-    story.append(Spacer(1, 0.4*cm))
+    story.append(Spacer(1, 0.3*cm))
 
-    # Commento finale
-    n_prof   = sum(1 for row in rows[1:] if "\u2713" in row[-1])
+    # Riepilogo finale
+    n_prof = sum(1 for row in rows[1:] if "\u2713" in row[-1])
     if strategia == "put_scoperta":
-        pnl_vals = [(prem - bs_put_price(float(row[0]), K, T_residuo, r, sigma))*n*mult
-                    for row in rows[1:]]
+        pnl_vals    = [(prem - bs_put_price(float(row[0]), K, T_residuo, r, sigma))*n*mult for row in rows[1:]]
         be_str      = f"{K - prem:.2f}"
-        perdita_max = f"{-(K - prem) * n * mult:.0f} \u20ac (teorica)"
+        perdita_max = f"{-(K - prem)*n*mult:.0f} \u20ac (teorica)"
     else:
-        pnl_vals = [(credito - (bs_put_price(float(row[0]), K_v, T_residuo, r, sigma) -
-                                bs_put_price(float(row[0]), K_c, T_residuo, r, sigma)))*n*mult
-                    for row in rows[1:]]
+        pnl_vals    = [(credito-(bs_put_price(float(row[0]),K_v,T_residuo,r,sigma)-
+                                 bs_put_price(float(row[0]),K_c,T_residuo,r,sigma)))*n*mult for row in rows[1:]]
         be_str      = f"{K_v - credito:.2f}"
-        perdita_max = f"{-(K_v - K_c - credito)*n*mult:.0f} \u20ac"
+        perdita_max = f"{-(K_v-K_c-credito)*n*mult:.0f} \u20ac"
 
     pnl_medio = float(np.mean(pnl_vals))
     story.append(Paragraph(
-        f"<b>Riepilogo:</b> Su 50 livelli di prezzo analizzati, <b>{n_prof}</b> producono un profitto "
-        f"e <b>{50-n_prof}</b> una perdita. "
-        f"Il P&amp;L medio su questa fascia \xe8 <b>{pnl_medio:+.0f} \u20ac</b>. "
-        f"Break-even a <b>{be_str}</b> — perdita massima: <b>{perdita_max}</b>.",
+        f"<b>Riepilogo:</b> {n_prof}/40 livelli in profitto, {40-n_prof} in perdita.  "
+        f"P&amp;L medio: <b>{pnl_medio:+.0f} \u20ac</b>  \u00b7  "
+        f"Break-even: <b>{be_str}</b>  \u00b7  Perdita max: <b>{perdita_max}</b>.",
         s_comment))
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
