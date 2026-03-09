@@ -1609,37 +1609,32 @@ def genera_pdf_scenari(strategia, params):
     story.append(Table(rows, colWidths=cw, style=TableStyle(tbl_style), repeatRows=1))
     story.append(Spacer(1, 0.3*cm))
 
-    # Break-even: prezzo interpolato dove P&L cambia segno
-    def find_breakeven(rows_data):
-        for i in range(1, len(rows_data)-1):
-            p1 = float(rows_data[i][-2])    # P&L tot riga i
-            p2 = float(rows_data[i+1][-2])  # P&L tot riga i+1
-            if p1 * p2 <= 0:               # cambio di segno
-                s1 = float(rows_data[i][0])
-                s2 = float(rows_data[i+1][0])
-                if p2 != p1:
-                    be = s1 + (s2 - s1) * (-p1) / (p2 - p1)
-                    return f"{be:.2f}"
-        return be_str  # fallback al calcolo analitico
+    # Break-even: interpolazione lineare sul cambio di segno del P&L Tot nella tabella
+    # rows[1:] = righe dati, colonna P&L Tot = indice -2 (penultima, prima di Esito)
+    be_str = "n.d."
+    for i in range(len(rows) - 2):  # rows[1] = prima riga dati
+        row_a = rows[i + 1]
+        row_b = rows[i + 2]
+        try:
+            pnl_a = float(row_a[-2])
+            pnl_b = float(row_b[-2])
+            s_a   = float(row_a[0])
+            s_b   = float(row_b[0])
+        except (ValueError, IndexError):
+            continue
+        if pnl_a * pnl_b < 0:  # cambio di segno preciso
+            be = s_a + (s_b - s_a) * (-pnl_a) / (pnl_b - pnl_a)
+            be_str = f"{be:.2f}"
+            break
+        elif pnl_a == 0:
+            be_str = f"{s_a:.2f}"
+            break
 
     n_prof = sum(1 for row in rows[1:] if "\u2713" in row[-1])
     if strategia == "put_scoperta":
-        pnl_vals    = [(prem - bs_put_price(float(row[0]), K, T_residuo, r, sigma))*n*mult for row in rows[1:]]
-        be_str      = f"{K - prem:.2f}"
         perdita_max = f"{-(K - prem)*n*mult:.0f} \u20ac (teorica)"
     else:
-        pnl_vals    = [(credito-(bs_put_price(float(row[0]),K_v,T_residuo,r,sigma)-
-                                 bs_put_price(float(row[0]),K_c,T_residuo,r,sigma)))*n*mult for row in rows[1:]]
-        be_reale = params.get("bps_be")
-        be_str      = f"{be_reale:.2f}" if be_reale else f"{K_v - credito:.2f}"
         perdita_max = f"{-(K_v-K_c-credito)*n*mult:.0f} \u20ac"
-
-    # Sostituisci be_str con il punto zero reale della tabella
-    rows_with_pnl = [[row[0], str(round((prem - bs_put_price(float(row[0]), K, T_residuo, r, sigma))*n*mult, 0))] if strategia == "put_scoperta"
-                     else [row[0], str(round((credito-(bs_put_price(float(row[0]),K_v,T_residuo,r,sigma)-bs_put_price(float(row[0]),K_c,T_residuo,r,sigma)))*n*mult, 0))]
-                     for row in rows[1:]]
-    be_interpolato = find_breakeven(rows_with_pnl)
-    be_str = be_interpolato
 
     story.append(Paragraph(
         f"<b>Riepilogo:</b> {n_prof}/30 livelli in profitto, {30-n_prof} in perdita.  "
@@ -1767,21 +1762,9 @@ with st.sidebar:
             options=[5, 10, 15, 20, 25, 30, 50], value=10,
             help="Differenza in dollari tra lo strike venduto e quello comprato.")
 
-        # Credito netto calcolato automaticamente
-        credito_reale_bps = round(prezzo_put_venduta - prezzo_put_comprata, 2)
-        credito_reale_bps = max(0.01, credito_reale_bps)
+        # Credito netto calcolato automaticamente — nessun display aggiuntivo
+        credito_reale_bps = max(0.01, round(prezzo_put_venduta - prezzo_put_comprata, 2))
         st.session_state["_credito_bps"] = credito_reale_bps
-
-        # Credito netto calcolato — display neutro
-        pct_credito = (credito_reale_bps / larghezza_spread) * 100
-        st.markdown(
-            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
-            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
-            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-            f"Credito netto: <strong>{credito_reale_bps:.2f}$</strong>"
-            f"&nbsp;·&nbsp;{pct_credito:.1f}% della larghezza</div>",
-            unsafe_allow_html=True
-        )
     else:
         larghezza_spread = None
         credito_reale_bps = None
