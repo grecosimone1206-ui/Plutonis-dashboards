@@ -1327,199 +1327,180 @@ def calc_wcs(S, K, prem, n, crash, mult=100):
 
 def genera_pdf_scenari(strategia, params):
     """
-    Genera un PDF con 3 macro scenari Monte Carlo (positivo, medio, negativo),
-    25 prezzi ciascuno, con valore delle opzioni a scadenza e P&L.
-    Ritorna i byte del PDF.
+    Genera un PDF con UN unico scenario completo spot -10% → +10%,
+    50 prezzi, valori BS a T residuo = DTE/2.
     """
     if not REPORTLAB_OK:
         return None
 
-    # ── Estrai parametri ──────────────────────────────────────────────────────
-    spot       = params["spot"]
-    sigma      = params["sigma"]
-    T          = params["T"]
-    r          = params["r"]
-    nome       = params["nome"]
-    dte        = params["dte"]
-    data_oggi  = datetime.now().strftime("%d/%m/%Y")
+    # ── Estrai parametri ─────────────────────────────────────────────────────
+    spot      = params["spot"]
+    sigma     = params["sigma"]
+    T         = params["T"]
+    r         = params["r"]
+    nome      = params["nome"]
+    dte       = params["dte"]
+    data_oggi = datetime.now().strftime("%d/%m/%Y")
 
     if strategia == "put_scoperta":
-        K          = params["K"]
-        prem       = params["prem"]
-        n          = params["n_contratti"]
-        mult       = 100
+        K      = params["K"]
+        prem   = params["prem"]
+        n      = params["n_contratti"]
+        mult   = 100
+        K_ref  = K
     else:
-        K_v        = params["bps_K_venduta"]
-        K_c        = params["bps_K_comprata"]
-        credito    = params["bps_credito"]
-        n          = params["n_contratti"]
-        mult       = 100
-        # Prezzi reali singole opzioni (dal broker)
-        pv_reale   = params.get("prezzo_put_venduta")   # prezzo put venduta (bid)
-        pc_reale   = params.get("prezzo_put_comprata")  # prezzo put comprata (ask)
+        K_v    = params["bps_K_venduta"]
+        K_c    = params["bps_K_comprata"]
+        credito= params["bps_credito"]
+        n      = params["n_contratti"]
+        mult   = 100
+        pv_reale = params.get("prezzo_put_venduta")
+        pc_reale = params.get("prezzo_put_comprata")
+        K_ref  = K_v
 
-    # ── Simulazione Monte Carlo per definire le fasce di prezzo ──────────────
+    # ── Monte Carlo per sintesi statistica (pagina 1) ────────────────────────
     np.random.seed(42)
-    N_sim = 10000
-    Z     = np.random.standard_normal(N_sim)
-    prezzi_sim = spot * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * Z)
+    prezzi_sim = spot * np.exp((r - 0.5*sigma**2)*T + sigma*np.sqrt(T)*np.random.standard_normal(10000))
+    p75 = float(np.percentile(prezzi_sim, 75))
+    p50 = float(np.percentile(prezzi_sim, 50))
+    p10 = float(np.percentile(prezzi_sim, 10))
+    pct_pos = float(np.mean(prezzi_sim > K_ref)) * 100
+    pct_neg = 100 - pct_pos
 
-    p75  = float(np.percentile(prezzi_sim, 75))   # scenario positivo
-    p50  = float(np.percentile(prezzi_sim, 50))   # scenario medio
-    p10  = float(np.percentile(prezzi_sim, 10))   # scenario negativo
+    # ── 50 prezzi da spot -10% a spot +10% ──────────────────────────────────
+    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 50))
+    T_residuo = max(T * 0.5, 1/365)
 
-    def build_prezzi_scenario(scenario_tipo, K_strike, n_punti=25, K_comprata=None):
-        """
-        Fasce di prezzo ancorate allo spot corrente:
-        - positivo:  spot → spot +10%   (25 prezzi equidistanti)
-        - medio:     spot -5% → spot +5%
-        - negativo:  spot -10% → spot
-        """
-        if scenario_tipo == "positivo":
-            low  = spot
-            high = spot * 1.10
-        elif scenario_tipo == "medio":
-            low  = spot * 0.95
-            high = spot * 1.05
-        else:  # negativo
-            low  = spot * 0.90
-            high = spot
-
-        return list(np.linspace(low, high, n_punti))
-
-    scenari_dati = [
-        ("SCENARIO POSITIVO", p75, "positivo",
-         f"{nome} si mantiene sopra lo strike — il time decay lavora a favore.",
-         colors.HexColor("#00E5A0")),
-        ("SCENARIO MEDIO", p50, "medio",
-         f"{nome} si avvicina al break-even — esito incerto, gestione attiva consigliata.",
-         colors.HexColor("#FFB547")),
-        ("SCENARIO NEGATIVO", p10, "negativo",
-         f"{nome} crolla sotto lo strike — perdita significativa, valutare stop loss.",
-         colors.HexColor("#FF5A5A")),
-    ]
+    def bs_put_price(S, K_opt, T_opt, r_opt, sig):
+        if T_opt <= 0 or S <= 0:
+            return max(K_opt - S, 0)
+        from scipy.stats import norm as _norm
+        d1 = (np.log(S/K_opt) + (r_opt + 0.5*sig**2)*T_opt) / (sig*np.sqrt(T_opt))
+        d2 = d1 - sig*np.sqrt(T_opt)
+        return max(round(K_opt*np.exp(-r_opt*T_opt)*_norm.cdf(-d2) - S*_norm.cdf(-d1), 2), 0.0)
 
     # ── Setup ReportLab ───────────────────────────────────────────────────────
     buf = io.BytesIO()
     W, H = A4
 
-    # Stili colori brand
-    BG       = colors.HexColor("#080C10")
-    CYAN     = colors.HexColor("#00C2FF")
-    GREEN    = colors.HexColor("#00E5A0")
-    GOLD     = colors.HexColor("#FFB547")
-    RED      = colors.HexColor("#FF5A5A")
-    MUTED    = colors.HexColor("#8B9FC0")
-    SURFACE  = colors.HexColor("#0F1E2E")
-    BORDER   = colors.HexColor("#1A2E45")
-    WHITE    = colors.HexColor("#E8EDF5")
+    # Palette colori
+    BG      = colors.HexColor("#080C10")
+    CYAN    = colors.HexColor("#00C2FF")
+    GREEN   = colors.HexColor("#00E5A0")
+    GOLD    = colors.HexColor("#FFB547")
+    RED     = colors.HexColor("#FF5A5A")
+    MUTED   = colors.HexColor("#8B9FC0")
+    SURFACE = colors.HexColor("#0F1E2E")
+    BORDER  = colors.HexColor("#1A2E45")
+    WHITE   = colors.HexColor("#E8EDF5")
+    DARK    = colors.HexColor("#060A0E")
 
-    # Funzione header/footer su ogni pagina
+    strat_label = "Vendita Put Scoperta" if strategia == "put_scoperta" else "Bull Put Spread"
+
     def on_page(canv, doc):
         canv.saveState()
-        # Header band
-        canv.setFillColor(BG)
-        canv.rect(0, H - 1.5*cm, W, 1.5*cm, fill=1, stroke=0)
-        # Logo testo
-        canv.setFont("Helvetica-Bold", 13)
+        canv.setFillColor(DARK)
+        canv.rect(0, H - 1.6*cm, W, 1.6*cm, fill=1, stroke=0)
+        canv.setFont("Helvetica-Bold", 12)
         canv.setFillColor(CYAN)
-        canv.drawString(1.5*cm, H - 1.0*cm, "Phinance")
+        canv.drawString(1.5*cm, H - 1.05*cm, "Phinance")
         canv.setFont("Helvetica", 8)
+        canv.setFillColor(WHITE)
+        canv.drawString(4.2*cm, H - 1.05*cm, f"| Analisi Scenari — {strat_label}")
         canv.setFillColor(MUTED)
-        strat_label = "Vendita Put Scoperta" if strategia == "put_scoperta" else "Bull Put Spread"
-        canv.drawString(4.5*cm, H - 1.0*cm, f"| Analisi Scenari Monte Carlo — {strat_label}")
-        # Data a destra
-        canv.drawRightString(W - 1.5*cm, H - 1.0*cm, data_oggi)
-        # Linea separatrice
+        canv.drawRightString(W - 1.5*cm, H - 1.05*cm, data_oggi)
         canv.setStrokeColor(BORDER)
         canv.setLineWidth(0.5)
-        canv.line(1.5*cm, H - 1.55*cm, W - 1.5*cm, H - 1.55*cm)
+        canv.line(1.5*cm, H - 1.6*cm, W - 1.5*cm, H - 1.6*cm)
         # Footer
         canv.setFont("Helvetica", 7)
         canv.setFillColor(MUTED)
-        canv.drawCentredString(W/2, 0.7*cm,
+        canv.drawCentredString(W/2, 0.65*cm,
             "Solo a scopo educativo — non costituisce consulenza finanziaria — Phinance v5.1")
-        canv.setStrokeColor(BORDER)
-        canv.line(1.5*cm, 1.1*cm, W - 1.5*cm, 1.1*cm)
+        canv.line(1.5*cm, 1.05*cm, W - 1.5*cm, 1.05*cm)
         canv.restoreState()
 
     doc = SimpleDocTemplate(
         buf, pagesize=A4,
         leftMargin=1.5*cm, rightMargin=1.5*cm,
-        topMargin=2.2*cm, bottomMargin=1.8*cm,
-        onPage=on_page, onLaterPages=on_page,
+        topMargin=2.4*cm, bottomMargin=1.8*cm,
     )
 
-    # Stili paragrafo
     def ps(name, font="Helvetica", size=9, color=WHITE, align=TA_LEFT,
            leading=None, spaceBefore=0, spaceAfter=0):
         return ParagraphStyle(name, fontName=font, fontSize=size,
                               textColor=color, alignment=align,
-                              leading=leading or size*1.35,
+                              leading=leading or size*1.4,
                               spaceBefore=spaceBefore, spaceAfter=spaceAfter)
 
-    s_title    = ps("title",  "Helvetica-Bold", 20, CYAN,  TA_LEFT, spaceAfter=4)
-    s_subtitle = ps("sub",    "Helvetica",      10, MUTED, TA_LEFT, spaceAfter=2)
-    s_h2       = ps("h2",     "Helvetica-Bold", 12, WHITE, TA_LEFT, spaceBefore=10, spaceAfter=4)
-    s_body     = ps("body",   "Helvetica",       8, MUTED, TA_LEFT, leading=12, spaceAfter=3)
-    s_label    = ps("label",  "Helvetica-Bold",  8, MUTED, TA_LEFT)
-    s_value    = ps("value",  "Helvetica-Bold",  9, CYAN,  TA_LEFT)
-    s_small    = ps("small",  "Helvetica",        7, MUTED, TA_LEFT)
-    s_comment  = ps("comm",   "Helvetica",        8, MUTED, TA_LEFT, leading=12)
+    s_title   = ps("title", "Helvetica-Bold", 18, CYAN,  TA_LEFT, spaceAfter=4)
+    s_sub     = ps("sub",   "Helvetica",       9, WHITE, TA_LEFT, spaceAfter=2)
+    s_h2      = ps("h2",    "Helvetica-Bold", 11, WHITE, TA_LEFT, spaceBefore=8, spaceAfter=4)
+    s_body    = ps("body",  "Helvetica",       8, WHITE, TA_LEFT, leading=13, spaceAfter=3)
+    s_nota    = ps("nota",  "Helvetica",       7, MUTED, TA_LEFT, leading=11, spaceAfter=3)
+    s_comment = ps("comm",  "Helvetica",       8, WHITE, TA_LEFT, leading=12)
 
     story = []
 
     # ═══════════════════════════════════════════════════════
-    # PAGINA 1 — COPERTINA / INTRO
+    # PAGINA 1 — INTRO + PARAMETRI + STATISTICHE
     # ═══════════════════════════════════════════════════════
-    story.append(Spacer(1, 0.8*cm))
-    story.append(Paragraph("Analisi Scenari — Report Operativo", s_title))
-
-    strat_nome = "Vendita Put Scoperta" if strategia == "put_scoperta" else "Bull Put Spread"
-    story.append(Paragraph(f"{nome} &nbsp;·&nbsp; {strat_nome} &nbsp;·&nbsp; Generato il {data_oggi}", s_subtitle))
-    story.append(Spacer(1, 0.4*cm))
-    story.append(HRFlowable(width="100%", thickness=0.5, color=BORDER))
     story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph("Analisi Scenari — Report Operativo", s_title))
+    story.append(Paragraph(
+        f"{nome}  ·  {strat_label}  ·  Generato il {data_oggi}", s_sub))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=BORDER))
+    story.append(Spacer(1, 0.35*cm))
 
-    # Box intro
     intro_txt = (
-        "Questo documento analizza la tua posizione su opzioni attraverso tre scenari di mercato distinti, "
-        "costruiti su fasce di prezzo percentuali ancorate al prezzo spot corrente. "
-        "Lo scenario Negativo copre una discesa fino al \u221210% dallo spot, lo scenario Medio una fascia simmetrica "
-        "\xb15%, e lo scenario Positivo un rialzo fino al +10%. "
-        "Per ciascuno vengono mostrati 25 livelli di prezzo rappresentativi con il valore teorico delle opzioni "
-        "calcolato tramite il modello Black-Scholes a tempo residuo pari a met\xe0 del DTE originale, "
-        "simulando cos\xec una valutazione realistica a met\xe0 vita del trade \u2014 non a scadenza. "
-        "<br/><br/>"
-        "<b>Nota metodologica:</b> i valori delle opzioni sono stimati con Black-Scholes a T residuo = DTE/2. "
-        "Il P&amp;L include il credito netto gi\xe0 incassato all\u2019apertura del trade. "
-        "Il documento ha scopo esclusivamente educativo e non costituisce consulenza finanziaria."
+        "Questo report analizza la tua posizione su opzioni su una fascia di prezzo da "
+        "<b>\u221210% a +10%</b> rispetto al prezzo spot corrente, con 50 livelli di prezzo equidistanti. "
+        "I valori delle opzioni sono calcolati con il modello <b>Black-Scholes</b> a un tempo residuo "
+        "pari a met\xe0 del DTE originale (DTE/2), simulando una valutazione realistica "
+        "a met\xe0 vita del trade \u2014 non a scadenza."
     )
     story.append(Paragraph(intro_txt, s_body))
-    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph(
+        "Nota: il P&L include il credito/premio gi\xe0 incassato all\u2019apertura. "
+        "Documento a scopo esclusivamente educativo, non costituisce consulenza finanziaria.",
+        s_nota))
+    story.append(Spacer(1, 0.35*cm))
 
-    # Riquadro parametri operazione
+    # ── Tabella parametri ────────────────────────────────────────────────────
+    story.append(Paragraph("Parametri operazione", s_h2))
     if strategia == "put_scoperta":
         param_rows = [
-            ["Strumento", nome, "Strike", f"{K:.2f}"],
-            ["Prezzo Spot", f"{spot:.2f}", "Premio incassato/az.", f"{prem:.4f}"],
-            ["DTE", f"{dte} giorni", "Contratti", str(n)],
-            ["IV", f"{sigma*100:.1f}%", "Credito totale", f"+{prem*n*mult:.0f} €"],
+            ["Strumento",   Paragraph(nome, ps("pn", size=8, color=WHITE)),
+             "Strike",      f"{K:.2f}"],
+            ["Prezzo Spot", f"{spot:.2f}",
+             "Premio / az.",f"{prem:.4f}"],
+            ["DTE",         f"{dte} giorni",
+             "Contratti",   str(n)],
+            ["IV",          f"{sigma*100:.1f}%",
+             "Credito tot.",f"+{prem*n*mult:.0f} \u20ac"],
         ]
     else:
-        pv_str = f"{pv_reale:.2f}" if pv_reale else f"{credito:.4f} (netto)"
-        pc_str = f"{pc_reale:.2f}" if pc_reale else "—"
+        pv_str = f"{pv_reale:.2f}" if pv_reale else f"{credito:.4f}"
+        pc_str = f"{pc_reale:.2f}" if pc_reale else "\u2014"
         param_rows = [
-            ["Strumento", nome,              "Strike venduto",   f"{K_v:.2f}"],
-            ["Prezzo Spot", f"{spot:.2f}",   "Strike comprato",  f"{K_c:.2f}"],
-            ["DTE", f"{dte} giorni",         "Put venduta (bid)", pv_str],
-            ["IV", f"{sigma*100:.1f}%",      "Put comprata (ask)", pc_str],
-            ["Contratti", str(n),            "Credito netto",    f"{credito:.2f} ({credito*n*mult:.0f} €)"],
+            ["Strumento",    Paragraph(nome, ps("pn2", size=8, color=WHITE)),
+             "Strike venduto", f"{K_v:.2f}"],
+            ["Prezzo Spot",  f"{spot:.2f}",
+             "Strike comprato", f"{K_c:.2f}"],
+            ["DTE",          f"{dte} giorni",
+             "Put venduta (bid)", pv_str],
+            ["IV",           f"{sigma*100:.1f}%",
+             "Put comprata (ask)", pc_str],
+            ["Contratti",    str(n),
+             "Credito netto", f"{credito:.2f}  (+{credito*n*mult:.0f} \u20ac)"],
         ]
 
+    total_w = W - 3*cm
+    col_w4  = [total_w*0.20, total_w*0.30, total_w*0.25, total_w*0.25]
     param_style = TableStyle([
         ("BACKGROUND",  (0,0), (-1,-1), SURFACE),
-        ("GRID",        (0,0), (-1,-1), 0.3,    BORDER),
+        ("GRID",        (0,0), (-1,-1), 0.3, BORDER),
         ("FONTNAME",    (0,0), (0,-1),  "Helvetica-Bold"),
         ("FONTNAME",    (2,0), (2,-1),  "Helvetica-Bold"),
         ("FONTSIZE",    (0,0), (-1,-1), 8),
@@ -1529,194 +1510,145 @@ def genera_pdf_scenari(strategia, params):
         ("TEXTCOLOR",   (3,0), (3,-1),  CYAN),
         ("PADDING",     (0,0), (-1,-1), 6),
         ("VALIGN",      (0,0), (-1,-1), "MIDDLE"),
-        ("WORDWRAP",    (0,0), (-1,-1), True),
     ])
-    # Colonne: label sinistra (stretta), valore sinistra (larga), label destra (stretta), valore destra
-    total_w = W - 3*cm
-    col_w = [total_w*0.18, total_w*0.32, total_w*0.22, total_w*0.28]
-    param_tbl = Table(param_rows, colWidths=col_w, style=param_style)
-    story.append(param_tbl)
-    story.append(Spacer(1, 0.5*cm))
+    story.append(Table(param_rows, colWidths=col_w4, style=param_style))
+    story.append(Spacer(1, 0.4*cm))
 
-    # Statistica riassuntiva
-    pct_pos = float(np.mean(prezzi_sim > (K if strategia == "put_scoperta" else K_v))) * 100
-    pct_neg = 100 - pct_pos
-    story.append(HRFlowable(width="100%", thickness=0.5, color=BORDER))
-    story.append(Spacer(1, 0.3*cm))
-    story.append(Paragraph("Sintesi statistica della simulazione (10.000 percorsi)", s_h2))
-
+    # ── Sintesi statistica ───────────────────────────────────────────────────
+    story.append(HRFlowable(width="100%", thickness=0.3, color=BORDER))
+    story.append(Paragraph("Sintesi statistica Monte Carlo (10.000 percorsi)", s_h2))
     stat_rows = [
         ["Prezzo mediano a scadenza", f"{p50:.2f}",
-         "Scenari sopra lo strike", f"{pct_pos:.1f}%  ✓"],
-        ["Prezzo al 75° percentile", f"{p75:.2f}",
-         "Scenari sotto lo strike", f"{pct_neg:.1f}%  ✗"],
-        ["Prezzo al 10° percentile", f"{p10:.2f}",
-         "Deviazione std. simulata", f"{float(np.std(prezzi_sim)):.2f}"],
+         "Prob. sopra lo strike",     f"{pct_pos:.1f}%  \u2713"],
+        ["Prezzo al 75\xb0 percentile", f"{p75:.2f}",
+         "Prob. sotto lo strike",     f"{pct_neg:.1f}%  \u2717"],
+        ["Prezzo al 10\xb0 percentile", f"{p10:.2f}",
+         "Deviazione std. simulata",  f"{float(np.std(prezzi_sim)):.2f}"],
     ]
     stat_style = TableStyle([
         ("BACKGROUND",  (0,0), (-1,-1), SURFACE),
-        ("GRID",        (0,0), (-1,-1), 0.3,    BORDER),
+        ("GRID",        (0,0), (-1,-1), 0.3, BORDER),
         ("FONTNAME",    (0,0), (0,-1),  "Helvetica-Bold"),
         ("FONTNAME",    (2,0), (2,-1),  "Helvetica-Bold"),
         ("FONTSIZE",    (0,0), (-1,-1), 8),
         ("TEXTCOLOR",   (0,0), (0,-1),  MUTED),
         ("TEXTCOLOR",   (2,0), (2,-1),  MUTED),
         ("TEXTCOLOR",   (1,0), (1,-1),  CYAN),
-        ("TEXTCOLOR",   (3,0), (3,0),   GREEN),   # Scenari sopra lo strike ✓ — verde
-        ("TEXTCOLOR",   (3,1), (3,1),   RED),     # Scenari sotto lo strike ✗ — rosso
-        ("TEXTCOLOR",   (3,2), (3,2),   WHITE),   # Deviazione std — bianco neutro
+        ("TEXTCOLOR",   (3,0), (3,0),   GREEN),
+        ("TEXTCOLOR",   (3,1), (3,1),   RED),
+        ("TEXTCOLOR",   (3,2), (3,2),   WHITE),
         ("PADDING",     (0,0), (-1,-1), 6),
     ])
-    stat_tbl = Table(stat_rows, colWidths=col_w, style=stat_style)
-    story.append(stat_tbl)
+    story.append(Table(stat_rows, colWidths=col_w4, style=stat_style))
     story.append(PageBreak())
 
     # ═══════════════════════════════════════════════════════
-    # PAGINE SCENARI
+    # PAGINA 2 — SCENARIO UNICO spot -10% → +10%
     # ═══════════════════════════════════════════════════════
-    for idx, (sc_nome, centro, sc_tipo, sc_commento, sc_color) in enumerate(scenari_dati):
-        K_strike_ref   = K if strategia == "put_scoperta" else K_v
-        K_comprata_ref = None if strategia == "put_scoperta" else K_c
-        prezzi_sc = build_prezzi_scenario(sc_tipo, K_strike_ref, K_comprata=K_comprata_ref)
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Scenario Completo: Spot \u221210% \u2192 +10%", ps(
+        "sc_title", "Helvetica-Bold", 14, CYAN, TA_LEFT, spaceAfter=2)))
+    story.append(Paragraph(
+        f"Fascia: <b>{spot*0.90:.2f} \u2013 {spot*1.10:.2f}</b>  \u00b7  "
+        f"50 livelli equidistanti  \u00b7  "
+        f"Valori BS a T residuo: <b>{max(int(T*365*0.5), 1)} gg</b>  \u00b7  "
+        f"IV: <b>{sigma*100:.1f}%</b>",
+        ps("sc_sub", "Helvetica", 8, MUTED, TA_LEFT, spaceAfter=4)))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=CYAN))
+    story.append(Spacer(1, 0.25*cm))
 
-        # Titolo scenario
-        story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph(sc_nome, ps(f"sct{idx}", "Helvetica-Bold", 14,
-                                            sc_color, TA_LEFT, spaceAfter=2)))
-        sc_range = {"positivo": "Spot → +10%", "medio": "-5% → +5%", "negativo": "-10% → Spot"}
-        story.append(Paragraph(
-            f"Fascia: <b>{sc_range[sc_tipo]}</b> &nbsp;|&nbsp; "
-            f"Prezzi: <b>{min(prezzi_sc):.2f} – {max(prezzi_sc):.2f}</b> &nbsp;|&nbsp; "
-            f"Valori BS a T residuo: <b>{int(T*365//2)} gg</b>",
-            ps(f"scs{idx}", "Helvetica", 8, MUTED, TA_LEFT, spaceAfter=4)))
-        story.append(HRFlowable(width="100%", thickness=0.5, color=sc_color))
-        story.append(Spacer(1, 0.3*cm))
+    # Costruisci righe tabella
+    if strategia == "put_scoperta":
+        header = ["Prezzo", "Val. Put", "P&L / az.", "P&L Tot. (\u20ac)", "Esito"]
+    else:
+        header = ["Prezzo", "Put Vend.", "Put Comp.", "Spread", "P&L / az.", "P&L Tot. (\u20ac)", "Esito"]
 
-        # Intestazione tabella
+    rows = [header]
+    for sp in prezzi_sc:
         if strategia == "put_scoperta":
-            header = ["Prezzo SPY", "Valore Put", "P&L / az. (€)", "P&L Totale (€)", "Esito"]
+            vp     = bs_put_price(sp, K, T_residuo, r, sigma)
+            pnl_az = round(prem - vp, 2)
+            pnl_t  = round(pnl_az * n * mult, 0)
+            esito  = "\u2713 Profitto" if pnl_t >= 0 else "\u2717 Perdita"
+            rows.append([f"{sp:.2f}", f"{vp:.2f}", f"{pnl_az:+.2f}", f"{pnl_t:+.0f}", esito])
         else:
-            header = ["Prezzo SPY", "Put Venduta", "Put Comprata", "Valore Spread", "P&L / az. (€)", "P&L Totale (€)", "Esito"]
+            vv     = bs_put_price(sp, K_v, T_residuo, r, sigma)
+            vc     = bs_put_price(sp, K_c, T_residuo, r, sigma)
+            vspr   = round(vv - vc, 2)
+            pnl_az = round(credito - vspr, 2)
+            pnl_t  = round(pnl_az * n * mult, 0)
+            esito  = "\u2713 Profitto" if pnl_t >= 0 else "\u2717 Perdita"
+            rows.append([f"{sp:.2f}", f"{vv:.2f}", f"{vc:.2f}", f"{vspr:.2f}",
+                         f"{pnl_az:+.2f}", f"{pnl_t:+.0f}", esito])
 
-        rows = [header]
+    # Colonne proporzionali
+    if strategia == "put_scoperta":
+        cw = [total_w*0.18, total_w*0.16, total_w*0.18, total_w*0.22, total_w*0.26]
+    else:
+        cw = [total_w*0.14, total_w*0.12, total_w*0.12, total_w*0.12,
+              total_w*0.14, total_w*0.18, total_w*0.18]
 
-        # Usiamo BS per prezzare le opzioni con T residuo = metà del DTE originale
-        # Questo simula il valore realistico dell'opzione a metà vita del trade
-        T_residuo = max(T * 0.5, 1/365)
+    tbl_style = [
+        # Header
+        ("BACKGROUND",    (0,0),  (-1,0),  SURFACE),
+        ("FONTNAME",      (0,0),  (-1,0),  "Helvetica-Bold"),
+        ("FONTSIZE",      (0,0),  (-1,0),  7),
+        ("TEXTCOLOR",     (0,0),  (-1,0),  CYAN),
+        ("ALIGN",         (0,0),  (-1,0),  "CENTER"),
+        ("BOTTOMPADDING", (0,0),  (-1,0),  5),
+        ("TOPPADDING",    (0,0),  (-1,0),  5),
+        # Body
+        ("FONTNAME",      (0,1),  (-1,-1), "Helvetica"),
+        ("FONTSIZE",      (0,1),  (-1,-1), 7),
+        ("TEXTCOLOR",     (0,1),  (-1,-1), WHITE),
+        ("ALIGN",         (1,1),  (-1,-1), "RIGHT"),
+        ("ALIGN",         (0,1),  (0,-1),  "CENTER"),
+        ("ALIGN",         (-1,1), (-1,-1), "CENTER"),
+        # Grid
+        ("GRID",          (0,0),  (-1,-1), 0.25, BORDER),
+        ("ROWBACKGROUNDS",(0,1),  (-1,-1), [BG, SURFACE]),
+        ("PADDING",       (0,1),  (-1,-1), 3),
+        # Prezzo colonna 0 in cyan bold
+        ("TEXTCOLOR",     (0,1),  (0,-1),  CYAN),
+        ("FONTNAME",      (0,1),  (0,-1),  "Helvetica-Bold"),
+    ]
 
-        # Funzione BS put interna alla generazione
-        def bs_put_price(S, K_opt, T_opt, r_opt, sigma_opt):
-            if T_opt <= 0 or S <= 0:
-                return max(K_opt - S, 0)
-            d1 = (np.log(S / K_opt) + (r_opt + 0.5 * sigma_opt**2) * T_opt) / (sigma_opt * np.sqrt(T_opt))
-            d2 = d1 - sigma_opt * np.sqrt(T_opt)
-            from scipy.stats import norm
-            put = K_opt * np.exp(-r_opt * T_opt) * norm.cdf(-d2) - S * norm.cdf(-d1)
-            return max(round(put, 2), 0.0)
+    # Colora P&L e Esito riga per riga
+    for i, row in enumerate(rows[1:], start=1):
+        esito_val = row[-1]
+        clr_e = GREEN if "\u2713" in esito_val else RED
+        clr_p = GREEN if "+" in row[-2] else RED
+        tbl_style.append(("TEXTCOLOR", (-1, i), (-1, i), clr_e))
+        tbl_style.append(("FONTNAME",  (-1, i), (-1, i), "Helvetica-Bold"))
+        tbl_style.append(("TEXTCOLOR", (-2, i), (-2, i), clr_p))
+        tbl_style.append(("FONTNAME",  (-2, i), (-2, i), "Helvetica-Bold"))
 
-        for sp in prezzi_sc:
-            if strategia == "put_scoperta":
-                val_put = bs_put_price(sp, K, T_residuo, r, sigma)
-                pnl_az  = round(prem - val_put, 2)
-                pnl_tot = round(pnl_az * n * mult, 0)
-                esito   = "✓ Profitto" if pnl_tot >= 0 else "✗ Perdita"
-                rows.append([
-                    f"{sp:.2f}",
-                    f"{val_put:.2f}",
-                    f"{pnl_az:+.2f}",
-                    f"{pnl_tot:+.0f}",
-                    esito,
-                ])
-            else:
-                val_v   = bs_put_price(sp, K_v, T_residuo, r, sigma)
-                val_c   = bs_put_price(sp, K_c, T_residuo, r, sigma)
-                val_spr = round(val_v - val_c, 2)
-                pnl_az  = round(credito - val_spr, 2)
-                pnl_tot = round(pnl_az * n * mult, 0)
-                esito   = "✓ Profitto" if pnl_tot >= 0 else "✗ Perdita"
-                rows.append([
-                    f"{sp:.2f}",
-                    f"{val_v:.2f}",
-                    f"{val_c:.2f}",
-                    f"{val_spr:.2f}",
-                    f"{pnl_az:+.2f}",
-                    f"{pnl_tot:+.0f}",
-                    esito,
-                ])
+    story.append(Table(rows, colWidths=cw, style=TableStyle(tbl_style), repeatRows=1))
+    story.append(Spacer(1, 0.4*cm))
 
-        # Stile tabella dati
-        if strategia == "put_scoperta":
-            n_cols = 5
-            cw = [(W - 3*cm) / n_cols] * n_cols
-        else:
-            n_cols = 7
-            cw = [(W - 3*cm) / n_cols] * n_cols
+    # Commento finale
+    n_prof   = sum(1 for row in rows[1:] if "\u2713" in row[-1])
+    if strategia == "put_scoperta":
+        pnl_vals = [(prem - bs_put_price(float(r[0]), K, T_residuo, r_val, sigma))*n*mult
+                    for r_val in [r] for r in rows[1:]]
+        be_str   = f"{K - prem:.2f}"
+        perdita_max = f"{-(K - prem) * n * mult:.0f} \u20ac (teorica)"
+    else:
+        pnl_vals = [(credito - (bs_put_price(float(r[0]), K_v, T_residuo, r, sigma) -
+                                bs_put_price(float(r[0]), K_c, T_residuo, r, sigma)))*n*mult
+                    for r in rows[1:]]
+        be_str      = f"{K_v - credito:.2f}"
+        perdita_max = f"{-(K_v - K_c - credito)*n*mult:.0f} \u20ac"
 
-        tbl_style_base = [
-            # Header
-            ("BACKGROUND",  (0,0),  (-1,0),  SURFACE),
-            ("FONTNAME",    (0,0),  (-1,0),  "Helvetica-Bold"),
-            ("FONTSIZE",    (0,0),  (-1,0),  7),
-            ("TEXTCOLOR",   (0,0),  (-1,0),  MUTED),
-            ("ALIGN",       (0,0),  (-1,0),  "CENTER"),
-            # Body
-            ("FONTNAME",    (0,1),  (-1,-1), "Helvetica"),
-            ("FONTSIZE",    (0,1),  (-1,-1), 7.5),
-            ("TEXTCOLOR",   (0,1),  (-1,-1), WHITE),
-            ("ALIGN",       (0,1),  (-1,-1), "RIGHT"),
-            ("ALIGN",       (-1,1), (-1,-1), "CENTER"),
-            # Grid
-            ("GRID",        (0,0),  (-1,-1), 0.25, BORDER),
-            ("ROWBACKGROUNDS", (0,1), (-1,-1), [BG, SURFACE]),
-            ("PADDING",     (0,0),  (-1,-1), 4),
-            # Colonna prezzo SPY in cyan
-            ("TEXTCOLOR",   (0,1),  (0,-1),  CYAN),
-            ("FONTNAME",    (0,1),  (0,-1),  "Helvetica-Bold"),
-        ]
+    pnl_medio = float(np.mean(pnl_vals))
+    story.append(Paragraph(
+        f"<b>Riepilogo:</b> Su 50 livelli di prezzo analizzati, <b>{n_prof}</b> producono un profitto "
+        f"e <b>{50-n_prof}</b> una perdita. "
+        f"Il P&amp;L medio su questa fascia \xe8 <b>{pnl_medio:+.0f} \u20ac</b>. "
+        f"Break-even a <b>{be_str}</b> — perdita massima: <b>{perdita_max}</b>.",
+        s_comment))
 
-        # Colora esito per riga
-        for i, row in enumerate(rows[1:], start=1):
-            esito_val = row[-1]
-            clr = GREEN if "Profitto" in esito_val else RED
-            tbl_style_base.append(("TEXTCOLOR", (-1, i), (-1, i), clr))
-            tbl_style_base.append(("FONTNAME",  (-1, i), (-1, i), "Helvetica-Bold"))
-            # Colora P&L totale
-            pnl_col = -2
-            pnl_clr = GREEN if "+" in row[pnl_col] else RED
-            tbl_style_base.append(("TEXTCOLOR", (pnl_col, i), (pnl_col, i), pnl_clr))
-
-        sc_tbl = Table(rows, colWidths=cw, style=TableStyle(tbl_style_base), repeatRows=1)
-        story.append(sc_tbl)
-        story.append(Spacer(1, 0.4*cm))
-
-        # Commento automatico scenario
-        if strategia == "put_scoperta":
-            n_prof = sum(1 for r in rows[1:] if "Profitto" in r[-1])
-            pnl_medio = np.mean([(prem - max(K - float(r[0]), 0)) * n * mult for r in rows[1:]])
-            commento = (
-                f"<b>Analisi:</b> {sc_commento} "
-                f"In questo scenario {n_prof}/25 prezzi simulati producono un profitto. "
-                f"Il P&amp;L medio è <b>{pnl_medio:+.0f} €</b>. "
-                f"Il break-even si trova a <b>{K - prem:.2f}</b> — "
-                f"{'il prezzo rimane prevalentemente sopra questo livello' if centro > K - prem else 'attenzione: molti prezzi sono sotto il break-even'}."
-            )
-        else:
-            n_prof = sum(1 for r in rows[1:] if "Profitto" in r[-1])
-            pnl_medio = np.mean([(credito - (max(K_v - float(r[0]), 0) - max(K_c - float(r[0]), 0))) * n * mult for r in rows[1:]])
-            commento = (
-                f"<b>Analisi:</b> {sc_commento} "
-                f"In questo scenario {n_prof}/25 prezzi simulati producono un profitto. "
-                f"Il P&amp;L medio è <b>{pnl_medio:+.0f} €</b>. "
-                f"Break-even a <b>{K_v - credito:.2f}</b> — perdita max limitata a "
-                f"<b>{-(K_v - K_c - credito) * n * mult:.0f} €</b>."
-            )
-        story.append(Paragraph(commento, s_comment))
-
-        if idx < 2:
-            story.append(PageBreak())
-
-    # Build
-    doc.build(story)
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
     buf.seek(0)
     return buf.getvalue()
 
