@@ -1508,7 +1508,7 @@ def genera_pdf_scenari(strategia, params):
 
     # ── Sintesi statistica ───────────────────────────────────────────────────
     story.append(HRFlowable(width="100%", thickness=0.3, color=BORDER))
-    story.append(Paragraph("Sintesi statistica Monte Carlo (10.000 percorsi)", s_h2))
+    story.append(Paragraph("Sintesi statistica (10.000 simulazioni GBM)", s_h2))
     stat_rows = [
         ["Prezzo mediano",      f"{p50:.2f}",  "Prob. sopra strike",   f"{pct_pos:.1f}%  \u2713"],
         ["P75\xb0 percentile",  f"{p75:.2f}",  "Prob. sotto strike",   f"{pct_neg:.1f}%  \u2717"],
@@ -1619,6 +1619,10 @@ def genera_pdf_scenari(strategia, params):
         pnl_vals    = [(credito-(bs_put_price(float(row[0]),K_v,T_residuo,r,sigma)-
                                  bs_put_price(float(row[0]),K_c,T_residuo,r,sigma)))*n*mult for row in rows[1:]]
         be_str      = f"{K_v - credito:.2f}"
+        # Usa il break-even reale se disponibile (calcolato dalla dashboard)
+        be_reale = params.get("bps_be")
+        if be_reale:
+            be_str = f"{be_reale:.2f}"
         perdita_max = f"{-(K_v-K_c-credito)*n*mult:.0f} \u20ac"
 
     story.append(Paragraph(
@@ -1874,7 +1878,7 @@ with st.sidebar:
     st.markdown("<div class='sb-section'>Analisi Scenari</div>", unsafe_allow_html=True)
     genera_pdf_btn = st.button("📄 Genera Report Scenari PDF",
         use_container_width=True,
-        help="Genera un PDF scaricabile con 3 macro scenari Monte Carlo (positivo, medio, negativo), "
+        help="Genera un PDF scaricabile con l'analisi completa della posizione su una fascia -10%/+10% dallo spot, "
              "25 prezzi ciascuno con valore delle opzioni e P&L a scadenza.")
 
 
@@ -1993,6 +1997,7 @@ if genera_pdf_btn:
         "K": K, "prem": prem,
         "bps_K_venduta": bps_K_venduta, "bps_K_comprata": bps_K_comprata,
         "bps_credito": bps_credito,
+        "bps_be": bps_be,
         "prezzo_put_venduta": prezzo_put_venduta if STRATEGIA == "bull_put_spread" else None,
         "prezzo_put_comprata": prezzo_put_comprata if STRATEGIA == "bull_put_spread" else None,
     }
