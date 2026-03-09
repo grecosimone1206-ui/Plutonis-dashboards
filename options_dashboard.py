@@ -1534,7 +1534,7 @@ def genera_pdf_scenari(strategia, params):
     # ═══════════════════════════════════════════════════════
     # PAGINA 2 — SCENARIO UNICO spot -10% → +10% (40 righe)
     # ═══════════════════════════════════════════════════════
-    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 40))  # 40 per stare in una pagina
+    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 40))  # 40 righe
 
     story.append(Spacer(1, 0.3*cm))
     story.append(Paragraph("Scenario Completo: Spot \u221210% \u2192 +10%", ps(
