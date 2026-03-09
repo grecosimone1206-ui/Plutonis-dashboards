@@ -1128,7 +1128,8 @@ hr { border-color: var(--border-subtle) !important; }
     opacity: 0;
     position: absolute;
     bottom: calc(100% + 8px);
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
     min-width: 220px;
     max-width: 260px;
     background: #0F1E2E;
