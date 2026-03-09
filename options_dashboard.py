@@ -1629,14 +1629,14 @@ def genera_pdf_scenari(strategia, params):
     # Commento finale
     n_prof   = sum(1 for row in rows[1:] if "\u2713" in row[-1])
     if strategia == "put_scoperta":
-        pnl_vals = [(prem - bs_put_price(float(r[0]), K, T_residuo, r_val, sigma))*n*mult
-                    for r_val in [r] for r in rows[1:]]
-        be_str   = f"{K - prem:.2f}"
+        pnl_vals = [(prem - bs_put_price(float(row[0]), K, T_residuo, r, sigma))*n*mult
+                    for row in rows[1:]]
+        be_str      = f"{K - prem:.2f}"
         perdita_max = f"{-(K - prem) * n * mult:.0f} \u20ac (teorica)"
     else:
-        pnl_vals = [(credito - (bs_put_price(float(r[0]), K_v, T_residuo, r, sigma) -
-                                bs_put_price(float(r[0]), K_c, T_residuo, r, sigma)))*n*mult
-                    for r in rows[1:]]
+        pnl_vals = [(credito - (bs_put_price(float(row[0]), K_v, T_residuo, r, sigma) -
+                                bs_put_price(float(row[0]), K_c, T_residuo, r, sigma)))*n*mult
+                    for row in rows[1:]]
         be_str      = f"{K_v - credito:.2f}"
         perdita_max = f"{-(K_v - K_c - credito)*n*mult:.0f} \u20ac"
 
