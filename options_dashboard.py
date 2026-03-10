@@ -1368,8 +1368,6 @@ def genera_pdf_scenari(strategia, params):
     pct_pos = float(np.mean(prezzi_sim > K_ref)) * 100
     pct_neg = 100 - pct_pos
 
-    # ── 50 prezzi da spot -10% a spot +10% ──────────────────────────────────
-    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 50))
     T_residuo = max(T * 0.5, 1/365)
 
     def bs_put_price(S, K_opt, T_opt, r_opt, sig):
@@ -1533,9 +1531,9 @@ def genera_pdf_scenari(strategia, params):
     story.append(PageBreak())
 
     # ═══════════════════════════════════════════════════════
-    # PAGINA 2 — SCENARIO UNICO spot -10% → +10% (40 righe)
+    # PAGINA 2 — SCENARIO UNICO spot -10% → +10% (30 righe)
     # ═══════════════════════════════════════════════════════
-    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 30))  # 40 righe
+    prezzi_sc = list(np.linspace(spot * 0.90, spot * 1.10, 30))  # 30 righe
 
     story.append(Spacer(1, 0.3*cm))
     story.append(Paragraph("Scenario Completo: Spot \u221210% \u2192 +10%", ps(
@@ -2421,7 +2419,7 @@ elif STRATEGIA == "bull_put_spread":
 st.markdown("""
 <div class="ph-footer">
     <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:500">Phinance</span><br>
-    Sistemi Quantitativi per il Trading di Opzioni &middot; v5.0<br>
+    Sistemi Quantitativi per il Trading di Opzioni &middot; v5.1<br>
     Dati: Yahoo Finance &nbsp;&middot;&nbsp; VIX: CBOE &nbsp;&middot;&nbsp; Motore: Black-Scholes<br>
     <span style="color:rgba(255,255,255,0.03);font-size:0.5rem">&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</span><br>
     Solo a scopo educativo &middot; Non costituisce consulenza finanziaria
