@@ -2343,7 +2343,7 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
 
 
     # ── RIEPILOGO BPS ──
-    st.markdown("<div class='section-label'>Riepilogo Operazione &mdash; Bull Put Spread</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allow_html=True)
     st.dataframe(pd.DataFrame({
         "Parametro": ["Strumento","Prezzo Attuale","Strike Venduto (STO)","Strike Comprato (BTO)",
                       "Larghezza Spread","Giorni alla Scadenza",
