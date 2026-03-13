@@ -628,6 +628,26 @@ hr { border-color: var(--border-subtle) !important; }
     height: 115px !important;
     padding: 0.9rem 1rem !important;
 }
+.kpi-card.kpi-sm {
+    height: 138px !important;
+    padding: 1rem 1.1rem !important;
+}
+.kpi-card.kpi-sm .kpi-value {
+    font-size: 1.45rem !important;
+    margin-bottom: 0.25rem !important;
+}
+.kpi-card.kpi-sm .kpi-sub {
+    font-size: 0.58rem !important;
+    margin-bottom: 0.35rem !important;
+}
+.kpi-card.kpi-sm .kpi-eyebrow {
+    font-size: 0.52rem !important;
+    margin-bottom: 0.3rem !important;
+}
+.kpi-card.kpi-sm .kpi-badge {
+    font-size: 0.50rem !important;
+    padding: 2px 8px !important;
+}
 .kpi-card:hover {
     border-color: rgba(0,194,255,0.2);
     transform: translateY(-3px);
@@ -2059,9 +2079,9 @@ iv_ind_fonte = "Da slider IV IND"
 
 
 st.markdown(f"""
-<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.2rem;margin-bottom:2rem">
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.7rem;margin-bottom:2rem;margin-left:-0.5rem;margin-right:-0.5rem">
 
-  <div class="kpi-card" style="animation-delay:0.0s">
+  <div class="kpi-card kpi-sm" style="animation-delay:0.0s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; Prezzo Spot
         <span class="tip-icon">?</span>
         <div class="tip-box">Prezzo di chiusura pi&ugrave; recente del sottostante selezionato, scaricato in tempo reale da Yahoo Finance. &Egrave; il riferimento base per tutti i calcoli di strike, premio e margine.</div>
@@ -2071,7 +2091,7 @@ st.markdown(f"""
     <div><span class="kpi-badge {spot_cls}">{spot_arrow}</span></div>
   </div>
 
-  <div class="kpi-card" style="animation-delay:0.06s">
+  <div class="kpi-card kpi-sm" style="animation-delay:0.06s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; Vol. Storica 30gg
         <span class="tip-icon">?</span>
         <div class="tip-box">Volatilità reale del sottostante negli ultimi 30 giorni, annualizzata. Indica quanto si è mosso il prezzo storicamente. Confrontata con la IV: se IV &gt; Vol. Storica significa che le opzioni sono care &mdash; condizione favorevole per vendere.</div>
@@ -2081,7 +2101,7 @@ st.markdown(f"""
     <div><span class="kpi-badge {vol_cls}">{vol_arrow}</span></div>
   </div>
 
-  <div class="kpi-card" style="animation-delay:0.12s">
+  <div class="kpi-card kpi-sm" style="animation-delay:0.12s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; IV Rank
         <span class="tip-icon">?</span>
         <div class="tip-box">Indica quanto è alta la volatilità implicita attuale rispetto agli ultimi 12 mesi. 0 = minimo storico, 100 = massimo storico. Sopra 50 = buon momento per vendere opzioni (regola Tastytrade). Sotto 30 = premi troppo bassi, meglio aspettare.</div>
@@ -2091,8 +2111,8 @@ st.markdown(f"""
     <div><span class="kpi-badge {ivr_cls}">{ivr_arrow}</span></div>
   </div>
 
-  <div class="kpi-card" style="animation-delay:0.18s">
-    <div class="kpi-eyebrow greek-tooltip">&#9679; VIX &mdash; Indice di Paura
+  <div class="kpi-card kpi-sm" style="animation-delay:0.18s">
+    <div class="kpi-eyebrow greek-tooltip">&#9679; VIX &mdash; Paura
         <span class="tip-icon">?</span>
         <div class="tip-box">Il VIX misura la volatilità implicita attesa sull&apos;S&amp;P 500 nei prossimi 30 giorni. Sotto 15 = mercato tranquillo, premi bassi. 15-20 = normale. Sopra 20 = paura elevata, premi gonfiati &mdash; ottimo per vendere put.</div>
     </div>
@@ -2101,7 +2121,7 @@ st.markdown(f"""
     <div><span class="kpi-badge {vix_cls}">{vix_arrow}</span></div>
   </div>
 
-  <div class="kpi-card" style="animation-delay:0.24s">
+  <div class="kpi-card kpi-sm" style="animation-delay:0.24s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; IV IND
         <span class="tip-icon">?</span>
         <div class="tip-box">Volatilità implicita del sottostante calcolata direttamente dalle sue opzioni quotate. Su Tastytrade la trovi nella scheda del titolo come &ldquo;IV IND&rdquo;. &Egrave; specifica dello strumento che stai tradando &mdash; usala al posto del VIX nello slider. Alta = premi gonfiati, ottimo per vendere. Bassa = premi scarsi, meglio aspettare.</div>
