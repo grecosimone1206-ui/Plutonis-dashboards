@@ -1910,13 +1910,13 @@ if STRATEGIA == "bull_put_spread" and larghezza_spread and credito_reale_bps:
     # Deviazione standard a scadenza
     bps_sigma_T     = spot * sigma * np.sqrt(T)
     bps_dist_sd     = (spot - bps_K_venduta) / bps_sigma_T if bps_sigma_T > 0 else 0
-    # Semaforo regola 25-35%
-    if bps_pct_largh >= 30:
-        bps_regola_cls = "ok"; bps_regola_txt = "Credito ottimale (>30%)"
+    # Semaforo regola credito ≥ 1/3 larghezza (Tastytrade)
+    if bps_pct_largh >= 33:
+        bps_regola_cls = "ok"; bps_regola_txt = "Credito ottimale (≥33% — regola 1/3 Tastytrade)"
     elif bps_pct_largh >= 25:
-        bps_regola_cls = "warn"; bps_regola_txt = "Credito accettabile (25-30%)"
+        bps_regola_cls = "warn"; bps_regola_txt = "Credito accettabile (25–33%) — sotto la soglia ideale"
     else:
-        bps_regola_cls = "bad"; bps_regola_txt = "Credito insufficiente (<25%) — rischio non efficiente"
+        bps_regola_cls = "bad"; bps_regola_txt = "Credito insufficiente (<25%) — valore atteso negativo"
 else:
     bps_K_venduta = bps_K_comprata = bps_credito = bps_credito_tot = None
     bps_margine_c = bps_margine_tot = bps_max_profit = bps_max_loss = None
@@ -1925,8 +1925,8 @@ else:
     bps_regola_cls = bps_regola_txt = None
 
 # IV Rank badge
-ivr_cls   = "alto" if iv_rank >= 60 else "medio" if iv_rank >= 35 else "basso"
-ivr_label = "Alto &mdash; Vendi" if iv_rank >= 60 else "Medio &mdash; Valuta" if iv_rank >= 35 else "Basso &mdash; Aspetta"
+ivr_cls   = "alto" if iv_rank >= 50 else "medio" if iv_rank >= 30 else "basso"
+ivr_label = "Alto &mdash; Vendi" if iv_rank >= 50 else "Medio &mdash; Valuta" if iv_rank >= 30 else "Basso &mdash; Aspetta"
 
 # VIX colore
 vix_str = fmt(vix_val, 2) if vix_val else "N/D"
@@ -2011,10 +2011,10 @@ else:
     vol_cls   = "red"
 
 # IV Rank: alto=verde, medio=arancio, basso=rosso
-if iv_rank >= 60:
+if iv_rank >= 50:
     ivr_arrow = "&#9650; Alto &mdash; Vendi"
     ivr_cls   = "green"
-elif iv_rank >= 35:
+elif iv_rank >= 30:
     ivr_arrow = "&#8596; Medio &mdash; Valuta"
     ivr_cls   = "gold"
 else:
@@ -2062,7 +2062,7 @@ st.markdown(f"""
   <div class="kpi-card" style="animation-delay:0.12s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; IV Rank
         <span class="tip-icon">?</span>
-        <div class="tip-box">Indica quanto è alta la volatilità implicita attuale rispetto agli ultimi 12 mesi. 0 = minimo storico, 100 = massimo storico. Sopra 50 = buon momento per vendere opzioni. Sotto 35 = premi troppo bassi, meglio aspettare.</div>
+        <div class="tip-box">Indica quanto è alta la volatilità implicita attuale rispetto agli ultimi 12 mesi. 0 = minimo storico, 100 = massimo storico. Sopra 50 = buon momento per vendere opzioni (regola Tastytrade). Sotto 30 = premi troppo bassi, meglio aspettare.</div>
     </div>
     <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,0)} / 100</div>
     <div class="kpi-sub">Aggiornato: {ts_ivr}</div>
@@ -2273,12 +2273,12 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
         """, unsafe_allow_html=True)
 
     with c3:
-        cred_cls = "green" if bps_pct_largh >= 30 else "gold" if bps_pct_largh >= 25 else "red"
+        cred_cls = "green" if bps_pct_largh >= 33 else "gold" if bps_pct_largh >= 25 else "red"
         st.markdown(f"""
         <div class="kpi-card" style="animation-delay:0.12s">
             <div class="kpi-eyebrow greek-tooltip">&#9679; Credito Netto
                 <span class="tip-icon">?</span>
-                <div class="tip-box">Il credito netto &egrave; la differenza tra il premio incassato e quello pagato. Deve essere almeno il 25-30% della larghezza dello spread ({larghezza_spread}$) per avere un valore atteso positivo. Regola professionale fondamentale.</div>
+                <div class="tip-box">Il credito netto è la differenza tra il premio incassato e quello pagato. Secondo la regola Tastytrade deve essere almeno 1/3 (≈33%) della larghezza dello spread ({larghezza_spread}$) per avere un valore atteso positivo. Sotto il 25% il trade non è efficiente.</div>
             </div>
             <div class="kpi-value {cred_cls}">{fmt(bps_credito,2)}</div>
             <div class="kpi-sub">{n_contratti} contratti &rarr; <strong style="color:var(--accent-green)">+{fmt(bps_credito_tot,0)} &euro;</strong></div>
@@ -2316,7 +2316,7 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
     with d3:
         st.markdown(f'<div style="{_s}"><div style="{_e}">Strike comprato</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(bps_K_comprata,2)}</div><div style="{_b}">put comprata (BTO)</div></div>', unsafe_allow_html=True)
     with d4:
-        cred_col = "var(--accent-green)" if bps_pct_largh >= 30 else "var(--accent-gold)" if bps_pct_largh >= 25 else "var(--accent-red)"
+        cred_col = "var(--accent-green)" if bps_pct_largh >= 33 else "var(--accent-gold)" if bps_pct_largh >= 25 else "var(--accent-red)"
         st.markdown(f'<div style="{_s}"><div style="{_e}">Credito netto</div><div style="{_v};font-size:1.2rem;color:{cred_col}">+{fmt(bps_credito_tot,2)} &euro;</div><div style="{_b}">{fmt(bps_pct_largh,1)}% della larghezza</div></div>', unsafe_allow_html=True)
     with d5:
         st.markdown(f'<div style="{_s}"><div style="{_e}">Margine fisso</div><div style="{_v};font-size:1.2rem;color:var(--accent-gold)">{fmt(bps_margine_tot,2)} &euro;</div><div style="{_b}">rischio definito</div></div>', unsafe_allow_html=True)
