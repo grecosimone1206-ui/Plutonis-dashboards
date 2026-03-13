@@ -1689,8 +1689,11 @@ with st.sidebar:
     st.markdown("<div class='sb-section'>Posizione & Rischio</div>", unsafe_allow_html=True)
     n_contratti = st.slider("Numero di Contratti", 1, 50, 3,
         help="Quanti contratti vuoi vendere.\nOgni contratto copre 100 azioni del sottostante.")
-    marg_pct = st.slider("Margine Broker (%)", 5.0, 50.0, 15.0, 1.0,
-        help="% del valore dello strike bloccata come garanzia dal broker.\nIl broker tipicamente richiede il 15-20% per le put OTM su ETF.\nVerifica nelle impostazioni del tuo conto.")
+    if STRATEGIA == "put_scoperta":
+        marg_pct = st.slider("Margine Broker (%)", 5.0, 50.0, 15.0, 1.0,
+            help="% del valore dello strike bloccata come garanzia dal broker.\nIl broker tipicamente richiede il 15-20% per le put OTM su ETF.\nVerifica nelle impostazioni del tuo conto.")
+    else:
+        marg_pct = 15.0  # non usato nel BPS, margine calcolato automaticamente
     crash = 20.0  # scenario crisi fisso (usato internamente per calc_wcs)
 
     st.markdown("<div class='sb-section'>Obiettivo Strategia</div>", unsafe_allow_html=True)
