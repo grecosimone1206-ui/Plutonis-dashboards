@@ -1781,13 +1781,6 @@ with st.sidebar:
             float(st.session_state.get("_ivr_val", 50.0)), 0.1,
             label_visibility="collapsed", key="input_ivr", format="%.1f")
         st.session_state["_ivr_val"] = iv_rank_reale
-        st.markdown(
-            f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
-            f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
-            f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-            f"IV Rank selezionato: <strong>{iv_rank_reale:.1f} / 100</strong></div>",
-            unsafe_allow_html=True
-        )
     else:
         iv_rank_reale = None
 
