@@ -653,7 +653,14 @@ hr { border-color: var(--border-subtle) !important; }
     overflow: visible !important;
     white-space: nowrap !important;
 }
-.kpi-card.kpi-sm .kpi-badge {
+.kpi-card.kpi-sm .tip-icon {
+    width: 11px !important;
+    height: 11px !important;
+    font-size: 0.42rem !important;
+}
+.kpi-card.kpi-sm .tip-box {
+    font-size: 0.62rem !important;
+}
     font-size: 0.46rem !important;
     padding: 2px 6px !important;
     white-space: nowrap !important;
