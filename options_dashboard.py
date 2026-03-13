@@ -1922,9 +1922,6 @@ prem     = premio_reale if premio_reale is not None else prem_bs
 prem_fonte = "Reale (broker)" if premio_reale is not None else "Black-Scholes (stimato)"
 prob  = prob_ok(par)
 gre   = calc_greche(par)
-
-# POP Bull Put Spread calcolato dopo i calcoli BPS
-pop_bps = None
 sema  = calc_semaforo(iv_pct, vol_st, iv_rank, vix_val)
 # v5.1 &mdash; calcoli basati su n_contratti scelto dall'utente
 mult      = 100                                        # ogni contratto = 100 azioni
@@ -1966,11 +1963,6 @@ if STRATEGIA == "bull_put_spread" and larghezza_spread and credito_reale_bps:
         bps_regola_cls = "warn"; bps_regola_txt = "Credito accettabile (25-30%)"
     else:
         bps_regola_cls = "bad"; bps_regola_txt = "Credito insufficiente (<25%) — rischio non efficiente"
-    # POP Bull Put Spread: N(d2_venduta) - N(d2_comprata)
-    par_v  = Par(S=spot, K=bps_K_venduta,  T=T, r=r, sigma=sigma)
-    _, d2_v = d1d2(par_v)
-    pop_bps_raw = si.norm.cdf(d2_v) * 100
-    pop_bps = round(max(0.0, min(100.0, pop_bps_raw)), 2)
 else:
     bps_K_venduta = bps_K_comprata = bps_credito = bps_credito_tot = None
     bps_margine_c = bps_margine_tot = bps_max_profit = bps_max_loss = None
@@ -2197,7 +2189,7 @@ if STRATEGIA == "put_scoperta":
             </div>
             <div class="kpi-value green">{fmt(prem,2)}</div>
             <div class="kpi-sub">{n_contratti} contratti &rarr; <strong style="color:var(--accent-green)">+{fmt(ptot,0)} &euro;</strong></div>
-            <div><span class="kpi-badge green">{fmt(rend,2)}% sul margine / mese</span></div>
+            <div><span class="kpi-badge green" style="white-space:nowrap">{fmt(rend,2)}% sul margine / mese</span></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -2348,49 +2340,11 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
             </div>
             <div class="kpi-value gold">{fmt(bps_margine_tot,0)} &euro;</div>
             <div class="kpi-sub">{fmt(bps_margine_c,0)} &euro; &times; {n_contratti} contratti</div>
-            <div><span class="kpi-badge gold">FISSO &mdash; RISCHIO DEFINITO</span></div>
+            <div><span class="kpi-badge gold" style="white-space:nowrap">FISSO &mdash; RISCHIO DEFINITO</span></div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
-
-    # ── POP CARD — BULL PUT SPREAD ──
-    pop_bps_cls   = "green" if pop_bps >= 70 else "gold" if pop_bps >= 60 else "red"
-    pop_bps_badge = "ECCELLENTE" if pop_bps >= 75 else "OTTIMALE" if pop_bps >= 70 else "ACCETTABILE" if pop_bps >= 60 else "RISCHIOSA"
-    pop_bps_sub   = "probabilit&agrave; spread scade OTM" if pop_bps >= 10 else "⚠️ Inserisci prezzi reali dal broker"
-    st.markdown(f"""
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:2rem;margin-bottom:0.5rem">
-        <div class="kpi-card" style="animation-delay:0.24s">
-            <div class="kpi-eyebrow greek-tooltip">&#9679; Probability of Profit (POP)
-                <span class="tip-icon">?</span>
-                <div class="tip-box">Per il Bull Put Spread il POP &egrave; la probabilit&agrave; che il prezzo resti sopra entrambi gli strike a scadenza. Formula: N(d2 strike venduto) &minus; N(d2 strike comprato). Tipicamente pi&ugrave; bassa della put scoperta perch&eacute; la finestra di profitto &egrave; pi&ugrave; stretta.</div>
-            </div>
-            <div class="kpi-value {pop_bps_cls}">{fmt(pop_bps,1)}%</div>
-            <div class="kpi-sub">{pop_bps_sub}</div>
-            <div><span class="kpi-badge {pop_bps_cls}">{pop_bps_badge}</span></div>
-        </div>
-        <div class="kpi-card" style="animation-delay:0.30s;background:rgba(0,194,255,0.02)">
-            <div class="panel-title" style="font-size:0.58rem;margin-bottom:0.8rem"><span style="color:var(--accent-cyan);margin-right:0.4rem">&#9432;</span>Come leggere il POP sul Bull Put Spread</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
-                <div>
-                    <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">POP &ge; 75%</div>
-                    <div style="font-family:var(--font-body);font-size:0.82rem;color:var(--accent-green);font-weight:600">Eccellente</div>
-                    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted)">Spread molto OTM &mdash; conservativo</div>
-                </div>
-                <div>
-                    <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">POP 65&ndash;75%</div>
-                    <div style="font-family:var(--font-body);font-size:0.82rem;color:var(--accent-cyan);font-weight:600">Ottimale</div>
-                    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted)">Bilanciamento rischio/rendimento</div>
-                </div>
-                <div>
-                    <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">POP &lt; 60%</div>
-                    <div style="font-family:var(--font-body);font-size:0.82rem;color:var(--accent-red);font-weight:600">Rischioso</div>
-                    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-muted)">Spread troppo vicino allo spot</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
     # ── DETTAGLIO POSIZIONE BPS ──
     _s = "background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:0.9rem 1rem;height:110px;max-height:110px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:default"
