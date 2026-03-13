@@ -1207,9 +1207,9 @@ hr { border-color: var(--border-subtle) !important; }
 # ═══════════════════════════════════════════════════════════
 
 TICKER_DISPONIBILI = {
+    "NASDAQ 100 (QQQ)":              "QQQ",
     "S&P 500 (SPY)":                 "SPY",
     "S&P 500 Indice (^GSPC)":        "^GSPC",
-    "NASDAQ 100 (QQQ)":              "QQQ",
     "Dow Jones (^DJI)":              "^DJI",
     "Apple (AAPL)":                  "AAPL",
     "Tesla (TSLA)":                  "TSLA",
