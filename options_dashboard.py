@@ -2070,7 +2070,7 @@ else:
 
 # VIX: alto=verde, medio=arancio, basso=rosso
 if vix_val and vix_val >= 20:
-    vix_arrow = "&#9650; Elevato &mdash; Buono per vendere"
+    vix_arrow = "&#9650; Elevato &mdash; Vendi"
     vix_cls   = "green"
 elif vix_val and vix_val >= 15:
     vix_arrow = "&#8596; Normale &mdash; Nella norma"
@@ -2141,7 +2141,7 @@ st.markdown(f"""
   <div class="kpi-card kpi-sm" style="animation-delay:0.24s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; IV IND
         <span class="tip-icon">?</span>
-        <div class="tip-box">Volatilità implicita del sottostante calcolata direttamente dalle sue opzioni quotate. Su Tastytrade la trovi nella scheda del titolo come &ldquo;IV IND&rdquo;. &Egrave; specifica dello strumento che stai tradando &mdash; usala al posto del VIX nello slider. Alta = premi gonfiati, ottimo per vendere. Bassa = premi scarsi, meglio aspettare.</div>
+        <div class="tip-box">IV implicita dello strumento, calcolata sulle sue opzioni quotate. Su Tastytrade: scheda titolo → &ldquo;IV IND&rdquo;. Alta = premi gonfiati, ottimo per vendere. Bassa = aspetta.</div>
     </div>
     <div class="kpi-value {iv_ind_cls}">{fmt(iv_ind,1)}%</div>
     <div class="kpi-sub">{iv_ind_fonte}</div>
