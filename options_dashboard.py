@@ -611,13 +611,13 @@ hr { border-color: var(--border-subtle) !important; }
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-xl);
-    padding: 1.6rem 1.6rem;
+    padding: 1.4rem 1.5rem;
     position: relative;
     overflow: visible;
     transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     animation: fadeSlideUp 0.6s ease both;
-    height: 100%;
-    min-height: 155px;
+    height: 148px;
+    box-sizing: border-box;
     cursor: default;
     display: flex;
     flex-direction: column;
@@ -654,24 +654,24 @@ hr { border-color: var(--border-subtle) !important; }
 }
 .kpi-eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.58rem;
+    font-size: 0.56rem;
     font-weight: 500;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.4rem;
     white-space: nowrap;
-    overflow: visible;
+    overflow: hidden;
     text-overflow: ellipsis;
 }
 .kpi-value {
     font-family: var(--font-body);
-    font-size: 2.6rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
     color: var(--text-primary);
     line-height: 1;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -682,22 +682,26 @@ hr { border-color: var(--border-subtle) !important; }
 .kpi-value.red   { color: var(--accent-red); }
 .kpi-sub {
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 0.8rem;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .kpi-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     font-family: var(--font-mono);
-    font-size: 0.58rem;
+    font-size: 0.55rem;
     font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     padding: 3px 10px;
     border-radius: 20px;
+    white-space: nowrap;
 }
 .kpi-badge.green { background: var(--accent-green-dim); color: var(--accent-green); border: 1px solid rgba(0,229,160,0.2); }
 .kpi-badge.gold  { background: var(--accent-gold-dim);  color: var(--accent-gold);  border: 1px solid rgba(255,181,71,0.2); }
@@ -1665,7 +1669,7 @@ with st.sidebar:
     scelta = st.selectbox(
         "Sottostante",
         options=list(TICKER_DISPONIBILI.keys()),
-        index=1,
+        index=0,
         label_visibility="collapsed",
         help="Seleziona lo strumento. Il VIX viene scaricato in automatico."
     )
@@ -2062,7 +2066,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Prezzo di chiusura pi&ugrave; recente del sottostante selezionato, scaricato in tempo reale da Yahoo Finance. &Egrave; il riferimento base per tutti i calcoli di strike, premio e margine.</div>
     </div>
-    <div class="kpi-value {spot_cls}" style="font-size:1.7rem">{fmt(spot,2)}</div>
+    <div class="kpi-value {spot_cls}">{fmt(spot,2)}</div>
     <div class="kpi-sub">Aggiornato: {ts_spot}</div>
     <div><span class="kpi-badge {spot_cls}">{spot_arrow}</span></div>
   </div>
@@ -2072,7 +2076,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Volatilità reale del sottostante negli ultimi 30 giorni, annualizzata. Indica quanto si è mosso il prezzo storicamente. Confrontata con la IV: se IV &gt; Vol. Storica significa che le opzioni sono care &mdash; condizione favorevole per vendere.</div>
     </div>
-    <div class="kpi-value {vol_cls}" style="font-size:1.7rem">{fmt(vol_st,2)}%</div>
+    <div class="kpi-value {vol_cls}">{fmt(vol_st,2)}%</div>
     <div class="kpi-sub">Aggiornato: {ts_vol}</div>
     <div><span class="kpi-badge {vol_cls}">{vol_arrow}</span></div>
   </div>
@@ -2082,7 +2086,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Indica quanto è alta la volatilità implicita attuale rispetto agli ultimi 12 mesi. 0 = minimo storico, 100 = massimo storico. Sopra 50 = buon momento per vendere opzioni (regola Tastytrade). Sotto 30 = premi troppo bassi, meglio aspettare.</div>
     </div>
-    <div class="kpi-value {ivr_cls}" style="font-size:1.7rem">{fmt(iv_rank,0)} / 100</div>
+    <div class="kpi-value {ivr_cls}">{fmt(iv_rank,0)} / 100</div>
     <div class="kpi-sub">Aggiornato: {ts_ivr}</div>
     <div><span class="kpi-badge {ivr_cls}">{ivr_arrow}</span></div>
   </div>
@@ -2092,7 +2096,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Il VIX misura la volatilità implicita attesa sull&apos;S&amp;P 500 nei prossimi 30 giorni. Sotto 15 = mercato tranquillo, premi bassi. 15-20 = normale. Sopra 20 = paura elevata, premi gonfiati &mdash; ottimo per vendere put.</div>
     </div>
-    <div class="kpi-value {vix_cls}" style="font-size:1.7rem">{vix_str}</div>
+    <div class="kpi-value {vix_cls}">{vix_str}</div>
     <div class="kpi-sub">Aggiornato: {ts_vix}</div>
     <div><span class="kpi-badge {vix_cls}">{vix_arrow}</span></div>
   </div>
@@ -2102,7 +2106,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Volatilità implicita del sottostante calcolata direttamente dalle sue opzioni quotate. Su Tastytrade la trovi nella scheda del titolo come &ldquo;IV IND&rdquo;. &Egrave; specifica dello strumento che stai tradando &mdash; usala al posto del VIX nello slider. Alta = premi gonfiati, ottimo per vendere. Bassa = premi scarsi, meglio aspettare.</div>
     </div>
-    <div class="kpi-value {iv_ind_cls}" style="font-size:1.7rem">{fmt(iv_ind,1)}%</div>
+    <div class="kpi-value {iv_ind_cls}">{fmt(iv_ind,1)}%</div>
     <div class="kpi-sub">{iv_ind_fonte}</div>
     <div><span class="kpi-badge {iv_ind_cls}">{iv_ind_label}</span></div>
   </div>
