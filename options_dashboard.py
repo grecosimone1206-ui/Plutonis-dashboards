@@ -631,6 +631,7 @@ hr { border-color: var(--border-subtle) !important; }
 .kpi-card.kpi-sm {
     height: 138px !important;
     padding: 1rem 1.1rem !important;
+    overflow: visible !important;
 }
 .kpi-card.kpi-sm .kpi-value {
     font-size: 1.45rem !important;
@@ -639,14 +640,20 @@ hr { border-color: var(--border-subtle) !important; }
 .kpi-card.kpi-sm .kpi-sub {
     font-size: 0.58rem !important;
     margin-bottom: 0.35rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 .kpi-card.kpi-sm .kpi-eyebrow {
     font-size: 0.52rem !important;
     margin-bottom: 0.3rem !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
 }
 .kpi-card.kpi-sm .kpi-badge {
     font-size: 0.50rem !important;
     padding: 2px 8px !important;
+    white-space: nowrap !important;
 }
 .kpi-card:hover {
     border-color: rgba(0,194,255,0.2);
@@ -681,8 +688,8 @@ hr { border-color: var(--border-subtle) !important; }
     color: var(--text-muted);
     margin-bottom: 0.4rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    position: relative;
 }
 .kpi-value {
     font-family: var(--font-body);
