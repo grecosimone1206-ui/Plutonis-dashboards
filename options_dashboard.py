@@ -1680,10 +1680,10 @@ with st.sidebar:
 
     dte    = st.slider("Giorni alla Scadenza (DTE)", 1, 365, 45,
         help=f"Giorni calendariali alla scadenza.\nOttimale: 35-49 giorni.\nUltimo aggiornamento: impostato da te manualmente.")
-    iv_pct = st.slider("Volatilità Implicita IV (%)", 1.0, 150.0,
+    iv_pct = st.slider("IV IND (%)", 1.0, 150.0,
         float(st.session_state.get("_iv_pct_init", 20.0)), 0.5,
         key="iv_pct_slider",
-        help="Se hai premuto 'Aggiorna', questo campo viene preimpostato automaticamente con il VIX corrente.\nPuoi modificarlo manualmente per confrontare scenari diversi.")
+        help="Volatilità implicita del sottostante — lo stesso valore 'IV IND' che vedi su Tastytrade nella scheda del titolo.\nUsato da Black-Scholes per tutti i calcoli. Se hai attivato 'Usa IV IND reale' nella sezione Dati Reali, quel valore sovrascrive questo solo nel riquadro informativo — qui imposta comunque il parametro per i calcoli.")
     r_pct = 4.5  # tasso risk-free fisso
 
     st.markdown("<div class='sb-section'>Posizione & Rischio</div>", unsafe_allow_html=True)
@@ -1761,6 +1761,8 @@ with st.sidebar:
         st.session_state["_ivr_val"] = iv_rank_reale
     else:
         iv_rank_reale = None
+
+    iv_ind_reale = None  # lo slider IV IND (%) è il valore diretto, nessun toggle separato
 
     # ── Greche reali — solo put scoperta ──
     if STRATEGIA == "put_scoperta":
@@ -1850,6 +1852,7 @@ if dati.get("errore"):
 spot    = dati["prezzo_spot"]
 vol_st  = dati["vol_storica"]
 iv_rank = iv_rank_reale if iv_rank_reale is not None else dati["iv_rank"]
+iv_ind  = iv_pct  # IV IND: direttamente dallo slider omonimo
 vix_val = dati["vix"]
 var     = dati["variazione_gg"]
 nome    = dati["nome"]
@@ -2038,6 +2041,18 @@ else:
     vix_arrow = "Non disponibile"
     vix_cls   = "gold"
 
+# IV IND: colore basato su livello
+if iv_ind >= 30:
+    iv_ind_cls   = "red"
+    iv_ind_label = "Elevata"
+elif iv_ind >= 20:
+    iv_ind_cls   = "gold"
+    iv_ind_label = "Media"
+else:
+    iv_ind_cls   = "green"
+    iv_ind_label = "Bassa"
+iv_ind_fonte = "Da slider IV IND"
+
 
 st.markdown(f"""
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-bottom:2rem">
@@ -2080,6 +2095,16 @@ st.markdown(f"""
     <div class="kpi-value {vix_cls}" style="font-size:1.9rem">{vix_str}</div>
     <div class="kpi-sub">Aggiornato: {ts_vix}</div>
     <div><span class="kpi-badge {vix_cls}">{vix_arrow}</span></div>
+  </div>
+
+  <div class="kpi-card" style="animation-delay:0.24s">
+    <div class="kpi-eyebrow greek-tooltip">&#9679; IV IND
+        <span class="tip-icon">?</span>
+        <div class="tip-box">Volatilità implicita del sottostante calcolata direttamente dalle sue opzioni quotate. Su Tastytrade la trovi nella scheda del titolo come &ldquo;IV IND&rdquo;. È più precisa del VIX perché è specifica dello strumento che stai tradando. Usala come input per Black-Scholes al posto del VIX.</div>
+    </div>
+    <div class="kpi-value {iv_ind_cls}" style="font-size:1.9rem">{fmt(iv_ind,1)}%</div>
+    <div class="kpi-sub">{iv_ind_fonte}</div>
+    <div><span class="kpi-badge {iv_ind_cls}">{iv_ind_label}</span></div>
   </div>
 
 </div>
