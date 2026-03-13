@@ -2041,28 +2041,28 @@ else:
     vix_arrow = "Non disponibile"
     vix_cls   = "gold"
 
-# IV IND: colore basato su livello
+# IV IND: per vendita opzioni alto=verde, basso=rosso
 if iv_ind >= 30:
-    iv_ind_cls   = "red"
-    iv_ind_label = "Elevata"
+    iv_ind_cls   = "green"
+    iv_ind_label = "Alta &mdash; Vendi"
 elif iv_ind >= 20:
     iv_ind_cls   = "gold"
-    iv_ind_label = "Media"
+    iv_ind_label = "Media &mdash; Valuta"
 else:
-    iv_ind_cls   = "green"
-    iv_ind_label = "Bassa"
+    iv_ind_cls   = "red"
+    iv_ind_label = "Bassa &mdash; Aspetta"
 iv_ind_fonte = "Da slider IV IND"
 
 
 st.markdown(f"""
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-bottom:2rem">
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.2rem;margin-bottom:2rem">
 
   <div class="kpi-card" style="animation-delay:0.0s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; Prezzo Spot
         <span class="tip-icon">?</span>
         <div class="tip-box">Prezzo di chiusura pi&ugrave; recente del sottostante selezionato, scaricato in tempo reale da Yahoo Finance. &Egrave; il riferimento base per tutti i calcoli di strike, premio e margine.</div>
     </div>
-    <div class="kpi-value {spot_cls}" style="font-size:1.9rem">{fmt(spot,2)}</div>
+    <div class="kpi-value {spot_cls}" style="font-size:1.7rem">{fmt(spot,2)}</div>
     <div class="kpi-sub">Aggiornato: {ts_spot}</div>
     <div><span class="kpi-badge {spot_cls}">{spot_arrow}</span></div>
   </div>
@@ -2072,7 +2072,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Volatilità reale del sottostante negli ultimi 30 giorni, annualizzata. Indica quanto si è mosso il prezzo storicamente. Confrontata con la IV: se IV &gt; Vol. Storica significa che le opzioni sono care &mdash; condizione favorevole per vendere.</div>
     </div>
-    <div class="kpi-value {vol_cls}" style="font-size:1.9rem">{fmt(vol_st,2)}%</div>
+    <div class="kpi-value {vol_cls}" style="font-size:1.7rem">{fmt(vol_st,2)}%</div>
     <div class="kpi-sub">Aggiornato: {ts_vol}</div>
     <div><span class="kpi-badge {vol_cls}">{vol_arrow}</span></div>
   </div>
@@ -2082,7 +2082,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Indica quanto è alta la volatilità implicita attuale rispetto agli ultimi 12 mesi. 0 = minimo storico, 100 = massimo storico. Sopra 50 = buon momento per vendere opzioni (regola Tastytrade). Sotto 30 = premi troppo bassi, meglio aspettare.</div>
     </div>
-    <div class="kpi-value {ivr_cls}" style="font-size:1.9rem">{fmt(iv_rank,0)} / 100</div>
+    <div class="kpi-value {ivr_cls}" style="font-size:1.7rem">{fmt(iv_rank,0)} / 100</div>
     <div class="kpi-sub">Aggiornato: {ts_ivr}</div>
     <div><span class="kpi-badge {ivr_cls}">{ivr_arrow}</span></div>
   </div>
@@ -2092,7 +2092,7 @@ st.markdown(f"""
         <span class="tip-icon">?</span>
         <div class="tip-box">Il VIX misura la volatilità implicita attesa sull&apos;S&amp;P 500 nei prossimi 30 giorni. Sotto 15 = mercato tranquillo, premi bassi. 15-20 = normale. Sopra 20 = paura elevata, premi gonfiati &mdash; ottimo per vendere put.</div>
     </div>
-    <div class="kpi-value {vix_cls}" style="font-size:1.9rem">{vix_str}</div>
+    <div class="kpi-value {vix_cls}" style="font-size:1.7rem">{vix_str}</div>
     <div class="kpi-sub">Aggiornato: {ts_vix}</div>
     <div><span class="kpi-badge {vix_cls}">{vix_arrow}</span></div>
   </div>
@@ -2100,9 +2100,9 @@ st.markdown(f"""
   <div class="kpi-card" style="animation-delay:0.24s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; IV IND
         <span class="tip-icon">?</span>
-        <div class="tip-box">Volatilità implicita del sottostante calcolata direttamente dalle sue opzioni quotate. Su Tastytrade la trovi nella scheda del titolo come &ldquo;IV IND&rdquo;. È più precisa del VIX perché è specifica dello strumento che stai tradando. Usala come input per Black-Scholes al posto del VIX.</div>
+        <div class="tip-box">Volatilità implicita del sottostante calcolata direttamente dalle sue opzioni quotate. Su Tastytrade la trovi nella scheda del titolo come &ldquo;IV IND&rdquo;. &Egrave; specifica dello strumento che stai tradando &mdash; usala al posto del VIX nello slider. Alta = premi gonfiati, ottimo per vendere. Bassa = premi scarsi, meglio aspettare.</div>
     </div>
-    <div class="kpi-value {iv_ind_cls}" style="font-size:1.9rem">{fmt(iv_ind,1)}%</div>
+    <div class="kpi-value {iv_ind_cls}" style="font-size:1.7rem">{fmt(iv_ind,1)}%</div>
     <div class="kpi-sub">{iv_ind_fonte}</div>
     <div><span class="kpi-badge {iv_ind_cls}">{iv_ind_label}</span></div>
   </div>
