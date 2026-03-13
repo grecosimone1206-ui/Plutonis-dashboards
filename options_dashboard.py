@@ -1790,9 +1790,9 @@ def pnl_chart(S, K, prem, n, sigma, r, dte_sim, dte_orig, mult=100):
     pmax = prem * n * mult
     fig.add_hline(y=pmax,
         line=dict(color='rgba(0,200,83,0.30)', dash='dot', width=1),
-        annotation=dict(text=f"Max Profit  +{fmt(pmax,0)} €",
-                        font=dict(color='rgba(0,200,83,0.7)', size=9, family='DM Mono'),
-                        xanchor='left', x=0.01, xref='paper'))
+        annotation_text=f"Max Profit  +{fmt(pmax,0)} €",
+        annotation_font=dict(color='rgba(0,200,83,0.7)', size=9, family='DM Mono'),
+        annotation_xanchor='left', annotation_position='right')
     fig.add_hline(y=0,
         line=dict(color='rgba(255,255,255,0.08)', width=1))
 
