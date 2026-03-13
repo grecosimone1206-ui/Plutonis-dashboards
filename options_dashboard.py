@@ -630,8 +630,12 @@ hr { border-color: var(--border-subtle) !important; }
 }
 .kpi-card.kpi-sm {
     height: 138px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     padding: 1rem 1.1rem !important;
     overflow: visible !important;
+    box-sizing: border-box !important;
 }
 .kpi-card.kpi-sm .kpi-value {
     font-size: 1.45rem !important;
@@ -2086,7 +2090,7 @@ iv_ind_fonte = "Da slider IV IND"
 
 
 st.markdown(f"""
-<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.7rem;margin-bottom:2rem;margin-left:-0.5rem;margin-right:-0.5rem">
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0.7rem;margin-bottom:2rem;margin-left:-0.5rem;margin-right:-0.5rem;width:calc(100% + 1rem);box-sizing:border-box">
 
   <div class="kpi-card kpi-sm" style="animation-delay:0.0s">
     <div class="kpi-eyebrow greek-tooltip">&#9679; Prezzo Spot
