@@ -1799,13 +1799,6 @@ with st.sidebar:
                 float(st.session_state.get("_theta_val", 10.0)), 0.01,
                 label_visibility="collapsed", key="input_theta", format="%.2f")
             st.session_state["_theta_val"] = theta_reale
-            st.markdown(
-                f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
-                f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
-                f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-                f"&#916; {delta_reale:.2f} &nbsp;&middot;&nbsp; &#920; +{theta_reale:.2f} &euro;/gg</div>",
-                unsafe_allow_html=True
-            )
         else:
             delta_reale = None
             theta_reale = None
@@ -1846,13 +1839,6 @@ with st.sidebar:
                     on_change=_sync_input
                 )
             premio_reale = float(st.session_state["_pr_val"])
-            st.markdown(
-                f"<div style='font-family:var(--font-mono);font-size:0.72rem;color:var(--accent-cyan);"
-                f"background:rgba(0,194,255,0.06);border:1px solid rgba(0,194,255,0.15);"
-                f"border-radius:6px;padding:6px 10px;margin-top:0.3rem'>"
-                f"Premio selezionato: <strong>{premio_reale:.2f} &euro;</strong></div>",
-                unsafe_allow_html=True
-            )
         else:
             premio_reale = None
     else:
