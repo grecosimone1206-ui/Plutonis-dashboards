@@ -654,8 +654,8 @@ hr { border-color: var(--border-subtle) !important; }
     white-space: nowrap !important;
 }
 .kpi-card.kpi-sm .kpi-badge {
-    font-size: 0.50rem !important;
-    padding: 2px 8px !important;
+    font-size: 0.46rem !important;
+    padding: 2px 6px !important;
     white-space: nowrap !important;
 }
 .kpi-card:hover {
