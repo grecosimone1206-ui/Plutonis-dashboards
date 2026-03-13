@@ -1178,7 +1178,7 @@ hr { border-color: var(--border-subtle) !important; }
     border-radius: 10px;
     padding: 0.7rem 0.9rem;
     font-family: var(--font-body);
-    font-size: 0.72rem;
+    font-size: 0.62rem;
     color: var(--text-secondary);
     line-height: 1.5;
     z-index: 9999;
