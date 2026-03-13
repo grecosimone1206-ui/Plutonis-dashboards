@@ -1569,6 +1569,60 @@ def genera_pdf_scenari(strategia, params):
         ("PADDING",     (0,0), (-1,-1), 6),
     ])
     story.append(Table(stat_rows, colWidths=col_w4, style=stat_style))
+    story.append(Spacer(1, 0.35*cm))
+
+    # ── Gestione della posizione ─────────────────────────────────────────────
+    story.append(HRFlowable(width="100%", thickness=0.3, color=BORDER))
+    story.append(Paragraph("Gestione della posizione", s_h2))
+
+    if strategia == "put_scoperta":
+        credito_tot = prem * n * mult
+        tp_val      = round(credito_tot * 0.50, 0)   # take profit 50%
+        sl_val      = round(credito_tot * 2.00, 0)   # stop loss 2x
+        tp_premio   = round(prem * 0.50, 4)           # premio a cui riacquistare
+        sl_premio   = round(prem * 2.00, 4)
+        data_21dte  = (datetime.now() + __import__('datetime').timedelta(days=max(dte-21,0))).strftime("%d/%m/%Y")
+        gest_rows = [
+            ["Take Profit 50%",   f"Riacquista put a {tp_premio:.2f}",   f"+{tp_val:.0f} \u20ac incassati"],
+            ["Stop Loss 2x",      f"Chiudi se put vale {sl_premio:.2f}", f"-{sl_val:.0f} \u20ac perdita"],
+            ["Chiudi a 21 DTE",   f"Entro il {data_21dte}",              "Evita rischio Gamma elevato"],
+            ["Delta ottimale",    "0.16 \u2013 0.20",                    "84\u201380% prob. di successo"],
+            ["Apertura ideale",   "45 DTE",                              "Massima efficienza Theta decay"],
+            ["IV Rank minimo",    "> 50 / 100",                          "Regola Tastytrade \u2014 premi sufficienti"],
+        ]
+    else:
+        credito_tot = credito * n * mult
+        tp_val      = round(credito_tot * 0.50, 0)
+        sl_val      = round(credito_tot * 2.00, 0)
+        tp_credito  = round(credito * 0.50, 2)
+        sl_credito  = round(credito * 2.00, 2)
+        data_21dte  = (datetime.now() + __import__('datetime').timedelta(days=max(dte-21,0))).strftime("%d/%m/%Y")
+        gest_rows = [
+            ["Take Profit 50%",   f"Chiudi spread a {tp_credito:.2f} costo", f"+{tp_val:.0f} \u20ac incassati"],
+            ["Stop Loss 2x",      f"Chiudi se spread vale {sl_credito:.2f}", f"-{sl_val:.0f} \u20ac perdita"],
+            ["Chiudi a 21 DTE",   f"Entro il {data_21dte}",                  "Evita rischio Gamma elevato"],
+            ["Credito minimo",    "\u226533% della larghezza",               "Regola 1/3 Tastytrade"],
+            ["IV Rank minimo",    "> 30\u201340 / 100",                      "Premi strutturalmente elevati"],
+            ["Apertura ideale",   "30\u201345 DTE",                          "Theta decay ottimale"],
+        ]
+
+    gest_style = TableStyle([
+        ("BACKGROUND",    (0,0), (-1,-1), SURFACE),
+        ("GRID",          (0,0), (-1,-1), 0.3, BORDER),
+        ("FONTNAME",      (0,0), (0,-1),  "Helvetica-Bold"),
+        ("FONTSIZE",      (0,0), (-1,-1), 8),
+        ("TEXTCOLOR",     (0,0), (0,-1),  MUTED),
+        ("TEXTCOLOR",     (1,0), (1,-1),  WHITE),
+        ("TEXTCOLOR",     (2,0), (2,-1),  CYAN),
+        ("PADDING",       (0,0), (-1,-1), 5),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("ROWBACKGROUNDS",(0,0), (-1,-1), [SURFACE, colors.HexColor("#0A1828")]),
+        # TP verde, SL rosso
+        ("TEXTCOLOR",     (2,0), (2,0),   GREEN),
+        ("TEXTCOLOR",     (2,1), (2,1),   RED),
+    ])
+    col_w3 = [total_w*0.26, total_w*0.37, total_w*0.37]
+    story.append(Table(gest_rows, colWidths=col_w3, style=TableStyle(gest_style)))
     story.append(PageBreak())
 
     # ═══════════════════════════════════════════════════════
