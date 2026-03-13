@@ -1968,10 +1968,8 @@ if STRATEGIA == "bull_put_spread" and larghezza_spread and credito_reale_bps:
         bps_regola_cls = "bad"; bps_regola_txt = "Credito insufficiente (<25%) — rischio non efficiente"
     # POP Bull Put Spread: N(d2_venduta) - N(d2_comprata)
     par_v  = Par(S=spot, K=bps_K_venduta,  T=T, r=r, sigma=sigma)
-    par_c  = Par(S=spot, K=bps_K_comprata, T=T, r=r, sigma=sigma)
     _, d2_v = d1d2(par_v)
-    _, d2_c = d1d2(par_c)
-    pop_bps_raw = (si.norm.cdf(d2_v) - si.norm.cdf(d2_c)) * 100
+    pop_bps_raw = si.norm.cdf(d2_v) * 100
     pop_bps = round(max(0.0, min(100.0, pop_bps_raw)), 2)
 else:
     bps_K_venduta = bps_K_comprata = bps_credito = bps_credito_tot = None
@@ -2367,7 +2365,7 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
                 <span class="tip-icon">?</span>
                 <div class="tip-box">Per il Bull Put Spread il POP &egrave; la probabilit&agrave; che il prezzo resti sopra entrambi gli strike a scadenza. Formula: N(d2 strike venduto) &minus; N(d2 strike comprato). Tipicamente pi&ugrave; bassa della put scoperta perch&eacute; la finestra di profitto &egrave; pi&ugrave; stretta.</div>
             </div>
-            <div class="kpi-value {pop_bps_cls}" style="font-size:2.2rem">{fmt(pop_bps,1)}%</div>
+            <div class="kpi-value {pop_bps_cls}">{fmt(pop_bps,1)}%</div>
             <div class="kpi-sub">{pop_bps_sub}</div>
             <div><span class="kpi-badge {pop_bps_cls}">{pop_bps_badge}</span></div>
         </div>
