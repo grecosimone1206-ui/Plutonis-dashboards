@@ -1971,7 +1971,8 @@ if STRATEGIA == "bull_put_spread" and larghezza_spread and credito_reale_bps:
     par_c  = Par(S=spot, K=bps_K_comprata, T=T, r=r, sigma=sigma)
     _, d2_v = d1d2(par_v)
     _, d2_c = d1d2(par_c)
-    pop_bps = round((si.norm.cdf(d2_v) - si.norm.cdf(d2_c)) * 100, 2)
+    pop_bps_raw = (si.norm.cdf(d2_v) - si.norm.cdf(d2_c)) * 100
+    pop_bps = round(max(0.0, min(100.0, pop_bps_raw)), 2)
 else:
     bps_K_venduta = bps_K_comprata = bps_credito = bps_credito_tot = None
     bps_margine_c = bps_margine_tot = bps_max_profit = bps_max_loss = None
@@ -2358,6 +2359,7 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
     # ── POP CARD — BULL PUT SPREAD ──
     pop_bps_cls   = "green" if pop_bps >= 70 else "gold" if pop_bps >= 60 else "red"
     pop_bps_badge = "ECCELLENTE" if pop_bps >= 75 else "OTTIMALE" if pop_bps >= 70 else "ACCETTABILE" if pop_bps >= 60 else "RISCHIOSA"
+    pop_bps_sub   = "probabilit&agrave; spread scade OTM" if pop_bps >= 10 else "⚠️ Inserisci prezzi reali dal broker"
     st.markdown(f"""
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:2rem;margin-bottom:0.5rem">
         <div class="kpi-card" style="animation-delay:0.24s">
@@ -2366,7 +2368,7 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
                 <div class="tip-box">Per il Bull Put Spread il POP &egrave; la probabilit&agrave; che il prezzo resti sopra entrambi gli strike a scadenza. Formula: N(d2 strike venduto) &minus; N(d2 strike comprato). Tipicamente pi&ugrave; bassa della put scoperta perch&eacute; la finestra di profitto &egrave; pi&ugrave; stretta.</div>
             </div>
             <div class="kpi-value {pop_bps_cls}" style="font-size:2.2rem">{fmt(pop_bps,1)}%</div>
-            <div class="kpi-sub">probabilit&agrave; spread scade OTM</div>
+            <div class="kpi-sub">{pop_bps_sub}</div>
             <div><span class="kpi-badge {pop_bps_cls}">{pop_bps_badge}</span></div>
         </div>
         <div class="kpi-card" style="animation-delay:0.30s;background:rgba(0,194,255,0.02)">
