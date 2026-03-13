@@ -2216,7 +2216,8 @@ if STRATEGIA == "put_scoperta":
     """, unsafe_allow_html=True)
 
     # ── RIEPILOGO PUT SCOPERTA ──
-    st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allow_html=True)
+    st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Riepilogo Operazione</span>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:0.5rem'></div>", unsafe_allow_html=True)
     st.dataframe(pd.DataFrame({
         "Parametro": ["Strumento","Prezzo Attuale","Strike Consigliato","Distanza Strike",
                       "Giorni alla Scadenza",
@@ -2343,7 +2344,8 @@ elif STRATEGIA == "bull_put_spread" and bps_credito_tot is not None:
 
 
     # ── RIEPILOGO BPS ──
-    st.markdown("<div class='section-label'>Riepilogo Operazione</div>", unsafe_allow_html=True)
+    st.markdown("<span style='font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-secondary)'><span style='color:var(--accent-green);margin-right:0.5rem'>&#9678;</span>Riepilogo Operazione</span>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:0.5rem'></div>", unsafe_allow_html=True)
     st.dataframe(pd.DataFrame({
         "Parametro": ["Strumento","Prezzo Attuale","Strike Venduto (STO)","Strike Comprato (BTO)",
                       "Larghezza Spread","Giorni alla Scadenza",
