@@ -1645,28 +1645,127 @@ def genera_pdf_scenari(strategia, params):
     return buf.getvalue()
 
 
-def pnl_chart(S, K, prem, n, mult=100):
-    px  = np.linspace(S*0.55, S*1.20, 400)
-    pnl = np.where(px < K, px-K+prem, prem)*n*mult
+def pnl_chart(S, K, prem, n, sigma, r, dte_sim, mult=100):
+    """
+    Grafico P&L avanzato per put scoperta.
+    - Curva a scadenza (P&L teorico finale)
+    - Curva oggi (valore attuale della posizione con dte_sim giorni rimasti)
+    - Bande ±1σ e ±2σ (Expected Move)
+    - Linee verticali: Spot, Strike, Break-even
+    """
+    px = np.linspace(S * 0.70, S * 1.15, 500)
+
+    # ── Curva a scadenza ──
+    pnl_scad = np.where(px < K, px - K + prem, prem) * n * mult
+
+    # ── Curva oggi: valore attuale della put per ogni prezzo spot simulato ──
+    T_sim = max(dte_sim / 365.0, 1/365.0)
+    pnl_oggi = []
+    for s_i in px:
+        par_i = Par(S=s_i, K=K, T=T_sim, r=r, sigma=sigma)
+        val_put = prezzo_put(par_i)           # valore put al prezzo s_i oggi
+        pnl_i   = (prem - val_put) * n * mult # P&L = incassato - valore attuale
+        pnl_oggi.append(pnl_i)
+    pnl_oggi = np.array(pnl_oggi)
+
+    # ── Expected Move ──
+    em1 = S * sigma * np.sqrt(dte_sim / 365.0)
+    em2 = em1 * 2
+
+    be = K - prem
+
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=px, y=np.maximum(pnl,0), fill='tozeroy', fillcolor='rgba(0,229,160,0.07)', line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
-    fig.add_trace(go.Scatter(x=px, y=np.minimum(pnl,0), fill='tozeroy', fillcolor='rgba(255,90,90,0.07)',  line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
-    fig.add_trace(go.Scatter(x=px, y=pnl, line=dict(color='#00C2FF', width=2), name='P&L',
-        hovertemplate='<b>Prezzo:</b> %{x:,.2f}<br><b>P&L:</b> %{y:+,.0f} &euro;<extra></extra>'))
-    fig.add_vline(x=K,       line=dict(color='#FFB547', dash='dash', width=1), annotation=dict(text=f"Strike {fmt(K,0)}",   font=dict(color='#FFB547', size=11)))
-    fig.add_vline(x=S,       line=dict(color='rgba(255,255,255,0.2)', dash='dot', width=1), annotation=dict(text=f"Spot {fmt(S,0)}", font=dict(color='#8B9FC0', size=11)))
-    fig.add_vline(x=K-prem,  line=dict(color='#A855F7', dash='dash', width=1), annotation=dict(text=f"Pareggio {fmt(K-prem,0)}", font=dict(color='#A855F7', size=11)))
-    fig.add_hline(y=0,       line=dict(color='rgba(255,255,255,0.08)', width=1))
+
+    # Bande Expected Move (layer below)
+    fig.add_vrect(x0=S - em2, x1=S + em2,
+                  fillcolor='rgba(255,255,255,0.025)', layer='below', line_width=0,
+                  annotation_text='±2σ 95%', annotation_position='top left',
+                  annotation_font=dict(size=9, color='rgba(255,255,255,0.2)'))
+    fig.add_vrect(x0=S - em1, x1=S + em1,
+                  fillcolor='rgba(0,194,255,0.04)', layer='below', line_width=0,
+                  annotation_text='±1σ 68%', annotation_position='top left',
+                  annotation_font=dict(size=9, color='rgba(0,194,255,0.35)'))
+
+    # Fill aree P&L scadenza
+    fig.add_trace(go.Scatter(
+        x=px, y=np.maximum(pnl_scad, 0),
+        fill='tozeroy', fillcolor='rgba(0,229,160,0.06)',
+        line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
+    fig.add_trace(go.Scatter(
+        x=px, y=np.minimum(pnl_scad, 0),
+        fill='tozeroy', fillcolor='rgba(255,90,90,0.06)',
+        line=dict(color='rgba(0,0,0,0)'), showlegend=False, hoverinfo='skip'))
+
+    # Curva oggi
+    fig.add_trace(go.Scatter(
+        x=px, y=pnl_oggi,
+        line=dict(color='rgba(255,181,71,0.75)', width=1.5, dash='dot'),
+        name=f'P&L oggi ({dte_sim}gg rimasti)',
+        hovertemplate=(
+            '<b>Spot:</b> %{x:,.2f}<br>'
+            '<b>P&L oggi:</b> %{y:+,.0f} €'
+            '<extra></extra>'
+        )
+    ))
+
+    # Curva a scadenza
+    fig.add_trace(go.Scatter(
+        x=px, y=pnl_scad,
+        line=dict(color='#00C2FF', width=2),
+        name='P&L a scadenza',
+        hovertemplate=(
+            '<b>Spot:</b> %{x:,.2f}<br>'
+            '<b>P&L scadenza:</b> %{y:+,.0f} €<br>'
+            '<b>Distanza BE:</b> %{customdata:+,.2f} €'
+            '<extra></extra>'
+        ),
+        customdata=px - be
+    ))
+
+    # Linee verticali
+    fig.add_vline(x=K,   line=dict(color='#FFB547', dash='dash', width=1),
+                  annotation=dict(text=f"Strike {fmt(K,0)}", font=dict(color='#FFB547', size=10), yshift=10))
+    fig.add_vline(x=S,   line=dict(color='rgba(255,255,255,0.25)', dash='dot', width=1),
+                  annotation=dict(text=f"Spot {fmt(S,0)}", font=dict(color='#8B9FC0', size=10), yshift=10))
+    fig.add_vline(x=be,  line=dict(color='#A855F7', dash='dash', width=1),
+                  annotation=dict(text=f"Pareggio {fmt(be,0)}", font=dict(color='#A855F7', size=10), yshift=10))
+    fig.add_hline(y=0,   line=dict(color='rgba(255,255,255,0.07)', width=1))
+
     fig.update_layout(
         paper_bgcolor='#080C10', plot_bgcolor='#0C1219',
         font=dict(family='DM Mono', size=11, color='#8B9FC0'),
-        title=dict(text='Profilo Profitto / Perdita a Scadenza', font=dict(family='DM Sans', size=13, color='#8B9FC0'), x=0, xanchor='left', pad=dict(l=0,b=12)),
-        xaxis=dict(title='Prezzo del Sottostante a Scadenza', gridcolor='rgba(255,255,255,0.04)', zerolinecolor='rgba(255,255,255,0.05)', tickfont=dict(size=10), title_font=dict(size=11)),
-        yaxis=dict(title='Profitto / Perdita (&euro;)',            gridcolor='rgba(255,255,255,0.04)', zerolinecolor='rgba(255,255,255,0.05)', tickfont=dict(size=10), title_font=dict(size=11)),
+        title=dict(
+            text='Profilo Profitto / Perdita',
+            font=dict(family='DM Sans', size=13, color='#8B9FC0'),
+            x=0, xanchor='left', pad=dict(l=0, b=12)
+        ),
+        xaxis=dict(
+            title='Prezzo Sottostante a Scadenza',
+            gridcolor='rgba(255,255,255,0.04)',
+            zerolinecolor='rgba(255,255,255,0.04)',
+            tickfont=dict(size=10), title_font=dict(size=11)
+        ),
+        yaxis=dict(
+            title='Profitto / Perdita (€)',
+            gridcolor='rgba(255,255,255,0.04)',
+            zerolinecolor='rgba(255,255,255,0.04)',
+            tickfont=dict(size=10), title_font=dict(size=11),
+            tickprefix='€ ', tickformat='+,.0f'
+        ),
         hovermode='x unified',
-        hoverlabel=dict(bgcolor='#111923', bordercolor='rgba(255,255,255,0.1)', font=dict(family='DM Mono', size=11, color='#F0F6FF')),
-        legend=dict(bgcolor='rgba(0,0,0,0)'),
-        margin=dict(l=0, r=0, t=40, b=0),
+        hoverlabel=dict(
+            bgcolor='#111923',
+            bordercolor='rgba(255,255,255,0.1)',
+            font=dict(family='DM Mono', size=11, color='#F0F6FF')
+        ),
+        legend=dict(
+            bgcolor='rgba(0,0,0,0)',
+            font=dict(size=10),
+            orientation='h',
+            yanchor='bottom', y=1.01,
+            xanchor='left', x=0
+        ),
+        margin=dict(l=0, r=0, t=48, b=0),
     )
     return fig
 
@@ -2236,6 +2335,47 @@ if STRATEGIA == "put_scoperta":
                 <div class="panel-val green" style="font-size:1.6rem">+{fmt(theta_display,2)} &euro;</div>
                 <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-secondary);margin-top:0.4rem">guadagno per giorno &nbsp;&middot;&nbsp; <span style="color:var(--text-muted)">{theta_fonte}</span></div>
             </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── GRAFICO P&L ──
+    st.markdown("<div class='section-label'>Profilo P&amp;L</div>", unsafe_allow_html=True)
+
+    # Slider DTE simulazione — indipendente dalla sidebar
+    dte_max  = max(int(dte), 1)
+    dte_graf = st.slider(
+        "Giorni alla scadenza (simulazione curva oggi)",
+        min_value=1, max_value=dte_max, value=dte_max,
+        help="Sposta lo slider per vedere come cambia il valore attuale della posizione al variare dei giorni rimasti. "
+             "La curva tratteggiata arancione si avvicina alla curva blu a scadenza man mano che il tempo scorre."
+    )
+
+    fig_pnl = pnl_chart(spot, K, prem, n_contratti, sigma, r, dte_graf)
+    st.plotly_chart(fig_pnl, use_container_width=True, config={"displayModeBar": False})
+
+    # Mini-card Expected Move
+    em1 = spot * sigma * np.sqrt(dte / 365.0)
+    em2 = em1 * 2
+    sd_dist = (spot - K) / em1 if em1 > 0 else 0
+    em1_pct  = em1 / spot * 100
+    em2_pct  = em2 / spot * 100
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:0.5rem;margin-bottom:1.5rem">
+        <div style="background:rgba(0,194,255,0.04);border:1px solid rgba(0,194,255,0.12);border-radius:10px;padding:0.8rem 1rem">
+            <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem">Expected Move ±1&sigma; (68%)</div>
+            <div style="font-family:var(--font-body);font-size:1.1rem;font-weight:700;color:var(--accent-cyan)">&plusmn;{fmt(em1,2)} &nbsp;<span style="font-size:0.75rem;color:var(--text-secondary)">({fmt(em1_pct,1)}%)</span></div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">Range: {fmt(spot-em1,2)} &mdash; {fmt(spot+em1,2)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:0.8rem 1rem">
+            <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem">Expected Move ±2&sigma; (95%)</div>
+            <div style="font-family:var(--font-body);font-size:1.1rem;font-weight:700;color:var(--text-secondary)">&plusmn;{fmt(em2,2)} &nbsp;<span style="font-size:0.75rem;color:var(--text-muted)">({fmt(em2_pct,1)}%)</span></div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">Range: {fmt(spot-em2,2)} &mdash; {fmt(spot+em2,2)}</div>
+        </div>
+        <div style="background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.15);border-radius:10px;padding:0.8rem 1rem">
+            <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem">Strike &mdash; Distanza in &sigma;</div>
+            <div style="font-family:var(--font-body);font-size:1.1rem;font-weight:700;color:#A855F7">{fmt(sd_dist,2)}&sigma; OTM</div>
+            <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-muted);margin-top:0.3rem">Strike {fmt(K,2)} &mdash; Pareggio {fmt(K-prem,2)}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
